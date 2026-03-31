@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { Button } from '../ui/Button';
 import {
   LayoutDashboard,
   Building2,
@@ -12,7 +13,8 @@ import {
   Activity,
   Settings,
   FileText,
-  Target
+  Target,
+  LogOut
 } from 'lucide-react';
 
 interface MenuItem {
@@ -47,7 +49,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const filteredMenuItems = menuItems.filter(item =>
     user && item.roles.includes(user.role)
@@ -94,6 +96,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
               {user.role === 'admin' ? 'مدير النظام' : user.role === 'manager' ? 'مدير قسم' : 'موظف'}
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 mt-3"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>تسجيل الخروج</span>
+          </Button>
         </div>
       )}
     </div>
