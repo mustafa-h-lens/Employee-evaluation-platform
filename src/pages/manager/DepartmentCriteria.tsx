@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Card, CardBody, CardHeader } from '../../components/ui/Card';
+import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
@@ -12,26 +12,14 @@ import {
   Trash2,
   ClipboardList,
   AlertTriangle,
-  GripVertical,
   ArrowUp,
   ArrowDown,
   Scale,
-  EyeOff,
-  Building2,
-  Filter
+  GripVertical,
+  EyeOff
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
-
-interface Criterion {
-  id: string;
-  title: string;
-  description: string;
-  weight: number;
-  order: number;
-  is_active: boolean;
-  score_count?: number;
-}
 
 interface DeptCriterion {
   id: string;
@@ -41,13 +29,7 @@ interface DeptCriterion {
   weight: number;
   order: number;
   is_active: boolean;
-}
-
-interface Department {
-  id: string;
-  name: string;
-  manager_id: string | null;
-  manager?: { full_name: string } | null;
+  created_by: string | null;
 }
 
 interface FormData {
@@ -64,28 +46,37 @@ const defaultFormData: FormData = {
   is_active: true,
 };
 
-export const EvaluationCriteria: React.FC = () => {
-  const [criteria, setCriteria] = useState<Criterion[]>([]);
+export const DepartmentCriteria: React.FC = () => {
+  const { user } = useAuth();
+  const [criteria, setCriteria] = useState<DeptCriterion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(null);
+  const [editingCriterion, setEditingCriterion] = useState<DeptCriterion | null>(null);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [generalWeightLimit, setGeneralWeightLimit] = useState(50);
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
-  const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo'>('general');
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
-  const [selectedDeptId, setSelectedDeptId] = useState<string>('all');
-  const [ceoCriteria, setCeoCriteria] = useState<DeptCriterion[]>([]);
+  const [departmentId, setDepartmentId] = useState<string | null>(null);
+  const [departmentName, setDepartmentName] = useState('');
 
-  const [deleteTarget, setDeleteTarget] = useState<Criterion | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeptCriterion | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  const { user } = useAuth();
+  const fetchDepartment = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('departments')
+      .select('id, name')
+      .eq('manager_id', user.id)
+      .single();
+
+    if (data) {
+      setDepartmentId(data.id);
+      setDepartmentName(data.name);
+    }
+  }, [user]);
 
   const fetchSettings = useCallback(async () => {
     const { data } = await supabase
@@ -94,58 +85,39 @@ export const EvaluationCriteria: React.FC = () => {
       .limit(1)
       .single();
     if (data) {
-      setGeneralWeightLimit(data.general_weight);
       setSpecificWeightLimit(data.specific_weight);
     }
   }, []);
 
-  const fetchDepartmentsAndCriteria = useCallback(async () => {
-    const [deptsRes, deptCriteriaRes, ceoCriteriaRes] = await Promise.all([
-      supabase.from('departments').select('id, name, manager_id, manager:users!departments_manager_id_fkey(full_name)').eq('status', 'active').order('name'),
-      supabase.from('department_criteria').select('*').not('department_id', 'is', null).order('order'),
-      supabase.from('department_criteria').select('*').is('department_id', null).order('order'),
-    ]);
-    setDepartments((deptsRes.data as unknown as Department[]) || []);
-    const map: Record<string, DeptCriterion[]> = {};
-    (deptCriteriaRes.data || []).forEach((c: any) => {
-      if (!map[c.department_id]) map[c.department_id] = [];
-      map[c.department_id].push(c);
-    });
-    setDeptCriteriaMap(map);
-    setCeoCriteria((ceoCriteriaRes.data || []) as DeptCriterion[]);
-  }, []);
-
   const fetchCriteria = useCallback(async () => {
+    if (!departmentId) return;
     try {
       const { data, error } = await supabase
-        .from('evaluation_criteria')
+        .from('department_criteria')
         .select('*')
+        .eq('department_id', departmentId)
         .order('order', { ascending: true });
 
       if (!error && data) {
-        const criteriaWithCount = await Promise.all(
-          data.map(async (c) => {
-            const { count } = await supabase
-              .from('evaluation_scores')
-              .select('*', { count: 'exact', head: true })
-              .eq('criterion_id', c.id);
-            return { ...c, score_count: count || 0 };
-          })
-        );
-        setCriteria(criteriaWithCount);
+        setCriteria(data);
       }
     } catch (error) {
       console.error('Error fetching criteria:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [departmentId]);
 
   useEffect(() => {
-    fetchCriteria();
+    fetchDepartment();
     fetchSettings();
-    fetchDepartmentsAndCriteria();
-  }, [fetchCriteria, fetchSettings, fetchDepartmentsAndCriteria]);
+  }, [fetchDepartment, fetchSettings]);
+
+  useEffect(() => {
+    if (departmentId) {
+      fetchCriteria();
+    }
+  }, [departmentId, fetchCriteria]);
 
   const totalWeight = criteria
     .filter(c => c.is_active)
@@ -158,7 +130,7 @@ export const EvaluationCriteria: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (criterion: Criterion) => {
+  const openEditModal = (criterion: DeptCriterion) => {
     setEditingCriterion(criterion);
     setFormData({
       title: criterion.title,
@@ -195,10 +167,16 @@ export const EvaluationCriteria: React.FC = () => {
       return;
     }
 
+    if (!departmentId) {
+      setFormError('لم يتم العثور على القسم');
+      setSaving(false);
+      return;
+    }
+
     try {
       if (editingCriterion) {
         const { error } = await supabase
-          .from('evaluation_criteria')
+          .from('department_criteria')
           .update({
             title: formData.title.trim(),
             description: formData.description.trim(),
@@ -216,10 +194,10 @@ export const EvaluationCriteria: React.FC = () => {
         if (user) {
           await supabase.from('audit_logs').insert({
             user_id: user.id,
-            action: 'تحديث معيار تقييم',
-            entity_type: 'evaluation_criteria',
+            action: 'تحديث معيار خاص بالقسم',
+            entity_type: 'department_criteria',
             entity_id: editingCriterion.id,
-            details: { title: formData.title, weight },
+            details: { title: formData.title, weight, department_id: departmentId },
           });
         }
       } else {
@@ -228,13 +206,15 @@ export const EvaluationCriteria: React.FC = () => {
           : 0;
 
         const { data, error } = await supabase
-          .from('evaluation_criteria')
+          .from('department_criteria')
           .insert({
+            department_id: departmentId,
             title: formData.title.trim(),
             description: formData.description.trim(),
             weight,
             order: maxOrder + 1,
             is_active: formData.is_active,
+            created_by: user?.id || null,
           })
           .select()
           .single();
@@ -248,10 +228,10 @@ export const EvaluationCriteria: React.FC = () => {
         if (user && data) {
           await supabase.from('audit_logs').insert({
             user_id: user.id,
-            action: 'إضافة معيار تقييم',
-            entity_type: 'evaluation_criteria',
+            action: 'إضافة معيار خاص بالقسم',
+            entity_type: 'department_criteria',
             entity_id: data.id,
-            details: { title: formData.title, weight },
+            details: { title: formData.title, weight, department_id: departmentId },
           });
         }
       }
@@ -267,7 +247,7 @@ export const EvaluationCriteria: React.FC = () => {
     }
   };
 
-  const confirmDelete = (criterion: Criterion) => {
+  const confirmDelete = (criterion: DeptCriterion) => {
     setDeleteTarget(criterion);
     setDeleteError('');
     setIsDeleteModalOpen(true);
@@ -279,12 +259,12 @@ export const EvaluationCriteria: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('evaluation_criteria')
+        .from('department_criteria')
         .delete()
         .eq('id', deleteTarget.id);
 
       if (error) {
-        setDeleteError('فشل حذف المعيار. تأكد من عدم وجود تقييمات مرتبطة به.');
+        setDeleteError('فشل حذف المعيار.');
         setDeleting(false);
         return;
       }
@@ -292,10 +272,10 @@ export const EvaluationCriteria: React.FC = () => {
       if (user) {
         await supabase.from('audit_logs').insert({
           user_id: user.id,
-          action: 'حذف معيار تقييم',
-          entity_type: 'evaluation_criteria',
+          action: 'حذف معيار خاص بالقسم',
+          entity_type: 'department_criteria',
           entity_id: deleteTarget.id,
-          details: { title: deleteTarget.title },
+          details: { title: deleteTarget.title, department_id: departmentId },
         });
       }
 
@@ -309,10 +289,10 @@ export const EvaluationCriteria: React.FC = () => {
     }
   };
 
-  const handleToggleActive = async (criterion: Criterion) => {
+  const handleToggleActive = async (criterion: DeptCriterion) => {
     const newActive = !criterion.is_active;
     const { error } = await supabase
-      .from('evaluation_criteria')
+      .from('department_criteria')
       .update({ is_active: newActive })
       .eq('id', criterion.id);
 
@@ -320,8 +300,8 @@ export const EvaluationCriteria: React.FC = () => {
       if (user) {
         await supabase.from('audit_logs').insert({
           user_id: user.id,
-          action: newActive ? 'تفعيل معيار تقييم' : 'تعطيل معيار تقييم',
-          entity_type: 'evaluation_criteria',
+          action: newActive ? 'تفعيل معيار خاص' : 'تعطيل معيار خاص',
+          entity_type: 'department_criteria',
           entity_id: criterion.id,
           details: { title: criterion.title, is_active: newActive },
         });
@@ -330,7 +310,7 @@ export const EvaluationCriteria: React.FC = () => {
     }
   };
 
-  const handleReorder = async (criterion: Criterion, direction: 'up' | 'down') => {
+  const handleReorder = async (criterion: DeptCriterion, direction: 'up' | 'down') => {
     const currentIndex = criteria.findIndex(c => c.id === criterion.id);
     const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
 
@@ -339,8 +319,8 @@ export const EvaluationCriteria: React.FC = () => {
     const swapCriterion = criteria[swapIndex];
 
     await Promise.all([
-      supabase.from('evaluation_criteria').update({ order: swapCriterion.order }).eq('id', criterion.id),
-      supabase.from('evaluation_criteria').update({ order: criterion.order }).eq('id', swapCriterion.id),
+      supabase.from('department_criteria').update({ order: swapCriterion.order }).eq('id', criterion.id),
+      supabase.from('department_criteria').update({ order: criterion.order }).eq('id', swapCriterion.id),
     ]);
 
     fetchCriteria();
@@ -353,50 +333,16 @@ export const EvaluationCriteria: React.FC = () => {
   const activeCount = criteria.filter(c => c.is_active).length;
   const inactiveCount = criteria.filter(c => !c.is_active).length;
 
-  const filteredDepts = selectedDeptId === 'all' ? departments : departments.filter(d => d.id === selectedDeptId);
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">إدارة المعايير</h1>
-        <p className="text-gray-600 mt-2">إدارة معايير التقييم العامة والخاصة بالأقسام</p>
-      </div>
-
-      <div className="flex gap-1 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'general'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          المعايير العامة ({generalWeightLimit}%)
-        </button>
-        <button
-          onClick={() => setActiveTab('departments')}
-          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'departments'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          المعايير الخاصة بالأقسام ({specificWeightLimit}%)
-        </button>
-        <button
-          onClick={() => setActiveTab('ceo')}
-          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'ceo'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          معايير تقييم المديرين ({ceoCriteria.length})
-        </button>
-      </div>
-
-      {activeTab === 'general' && (<>
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة بالقسم</h1>
+          <p className="text-gray-600 mt-2">
+            معايير التقييم الخاصة بقسم <span className="font-semibold text-emerald-700">{departmentName}</span>
+            {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
+          </p>
+        </div>
         <Button onClick={openAddModal} className="flex items-center gap-2">
           <span>إضافة معيار</span>
           <Plus className="h-5 w-5" />
@@ -435,11 +381,11 @@ export const EvaluationCriteria: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
-                <p className={`text-xl font-bold ${totalWeight === generalWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalWeight}% / {generalWeightLimit}%
+                <p className={`text-xl font-bold ${totalWeight === specificWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
+                  {totalWeight}% / {specificWeightLimit}%
                 </p>
               </div>
-              <div className={`p-3 rounded-xl ${totalWeight === generalWeightLimit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+              <div className={`p-3 rounded-xl ${totalWeight === specificWeightLimit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                 <Scale className="h-6 w-6" />
               </div>
             </div>
@@ -447,11 +393,11 @@ export const EvaluationCriteria: React.FC = () => {
         </Card>
       </div>
 
-      {totalWeight !== generalWeightLimit && criteria.length > 0 && (
+      {totalWeight !== specificWeightLimit && criteria.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
           <p className="text-amber-800 text-sm">
-            مجموع أوزان المعايير العامة النشطة يجب أن يساوي {generalWeightLimit}% (النسبة المخصصة من الإعدادات). المجموع الحالي: <span className="font-bold">{totalWeight}%</span>
+            مجموع أوزان المعايير الخاصة النشطة يجب أن يساوي {specificWeightLimit}% (النسبة المخصصة من الإعدادات). المجموع الحالي: <span className="font-bold">{totalWeight}%</span>
           </p>
         </div>
       )}
@@ -460,7 +406,7 @@ export const EvaluationCriteria: React.FC = () => {
         <CardBody className="p-0">
           {criteria.length === 0 ? (
             <EmptyState
-              message="لا توجد معايير تقييم مضافة حاليًا"
+              message="لا توجد معايير خاصة مضافة لهذا القسم حاليًا"
               icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
             />
           ) : (
@@ -480,7 +426,7 @@ export const EvaluationCriteria: React.FC = () => {
                   <TableRow key={criterion.id} className={!criterion.is_active ? 'opacity-60 bg-gray-50' : ''}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
                           <GripVertical className="h-4 w-4" />
                         </div>
                         <span className="font-bold text-gray-900">{criterion.title}</span>
@@ -517,11 +463,11 @@ export const EvaluationCriteria: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-16 bg-gray-200 rounded-full h-2">
                           <div
-                            className="bg-blue-600 h-2 rounded-full transition-all"
-                            style={{ width: `${criterion.weight}%` }}
+                            className="bg-emerald-600 h-2 rounded-full transition-all"
+                            style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
                           />
                         </div>
-                        <span className="font-bold text-blue-600">{criterion.weight}%</span>
+                        <span className="font-bold text-emerald-600">{criterion.weight}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -535,22 +481,19 @@ export const EvaluationCriteria: React.FC = () => {
                           <Edit className="h-4 w-4" />
                           <span>تعديل</span>
                         </Button>
-                        <div className="mr-auto" />
                         <Toggle
                           checked={criterion.is_active}
                           onChange={() => handleToggleActive(criterion)}
                           size="sm"
                         />
-                        {criterion.score_count === 0 && (
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => confirmDelete(criterion)}
-                            className="flex items-center gap-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => confirmDelete(criterion)}
+                          className="flex items-center gap-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -561,191 +504,10 @@ export const EvaluationCriteria: React.FC = () => {
         </CardBody>
       </Card>
 
-      </>)}
-
-      {activeTab === 'departments' && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">وزن المعايير الخاصة</p>
-                    <p className="text-xl font-bold text-emerald-600">{specificWeightLimit}%</p>
-                  </div>
-                  <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
-                    <Scale className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">عدد الأقسام</p>
-                    <p className="text-xl font-bold text-gray-900">{departments.length}</p>
-                  </div>
-                  <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
-                    <Building2 className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Filter className="h-5 w-5 text-gray-500" />
-            <label className="text-sm font-medium text-gray-700">عرض المعايير الخاصة لـ:</label>
-            <select
-              value={selectedDeptId}
-              onChange={(e) => setSelectedDeptId(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
-            >
-              <option value="all">جميع الأقسام</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.id}>{dept.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {filteredDepts.map(dept => {
-            const deptCriteria = deptCriteriaMap[dept.id] || [];
-            const activeDeptCriteria = deptCriteria.filter(c => c.is_active);
-            const deptTotal = activeDeptCriteria.reduce((s, c) => s + c.weight, 0);
-
-            return (
-              <Card key={dept.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                      <div>
-                        <h2 className="text-lg font-bold text-gray-900">{dept.name}</h2>
-                        <p className="text-sm text-gray-500">
-                          مدير القسم: {(dept.manager as any)?.full_name || 'غير محدد'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={deptTotal === specificWeightLimit ? 'success' : 'warning'} size="sm">
-                        المجموع: {deptTotal}% / {specificWeightLimit}%
-                      </Badge>
-                      <Badge variant="info" size="sm">
-                        {activeDeptCriteria.length} معيار
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="p-0">
-                  {deptCriteria.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500 text-sm">
-                      لم يتم تحديد معايير خاصة لهذا القسم بعد
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>المعيار</TableHead>
-                          <TableHead>الوصف</TableHead>
-                          <TableHead>الحالة</TableHead>
-                          <TableHead>الوزن</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {deptCriteria.map(c => (
-                          <TableRow key={c.id} className={!c.is_active ? 'opacity-60 bg-gray-50' : ''}>
-                            <TableCell>
-                              <span className="font-bold text-gray-900">{c.title}</span>
-                            </TableCell>
-                            <TableCell>
-                              <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
-                                {c.is_active ? 'نشط' : 'معطل'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-bold text-emerald-600">{c.weight}%</span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardBody>
-              </Card>
-            );
-          })}
-        </>
-      )}
-
-      {activeTab === 'ceo' && (
-        <>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center gap-3">
-            <ClipboardList className="h-5 w-5 text-purple-600 flex-shrink-0" />
-            <p className="text-purple-800 text-sm">
-              هذه المعايير يتم إنشاؤها وإدارتها بواسطة الإدارة العليا (CEO) وتستخدم في تقييم مديري الإدارات.
-            </p>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-purple-500" />
-                <h2 className="text-lg font-bold text-gray-900">المعايير الخاصة بتقييم المديرين</h2>
-                <Badge variant="info" size="sm">
-                  {ceoCriteria.filter(c => c.is_active).length} معيار نشط
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardBody className="p-0">
-              {ceoCriteria.length === 0 ? (
-                <div className="p-6 text-center text-gray-500 text-sm">
-                  لم يتم تحديد معايير خاصة لتقييم المديرين بعد
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>المعيار</TableHead>
-                      <TableHead>الوصف</TableHead>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead>الوزن</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ceoCriteria.map(c => (
-                      <TableRow key={c.id} className={!c.is_active ? 'opacity-60 bg-gray-50' : ''}>
-                        <TableCell>
-                          <span className="font-bold text-gray-900">{c.title}</span>
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
-                            {c.is_active ? 'نشط' : 'معطل'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-bold text-purple-600">{c.weight}%</span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
-        </>
-      )}
-
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingCriterion ? 'تعديل معيار التقييم' : 'إضافة معيار تقييم جديد'}
+        title={editingCriterion ? 'تعديل معيار خاص' : 'إضافة معيار خاص جديد'}
       >
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -759,7 +521,7 @@ export const EvaluationCriteria: React.FC = () => {
               label="عنوان المعيار"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="مثال: الأداء الوظيفي"
+              placeholder="مثال: العمل الجماعي"
               required
             />
 
@@ -777,11 +539,11 @@ export const EvaluationCriteria: React.FC = () => {
               type="number"
               value={formData.weight}
               onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-              placeholder="مثال: 40"
+              placeholder="مثال: 10"
               min={1}
-              max={100}
+              max={specificWeightLimit}
               required
-              helperText={`مجموع أوزان المعايير النشطة الحالي: ${totalWeight}% من ${generalWeightLimit}%`}
+              helperText={`مجموع أوزان المعايير الخاصة النشطة الحالي: ${totalWeight}% من ${specificWeightLimit}%`}
             />
 
             {editingCriterion && (

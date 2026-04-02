@@ -1,0 +1,262 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { Card, CardBody, CardHeader } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { Users, FileCheck, FileClock, TrendingUp, Calendar } from 'lucide-react';
+
+const monthLabels: Record<number, string> = {
+  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
+};
+
+const ratingVariant = (rating: string): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
+  const map: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
+    'ممتاز': 'success',
+    'جيد جدًا': 'info',
+    'جيد': 'warning',
+    'يحتاج تحسين': 'danger',
+  };
+  return map[rating] || 'default';
+};
+
+export const DirectorDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalManagers: 0,
+    evaluated: 0,
+    pending: 0,
+  });
+  const [latestEvaluation, setLatestEvaluation] = useState<{
+    percentage: number;
+    general_rating: string;
+    period: { year: number; month: number } | null;
+  } | null>(null);
+  const [activePeriod, setActivePeriod] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      // Find directorate
+      const { data: directorate } = await supabase
+        .from('directorates')
+        .select('id')
+        .eq('director_id', user.id)
+        .maybeSingle();
+
+      let totalManagers = 0;
+      let evaluated = 0;
+
+      if (directorate) {
+        // Count managers under this directorate
+        const { data: departments } = await supabase
+          .from('departments')
+          .select('manager_id')
+          .eq('directorate_id', directorate.id);
+
+        const managerIds = (departments || []).map(d => d.manager_id).filter(Boolean);
+        totalManagers = managerIds.length;
+
+        // Get active period
+        const { data: period } = await supabase
+          .from('evaluation_periods')
+          .select('*')
+          .eq('status', 'نشطة')
+          .maybeSingle();
+
+        setActivePeriod(period);
+
+        if (period && managerIds.length > 0) {
+          // Count evaluations for this period
+          const { data: evals } = await supabase
+            .from('director_evaluations')
+            .select('director_id, status')
+            .eq('evaluator_id', user.id)
+            .eq('period_id', period.id)
+            .eq('evaluation_type', 'director_manager')
+            .in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال']);
+
+          evaluated = evals?.length || 0;
+        }
+      }
+
+      setStats({
+        totalManagers,
+        evaluated,
+        pending: totalManagers - evaluated,
+      });
+
+      // Fetch latest evaluation received (CEO → director)
+      const { data: latest } = await supabase
+        .from('director_evaluations')
+        .select('percentage, general_rating, period:evaluation_periods(year, month)')
+        .eq('director_id', user.id)
+        .eq('evaluation_type', 'ceo_director')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latest) {
+        setLatestEvaluation({
+          percentage: latest.percentage,
+          general_rating: latest.general_rating,
+          period: latest.period as any,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching director dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">
+          مرحباً، {user?.full_name}
+        </h1>
+        <p className="text-gray-600 mt-2">لوحة تحكم مدير الإدارة</p>
+      </div>
+
+      {activePeriod && (
+        <Card>
+          <CardBody className="bg-blue-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium">فترة التقييم الحالية</p>
+                <p className="text-lg font-bold text-blue-900">
+                  {monthLabels[activePeriod.month]} - {activePeriod.year}
+                </p>
+              </div>
+              <div className="text-left">
+                <p className="text-sm text-blue-600">ينتهي في</p>
+                <p className="font-medium text-blue-900">{new Date(activePeriod.end_date).toLocaleDateString('ar-SA')}</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">مدراء الأقسام</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.totalManagers}</p>
+              </div>
+              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                <Users className="h-8 w-8" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">تم تقييمهم</p>
+                <p className="text-3xl font-bold text-green-600">{stats.evaluated}</p>
+              </div>
+              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                <FileCheck className="h-8 w-8" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">المتبقي</p>
+                <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
+              </div>
+              <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                <FileClock className="h-8 w-8" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Progress Bar */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold text-gray-900">نسبة الإنجاز</h2>
+        </CardHeader>
+        <CardBody>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">التقدم الكلي</span>
+              <span className="text-sm font-medium">
+                {stats.totalManagers > 0 ? Math.round((stats.evaluated / stats.totalManagers) * 100) : 0}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-4">
+              <div
+                className="bg-blue-600 h-4 rounded-full transition-all"
+                style={{
+                  width: `${stats.totalManagers > 0 ? (stats.evaluated / stats.totalManagers) * 100 : 0}%`
+                }}
+              ></div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Latest CEO evaluation received */}
+      {latestEvaluation && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-gray-900">آخر تقييم تلقيته</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                  <TrendingUp className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {latestEvaluation.percentage.toFixed(1)}%
+                  </p>
+                  <Badge variant={ratingVariant(latestEvaluation.general_rating)}>
+                    {latestEvaluation.general_rating}
+                  </Badge>
+                </div>
+              </div>
+              {latestEvaluation.period && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Calendar className="h-5 w-5" />
+                  <span>{monthLabels[latestEvaluation.period.month]} - {latestEvaluation.period.year}</span>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+    </div>
+  );
+};

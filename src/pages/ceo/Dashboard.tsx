@@ -2,15 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Building2, Users, UserCog, Calendar, FileCheck, FileClock } from 'lucide-react';
+import { Building2, Users, UserCog, Calendar, FileCheck, FileClock, Crown, ClipboardCheck } from 'lucide-react';
 
 interface Stats {
+  directorsCount: number;
   departmentsCount: number;
-  employeesCount: number;
-  managersCount: number;
-  activePeriod: string;
   completedEvaluations: number;
   pendingEvaluations: number;
+  pendingApprovals: number;
+  activePeriod: string;
 }
 
 const monthLabels: Record<number, string> = {
@@ -19,14 +19,14 @@ const monthLabels: Record<number, string> = {
   9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
 };
 
-export const AdminDashboard: React.FC = () => {
+export const CeoDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
+    directorsCount: 0,
     departmentsCount: 0,
-    employeesCount: 0,
-    managersCount: 0,
-    activePeriod: '',
     completedEvaluations: 0,
-    pendingEvaluations: 0
+    pendingEvaluations: 0,
+    pendingApprovals: 0,
+    activePeriod: ''
   });
   const [loading, setLoading] = useState(true);
 
@@ -37,28 +37,28 @@ export const AdminDashboard: React.FC = () => {
   const fetchStats = async () => {
     try {
       const [
+        { count: directorsCount },
         { count: departmentsCount },
-        { count: employeesCount },
-        { count: managersCount },
         { data: activePeriodData },
         { count: completedCount },
-        { count: pendingCount }
+        { count: pendingCount },
+        { count: pendingApprovalCount }
       ] = await Promise.all([
+        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'director'),
         supabase.from('departments').select('*', { count: 'exact', head: true }),
-        supabase.from('employees').select('*', { count: 'exact', head: true }),
-        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'manager'),
         supabase.from('evaluation_periods').select('*').eq('status', 'نشطة').maybeSingle(),
-        supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']),
-        supabase.from('evaluations').select('*', { count: 'exact', head: true }).eq('status', 'مسودة')
+        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).in('status', ['تم الإرسال', 'اطلع المدير', 'مغلق', 'موافقة']),
+        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).eq('status', 'مسودة'),
+        supabase.from('evaluations').select('*', { count: 'exact', head: true }).eq('status', 'بانتظار الموافقة')
       ]);
 
       setStats({
+        directorsCount: directorsCount || 0,
         departmentsCount: departmentsCount || 0,
-        employeesCount: employeesCount || 0,
-        managersCount: managersCount || 0,
         activePeriod: activePeriodData ? `${monthLabels[activePeriodData.month]} - ${activePeriodData.year}` : 'لا توجد فترة نشطة',
         completedEvaluations: completedCount || 0,
-        pendingEvaluations: pendingCount || 0
+        pendingEvaluations: pendingCount || 0,
+        pendingApprovals: pendingApprovalCount || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -69,25 +69,18 @@ export const AdminDashboard: React.FC = () => {
 
   const statCards = [
     {
+      title: 'عدد مديري الإدارات',
+      value: stats.directorsCount,
+      icon: <UserCog className="h-8 w-8" />,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    },
+    {
       title: 'عدد الأقسام',
       value: stats.departmentsCount,
       icon: <Building2 className="h-8 w-8" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
-    },
-    {
-      title: 'عدد الموظفين',
-      value: stats.employeesCount,
-      icon: <Users className="h-8 w-8" />,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
-    },
-    {
-      title: 'مدراء الأقسام',
-      value: stats.managersCount,
-      icon: <UserCog className="h-8 w-8" />,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
     },
     {
       title: 'التقييمات المكتملة',
@@ -102,6 +95,13 @@ export const AdminDashboard: React.FC = () => {
       icon: <FileClock className="h-8 w-8" />,
       color: 'text-amber-600',
       bgColor: 'bg-amber-50'
+    },
+    {
+      title: 'بانتظار الموافقة',
+      value: stats.pendingApprovals,
+      icon: <ClipboardCheck className="h-8 w-8" />,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
     }
   ];
 
@@ -115,9 +115,14 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">لوحة التحكم</h1>
-        <p className="text-gray-600 mt-2">نظرة عامة على منصة التقييم الوظيفي</p>
+      <div className="flex items-center gap-3">
+        <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+          <Crown className="h-8 w-8" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">لوحة تحكم الإدارة العليا</h1>
+          <p className="text-gray-600 mt-1">نظرة عامة على تقييمات مديري الإدارات</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -155,19 +160,19 @@ export const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">التقييمات الأخيرة</h2>
+            <h2 className="text-lg font-semibold text-gray-900">تقييمات المديرين الأخيرة</h2>
           </CardHeader>
           <CardBody>
-            <RecentEvaluations />
+            <RecentDirectorEvaluations />
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">إحصائيات الأداء</h2>
+            <h2 className="text-lg font-semibold text-gray-900">إحصائيات أداء المديرين</h2>
           </CardHeader>
           <CardBody>
-            <PerformanceStats />
+            <DirectorPerformanceStats />
           </CardBody>
         </Card>
       </div>
@@ -175,7 +180,7 @@ export const AdminDashboard: React.FC = () => {
   );
 };
 
-const RecentEvaluations: React.FC = () => {
+const RecentDirectorEvaluations: React.FC = () => {
   const [evaluations, setEvaluations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -184,19 +189,37 @@ const RecentEvaluations: React.FC = () => {
 
   const fetchRecentEvaluations = async () => {
     const { data } = await supabase
-      .from('evaluations')
+      .from('director_evaluations')
       .select(`
         id,
         status,
         percentage,
+        general_rating,
         created_at,
-        employee:employees(full_name),
-        department:departments(name)
+        director:users!director_evaluations_director_id_fkey(full_name)
       `)
       .order('created_at', { ascending: false })
       .limit(5);
 
     setEvaluations(data || []);
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'تم الإرسال':
+      case 'اطلع المدير':
+        return 'info';
+      case 'بانتظار الموافقة':
+        return 'warning';
+      case 'موافقة':
+        return 'success';
+      case 'مرفوض':
+        return 'danger';
+      case 'مغلق':
+        return 'default';
+      default:
+        return 'default';
+    }
   };
 
   if (evaluations.length === 0) {
@@ -208,10 +231,12 @@ const RecentEvaluations: React.FC = () => {
       {evaluations.map((evaluation) => (
         <div key={evaluation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div className="flex-1">
-            <p className="font-medium text-gray-900">{evaluation.employee?.full_name}</p>
-            <p className="text-sm text-gray-600">{evaluation.department?.name}</p>
+            <p className="font-medium text-gray-900">{evaluation.director?.full_name}</p>
+            {evaluation.percentage > 0 && (
+              <p className="text-sm text-gray-600">{evaluation.percentage}% - {evaluation.general_rating}</p>
+            )}
           </div>
-          <Badge variant={evaluation.status === 'مسودة' ? 'default' : 'success'}>
+          <Badge variant={getStatusVariant(evaluation.status)}>
             {evaluation.status}
           </Badge>
         </div>
@@ -220,7 +245,7 @@ const RecentEvaluations: React.FC = () => {
   );
 };
 
-const PerformanceStats: React.FC = () => {
+const DirectorPerformanceStats: React.FC = () => {
   const [stats, setStats] = useState<any[]>([]);
 
   useEffect(() => {
@@ -229,7 +254,7 @@ const PerformanceStats: React.FC = () => {
 
   const fetchPerformanceStats = async () => {
     const { data } = await supabase
-      .from('evaluations')
+      .from('director_evaluations')
       .select('general_rating')
       .not('general_rating', 'is', null);
 
@@ -271,7 +296,7 @@ const PerformanceStats: React.FC = () => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full"
+              className="bg-amber-600 h-2 rounded-full"
               style={{ width: `${(stat.count / total) * 100}%` }}
             ></div>
           </div>

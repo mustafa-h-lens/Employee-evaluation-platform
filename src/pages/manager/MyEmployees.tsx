@@ -34,17 +34,21 @@ const getRatingBadgeVariant = (rating: string | null): 'success' | 'info' | 'war
 };
 
 const getEvalStatusLabel = (status: string | null): string => {
-  if (!status) return 'لم يتم التقييم';
+  if (!status || status === 'مسودة') return 'بانتظار التقييم';
+  if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تم اعتماد التقييم';
+  if (status === 'مرفوض') return 'مرفوض';
   return status;
 };
 
 const getEvalStatusVariant = (status: string | null): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
-  if (!status) return 'default';
+  if (!status || status === 'مسودة') return 'default';
   const map: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
-    'مسودة': 'default',
-    'تم الإرسال': 'info',
-    'اطلع الموظف': 'warning',
-    'مغلق': 'danger',
+    'بانتظار الموافقة': 'warning',
+    'موافقة': 'success',
+    'اطلع الموظف': 'success',
+    'مغلق': 'success',
+    'مرفوض': 'danger',
   };
   return map[status] || 'default';
 };
@@ -212,12 +216,11 @@ export const MyEmployees: React.FC<MyEmployeesProps> = ({ onNavigate }) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>الإجراء</TableHead>
-                  <TableHead>التقييم الحالي</TableHead>
-                  <TableHead>المسمى الوظيفي</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>الرقم الوظيفي</TableHead>
                   <TableHead>الموظف</TableHead>
+                  <TableHead>الرقم الوظيفي</TableHead>
+                  <TableHead>البريد الإلكتروني</TableHead>
+                  <TableHead>المسمى الوظيفي</TableHead>
+                  <TableHead>التقييم الحالي</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -228,29 +231,21 @@ export const MyEmployees: React.FC<MyEmployeesProps> = ({ onNavigate }) => {
                     className={selectedEmployee?.id === emp.id ? 'bg-blue-50' : ''}
                   >
                     <TableCell>
-                      {(!emp.evaluation_status || emp.evaluation_status === 'مسودة') ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onNavigate?.(`/evaluations?employee=${emp.id}`);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          <ClipboardEdit className="h-3.5 w-3.5" />
-                          تقييم
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onNavigate?.(`/evaluations?employee=${emp.id}`);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          عرض التقييم
-                        </button>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                          {emp.full_name.charAt(0)}
+                        </div>
+                        <span className="font-medium text-gray-900">{emp.full_name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-gray-500 text-sm font-mono">{emp.employee_number}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-gray-500 text-sm">{emp.email}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-gray-600 text-sm">{emp.job_title}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -263,23 +258,6 @@ export const MyEmployees: React.FC<MyEmployeesProps> = ({ onNavigate }) => {
                             {getEvalStatusLabel(emp.evaluation_status)}
                           </Badge>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-gray-600 text-sm">{emp.job_title}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-gray-500 text-sm">{emp.email}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-gray-500 text-sm font-mono">{emp.employee_number}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                          {emp.full_name.charAt(0)}
-                        </div>
-                        <span className="font-medium text-gray-900">{emp.full_name}</span>
                       </div>
                     </TableCell>
                   </TableRow>

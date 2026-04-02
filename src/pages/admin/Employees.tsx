@@ -5,8 +5,9 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Plus, CreditCard as Edit, Trash2, Users, AlertTriangle } from 'lucide-react';
+import { CreditCard as Edit, Trash2, Users, AlertTriangle, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { RegisterUserModal } from '../../components/ui/RegisterUserModal';
 
 interface Employee {
   id: string;
@@ -33,6 +34,7 @@ export const Employees: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     employee_number: '',
     full_name: '',
@@ -57,11 +59,16 @@ export const Employees: React.FC = () => {
         .select(`
           *,
           department:departments(name),
-          manager:users!employees_manager_id_fkey(full_name)
+          manager:users!employees_manager_id_fkey(full_name),
+          linked_user:users!employees_user_id_fkey(role)
         `)
         .order('full_name');
 
-      setEmployees(data || []);
+      // Only show normal employees — exclude managers, directors, ceo, admin
+      const filtered = (data || []).filter(
+        (e: any) => !e.linked_user || e.linked_user.role === 'employee'
+      );
+      setEmployees(filtered);
     } catch (error) {
       console.error('Error fetching employees:', error);
     } finally {
@@ -334,6 +341,10 @@ export const Employees: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">إدارة الموظفين</h1>
           <p className="text-gray-600 mt-2">إدارة بيانات الموظفين وتوزيعهم على الأقسام</p>
         </div>
+        <Button onClick={() => setIsRegisterModalOpen(true)} className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4" />
+          <span>تسجيل موظف جديد</span>
+        </Button>
       </div>
 
       {selectedIds.size > 0 && (
@@ -378,6 +389,12 @@ export const Employees: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>اسم الموظف</TableHead>
+                  <TableHead>البريد الإلكتروني</TableHead>
+                  <TableHead>القسم</TableHead>
+                  <TableHead>المسمى الوظيفي</TableHead>
+                  <TableHead>رقم الموظف</TableHead>
+                  <TableHead>الإجراءات</TableHead>
                   <TableHead className="w-12">
                     <input
                       type="checkbox"
@@ -386,24 +403,21 @@ export const Employees: React.FC = () => {
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </TableHead>
-                  <TableHead>الإجراءات</TableHead>
-                  <TableHead>القسم</TableHead>
-                  <TableHead>المسمى الوظيفي</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>اسم الموظف</TableHead>
-                  <TableHead>رقم الموظف</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {employees.map((emp) => (
                   <TableRow key={emp.id} className={selectedIds.has(emp.id) ? 'bg-red-50/50' : ''}>
                     <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(emp.id)}
-                        onChange={() => toggleSelect(emp.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
+                      <span className="font-medium">{emp.full_name}</span>
+                    </TableCell>
+                    <TableCell className="text-sm">{emp.email}</TableCell>
+                    <TableCell>
+                      {emp.department?.name || <span className="text-gray-400">غير محدد</span>}
+                    </TableCell>
+                    <TableCell>{emp.job_title}</TableCell>
+                    <TableCell>
+                      <span className="font-mono text-sm">{emp.employee_number}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -428,15 +442,12 @@ export const Employees: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {emp.department?.name || <span className="text-gray-400">غير محدد</span>}
-                    </TableCell>
-                    <TableCell>{emp.job_title}</TableCell>
-                    <TableCell className="text-sm">{emp.email}</TableCell>
-                    <TableCell>
-                      <span className="font-medium">{emp.full_name}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm">{emp.employee_number}</span>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(emp.id)}
+                        onChange={() => toggleSelect(emp.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -548,6 +559,13 @@ export const Employees: React.FC = () => {
           </Button>
         </ModalFooter>
       </Modal>
+
+      <RegisterUserModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        role="employee"
+        onSuccess={fetchEmployees}
+      />
 
       <Modal
         isOpen={isBulkDeleteModalOpen}

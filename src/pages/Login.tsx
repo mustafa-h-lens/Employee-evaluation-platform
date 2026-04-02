@@ -31,14 +31,12 @@ export const Login: React.FC = () => {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-3xl">HL</span>
-              </div>
+              <img src="/logo-color.png" alt="Half Lens" className="h-20 w-auto" />
             </div>
 
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                منصة التقييم الوظيفي الربع سنوي
+                منصة التقييم الوظيفي
               </h1>
               <p className="text-gray-600">
                 نظام إدارة تقييم الأداء الوظيفي
@@ -105,11 +103,10 @@ export const Login: React.FC = () => {
         </div>
 
         <div className="relative z-10 text-white text-center max-w-lg">
-          <div className="w-32 h-32 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-8 backdrop-blur-sm border border-white/20">
-            <span className="text-white font-bold text-5xl">HL</span>
+          <div className="flex items-center justify-center mx-auto mb-8">
+            <img src="/logo-light.png" alt="Half Lens" className="h-40 w-auto" />
           </div>
-          <h2 className="text-4xl font-bold mb-4">HALF LENS</h2>
-          <p className="text-blue-100 text-lg">منصة التقييم الوظيفي الربع سنوي</p>
+          <p className="text-blue-100 text-lg">منصة التقييم الوظيفي</p>
         </div>
       </div>
     </div>

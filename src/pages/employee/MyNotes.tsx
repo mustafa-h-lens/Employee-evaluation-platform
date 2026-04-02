@@ -17,12 +17,18 @@ interface EvaluationWithNotes {
   submitted_at: string | null;
   period: {
     year: number;
-    quarter: number;
+    month: number;
   };
   manager: {
     full_name: string;
   };
 }
+
+const monthLabels: Record<number, string> = {
+  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
+};
 
 export const MyNotes: React.FC = () => {
   const { user } = useAuth();
@@ -54,11 +60,11 @@ export const MyNotes: React.FC = () => {
       .from('evaluations')
       .select(`
         id, status, general_rating, percentage, manager_note, employee_note, submitted_at,
-        period:evaluation_periods(year, quarter),
+        period:evaluation_periods(year, month),
         manager:users!evaluations_manager_id_fkey(full_name)
       `)
       .eq('employee_id', employee.id)
-      .in('status', ['تم الإرسال', 'اطلع الموظف', 'مغلق'])
+      .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
       .order('created_at', { ascending: false });
 
     setEvaluations((data as EvaluationWithNotes[]) || []);
@@ -128,7 +134,7 @@ export const MyNotes: React.FC = () => {
                     <span className="text-sm text-gray-500">{ev.percentage?.toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-700">
-                    <span className="font-semibold">الربع {ev.period?.quarter} - {ev.period?.year}</span>
+                    <span className="font-semibold">{monthLabels[ev.period?.month || 1]} {ev.period?.year}</span>
                     <Calendar className="h-4 w-4 text-gray-400" />
                   </div>
                 </div>

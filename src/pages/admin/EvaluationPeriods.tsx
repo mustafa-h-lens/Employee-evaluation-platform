@@ -12,7 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 interface EvaluationPeriod {
   id: string;
   year: number;
-  quarter: number;
+  month: number;
   start_date: string;
   end_date: string;
   status: 'نشطة' | 'مغلقة' | 'قادمة';
@@ -21,7 +21,7 @@ interface EvaluationPeriod {
 
 interface FormData {
   year: string;
-  quarter: string;
+  month: string;
   start_date: string;
   end_date: string;
   status: 'نشطة' | 'مغلقة' | 'قادمة';
@@ -29,23 +29,21 @@ interface FormData {
 
 const defaultFormData: FormData = {
   year: new Date().getFullYear().toString(),
-  quarter: '1',
+  month: '1',
   start_date: '',
   end_date: '',
   status: 'قادمة',
 };
 
-const quarterLabels: Record<number, string> = {
-  1: 'الربع الأول',
-  2: 'الربع الثاني',
-  3: 'الربع الثالث',
-  4: 'الربع الرابع',
+const monthLabels: Record<number, string> = {
+  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
 };
 
-const getQuarterDates = (year: number, quarter: number) => {
-  const startMonth = (quarter - 1) * 3;
-  const start = new Date(year, startMonth, 1);
-  const end = new Date(year, startMonth + 3, 0);
+const getMonthDates = (year: number, month: number) => {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
   return {
     start_date: start.toISOString().split('T')[0],
     end_date: end.toISOString().split('T')[0],
@@ -90,7 +88,7 @@ export const EvaluationPeriods: React.FC = () => {
         .from('evaluation_periods')
         .select('*')
         .order('year', { ascending: false })
-        .order('quarter', { ascending: false });
+        .order('month', { ascending: false });
 
       if (!error && data) {
         const periodsWithCount = await Promise.all(
@@ -111,18 +109,18 @@ export const EvaluationPeriods: React.FC = () => {
     }
   };
 
-  const handleQuarterChange = (quarter: string) => {
-    const q = parseInt(quarter);
+  const handleMonthChange = (month: string) => {
+    const m = parseInt(month);
     const y = parseInt(formData.year);
-    const { start_date, end_date } = getQuarterDates(y, q);
-    setFormData({ ...formData, quarter, start_date, end_date });
+    const { start_date, end_date } = getMonthDates(y, m);
+    setFormData({ ...formData, month, start_date, end_date });
   };
 
   const handleYearChange = (year: string) => {
     const y = parseInt(year);
-    const q = parseInt(formData.quarter);
+    const m = parseInt(formData.month);
     if (!isNaN(y) && y > 2000 && y < 2100) {
-      const { start_date, end_date } = getQuarterDates(y, q);
+      const { start_date, end_date } = getMonthDates(y, m);
       setFormData({ ...formData, year, start_date, end_date });
     } else {
       setFormData({ ...formData, year });
@@ -132,7 +130,7 @@ export const EvaluationPeriods: React.FC = () => {
   const openAddModal = () => {
     setEditingPeriod(null);
     const currentYear = new Date().getFullYear();
-    const { start_date, end_date } = getQuarterDates(currentYear, 1);
+    const { start_date, end_date } = getMonthDates(currentYear, 1);
     setFormData({ ...defaultFormData, year: currentYear.toString(), start_date, end_date });
     setFormError('');
     setIsModalOpen(true);
@@ -142,7 +140,7 @@ export const EvaluationPeriods: React.FC = () => {
     setEditingPeriod(period);
     setFormData({
       year: period.year.toString(),
-      quarter: period.quarter.toString(),
+      month: period.month.toString(),
       start_date: period.start_date,
       end_date: period.end_date,
       status: period.status,
@@ -157,7 +155,7 @@ export const EvaluationPeriods: React.FC = () => {
     setSaving(true);
 
     const year = parseInt(formData.year);
-    const quarter = parseInt(formData.quarter);
+    const month = parseInt(formData.month);
 
     if (!year || year < 2000 || year > 2100) {
       setFormError('يرجى إدخال سنة صحيحة');
@@ -183,7 +181,7 @@ export const EvaluationPeriods: React.FC = () => {
           .from('evaluation_periods')
           .update({
             year,
-            quarter,
+            month,
             start_date: formData.start_date,
             end_date: formData.end_date,
             status: formData.status,
@@ -192,7 +190,7 @@ export const EvaluationPeriods: React.FC = () => {
 
         if (error) {
           if (error.message.includes('unique') || error.message.includes('duplicate')) {
-            setFormError(`الفترة ${quarterLabels[quarter]} ${year} موجودة بالفعل`);
+            setFormError(`الفترة ${monthLabels[month]} ${year} موجودة بالفعل`);
           } else {
             setFormError(error.message);
           }
@@ -206,25 +204,34 @@ export const EvaluationPeriods: React.FC = () => {
             action: 'تحديث فترة تقييم',
             entity_type: 'evaluation_periods',
             entity_id: editingPeriod.id,
-            details: { year, quarter: quarterLabels[quarter], status: formData.status },
+            details: { year, month: monthLabels[month], status: formData.status },
           });
         }
       } else {
+        // Get current global weight settings for defaults
+        const { data: settings } = await supabase
+          .from('evaluation_settings')
+          .select('general_weight, specific_weight')
+          .limit(1)
+          .single();
+
         const { data, error } = await supabase
           .from('evaluation_periods')
           .insert({
             year,
-            quarter,
+            month,
             start_date: formData.start_date,
             end_date: formData.end_date,
             status: formData.status,
+            general_weight: settings?.general_weight ?? 50,
+            specific_weight: settings?.specific_weight ?? 50,
           })
           .select()
           .single();
 
         if (error) {
           if (error.message.includes('unique') || error.message.includes('duplicate')) {
-            setFormError(`الفترة ${quarterLabels[quarter]} ${year} موجودة بالفعل`);
+            setFormError(`الفترة ${monthLabels[month]} ${year} موجودة بالفعل`);
           } else {
             setFormError(error.message);
           }
@@ -238,7 +245,7 @@ export const EvaluationPeriods: React.FC = () => {
             action: 'إضافة فترة تقييم',
             entity_type: 'evaluation_periods',
             entity_id: data.id,
-            details: { year, quarter: quarterLabels[quarter], status: formData.status },
+            details: { year, month: monthLabels[month], status: formData.status },
           });
         }
       }
@@ -282,7 +289,7 @@ export const EvaluationPeriods: React.FC = () => {
           action: 'حذف فترة تقييم',
           entity_type: 'evaluation_periods',
           entity_id: deleteTarget.id,
-          details: { year: deleteTarget.year, quarter: quarterLabels[deleteTarget.quarter] },
+          details: { year: deleteTarget.year, month: monthLabels[deleteTarget.month] },
         });
       }
 
@@ -327,7 +334,7 @@ export const EvaluationPeriods: React.FC = () => {
           entity_id: period.id,
           details: {
             year: period.year,
-            quarter: quarterLabels[period.quarter],
+            month: monthLabels[period.month],
             from: period.status,
             to: newStatus,
           },
@@ -401,7 +408,7 @@ export const EvaluationPeriods: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">فترات التقييم</h1>
-          <p className="text-gray-600 mt-2">إدارة فترات التقييم الربع سنوية</p>
+          <p className="text-gray-600 mt-2">إدارة فترات التقييم الشهرية</p>
         </div>
         <Button onClick={openAddModal} className="flex items-center gap-2">
           <span>إضافة فترة</span>
@@ -417,7 +424,7 @@ export const EvaluationPeriods: React.FC = () => {
                 <p className="text-sm text-gray-600 mb-1">الفترة النشطة</p>
                 <p className="text-xl font-bold text-gray-900">
                   {activePeriod
-                    ? `${quarterLabels[activePeriod.quarter]} - ${activePeriod.year}`
+                    ? `${monthLabels[activePeriod.month]} - ${activePeriod.year}`
                     : 'لا يوجد'}
                 </p>
               </div>
@@ -466,17 +473,35 @@ export const EvaluationPeriods: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>الإجراءات</TableHead>
-                  <TableHead>عدد التقييمات</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>تاريخ النهاية</TableHead>
-                  <TableHead>تاريخ البداية</TableHead>
                   <TableHead>الفترة</TableHead>
+                  <TableHead>تاريخ البداية</TableHead>
+                  <TableHead>تاريخ النهاية</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>عدد التقييمات</TableHead>
+                  <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {periods.map((period) => (
                   <TableRow key={period.id}>
+                    <TableCell>
+                      <div>
+                        <span className="font-bold text-gray-900">
+                          {monthLabels[period.month]}
+                        </span>
+                        <span className="text-gray-500 mr-2">{period.year}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(period.start_date)}</TableCell>
+                    <TableCell>{formatDate(period.end_date)}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(period.status)}>
+                        {period.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{period.evaluation_count}</span>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getStatusActionButtons(period)}
@@ -500,24 +525,6 @@ export const EvaluationPeriods: React.FC = () => {
                             <span>حذف</span>
                           </Button>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{period.evaluation_count}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(period.status)}>
-                        {period.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(period.end_date)}</TableCell>
-                    <TableCell>{formatDate(period.start_date)}</TableCell>
-                    <TableCell>
-                      <div>
-                        <span className="font-bold text-gray-900">
-                          {quarterLabels[period.quarter]}
-                        </span>
-                        <span className="text-gray-500 mr-2">{period.year}</span>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -554,17 +561,16 @@ export const EvaluationPeriods: React.FC = () => {
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  الربع
+                  الشهر
                 </label>
                 <select
-                  value={formData.quarter}
-                  onChange={(e) => handleQuarterChange(e.target.value)}
+                  value={formData.month}
+                  onChange={(e) => handleMonthChange(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="1">{quarterLabels[1]}</option>
-                  <option value="2">{quarterLabels[2]}</option>
-                  <option value="3">{quarterLabels[3]}</option>
-                  <option value="4">{quarterLabels[4]}</option>
+                  {Object.entries(monthLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -631,7 +637,7 @@ export const EvaluationPeriods: React.FC = () => {
           <p className="text-gray-500 text-sm">
             سيتم حذف فترة{' '}
             <span className="font-bold text-gray-700">
-              {deleteTarget && `${quarterLabels[deleteTarget.quarter]} - ${deleteTarget.year}`}
+              {deleteTarget && `${monthLabels[deleteTarget.month]} - ${deleteTarget.year}`}
             </span>{' '}
             نهائيًا.
           </p>

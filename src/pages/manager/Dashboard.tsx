@@ -6,6 +6,12 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Users, FileCheck, FileClock, Target } from 'lucide-react';
 
+const monthLabels: Record<number, string> = {
+  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
+};
+
 export const ManagerDashboard: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({
@@ -36,7 +42,7 @@ export const ManagerDashboard: React.FC = () => {
       .from('evaluations')
       .select('*', { count: 'exact', head: true })
       .eq('manager_id', user.id)
-      .in('status', ['تم الإرسال', 'اطلع الموظف', 'مغلق']);
+      .in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']);
 
     setStats({
       totalEmployees: totalCount || 0,
@@ -99,7 +105,7 @@ export const ManagerDashboard: React.FC = () => {
               <div>
                 <p className="text-sm text-blue-600 font-medium">فترة التقييم الحالية</p>
                 <p className="text-lg font-bold text-blue-900">
-                  الربع {activePeriod.quarter} - {activePeriod.year}
+                  {monthLabels[activePeriod.month]} - {activePeriod.year}
                 </p>
               </div>
               <div className="text-left">

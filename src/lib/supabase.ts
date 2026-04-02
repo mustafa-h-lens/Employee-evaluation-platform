@@ -15,7 +15,14 @@ export type Database = {
     email: string;
     password_hash: string;
     full_name: string;
-    role: 'admin' | 'manager' | 'employee';
+    role: 'admin' | 'manager' | 'employee' | 'ceo' | 'director';
+    created_at: string;
+    updated_at: string;
+  };
+  directorates: {
+    id: string;
+    name: string;
+    director_id: string | null;
     created_at: string;
     updated_at: string;
   };
@@ -23,6 +30,7 @@ export type Database = {
     id: string;
     name: string;
     manager_id: string | null;
+    directorate_id: string | null;
     created_at: string;
     updated_at: string;
   };
@@ -43,10 +51,12 @@ export type Database = {
   evaluation_periods: {
     id: string;
     year: number;
-    quarter: number;
+    month: number;
     start_date: string;
     end_date: string;
     status: 'نشطة' | 'مغلقة' | 'قادمة';
+    general_weight: number;
+    specific_weight: number;
     created_at: string;
     updated_at: string;
   };
@@ -66,13 +76,16 @@ export type Database = {
     manager_id: string;
     department_id: string;
     period_id: string;
-    status: 'مسودة' | 'تم الإرسال' | 'اطلع الموظف' | 'مغلق';
+    status: 'مسودة' | 'بانتظار الموافقة' | 'موافقة' | 'مرفوض' | 'تم الإرسال' | 'اطلع الموظف' | 'مغلق';
     final_score_500: number;
     final_score_5: number;
     percentage: number;
     general_rating: string | null;
     manager_note: string | null;
     employee_note: string | null;
+    ceo_comment: string | null;
+    ceo_reviewed_at: string | null;
+    ceo_reviewer_id: string | null;
     submitted_at: string | null;
     viewed_by_employee_at: string | null;
     closed_at: string | null;
@@ -107,5 +120,55 @@ export type Database = {
     entity_id: string | null;
     details: any;
     created_at: string;
+  };
+  evaluation_settings: {
+    id: string;
+    general_weight: number;
+    specific_weight: number;
+    created_at: string;
+    updated_at: string;
+  };
+  department_criteria: {
+    id: string;
+    department_id: string;
+    title: string;
+    description: string;
+    weight: number;
+    order: number;
+    is_active: boolean;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  director_evaluations: {
+    id: string;
+    director_id: string;
+    evaluator_id: string;
+    period_id: string;
+    status: 'مسودة' | 'بانتظار الموافقة' | 'موافقة' | 'مرفوض' | 'تم الإرسال' | 'اطلع المدير' | 'مغلق';
+    final_score_500: number;
+    final_score_5: number;
+    percentage: number;
+    general_rating: string | null;
+    evaluator_note: string | null;
+    director_note: string | null;
+    ceo_comment: string | null;
+    ceo_reviewed_at: string | null;
+    submitted_at: string | null;
+    viewed_at: string | null;
+    closed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  director_evaluation_scores: {
+    id: string;
+    evaluation_id: string;
+    criterion_id: string | null;
+    criterion_type: 'general' | 'specific';
+    department_criterion_id: string | null;
+    score_1_to_5: number;
+    weighted_result: number;
+    created_at: string;
+    updated_at: string;
   };
 };

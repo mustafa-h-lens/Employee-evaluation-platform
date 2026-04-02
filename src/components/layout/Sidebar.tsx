@@ -6,7 +6,6 @@ import {
   Building2,
   Users,
   UserCog,
-  UserPlus,
   Calendar,
   ClipboardList,
   BarChart3,
@@ -14,7 +13,10 @@ import {
   Settings,
   FileText,
   Target,
-  LogOut
+  LogOut,
+  ListChecks,
+  Crown,
+  Landmark
 } from 'lucide-react';
 
 interface MenuItem {
@@ -25,22 +27,34 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { label: 'الرئيسية', icon: <LayoutDashboard className="h-5 w-5" />, path: '/', roles: ['admin', 'manager', 'employee'] },
+  { label: 'الرئيسية', icon: <LayoutDashboard className="h-5 w-5" />, path: '/', roles: ['admin', 'manager', 'employee', 'ceo', 'director'] },
   { label: 'الأقسام', icon: <Building2 className="h-5 w-5" />, path: '/departments', roles: ['admin'] },
   { label: 'الموظفون', icon: <Users className="h-5 w-5" />, path: '/employees', roles: ['admin'] },
-  { label: 'تسجيل المستخدمين', icon: <UserPlus className="h-5 w-5" />, path: '/register-user', roles: ['admin'] },
   { label: 'مدراء الأقسام', icon: <UserCog className="h-5 w-5" />, path: '/managers', roles: ['admin'] },
+  { label: 'الإدارات', icon: <Landmark className="h-5 w-5" />, path: '/directorates', roles: ['admin'] },
+  { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/directors', roles: ['admin'] },
   { label: 'فترات التقييم', icon: <Calendar className="h-5 w-5" />, path: '/periods', roles: ['admin'] },
-  { label: 'معايير التقييم', icon: <ClipboardList className="h-5 w-5" />, path: '/criteria', roles: ['admin'] },
+  { label: 'إدارة المعايير', icon: <ClipboardList className="h-5 w-5" />, path: '/criteria', roles: ['admin'] },
+  { label: 'جميع التقييمات', icon: <FileText className="h-5 w-5" />, path: '/all-evaluations', roles: ['admin'] },
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/reports', roles: ['admin'] },
   { label: 'سجل النشاط', icon: <Activity className="h-5 w-5" />, path: '/audit', roles: ['admin'] },
+  { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/ceo-directors', roles: ['ceo'] },
+  { label: 'تقييم المديرين', icon: <FileText className="h-5 w-5" />, path: '/ceo-evaluations', roles: ['ceo'] },
+  { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/ceo-director-criteria', roles: ['ceo'] },
+  { label: 'اعتمادية التقييمات', icon: <ClipboardList className="h-5 w-5" />, path: '/ceo-approvals', roles: ['ceo'] },
+  { label: 'جميع التقييمات', icon: <FileText className="h-5 w-5" />, path: '/ceo-all-evaluations', roles: ['ceo'] },
+  { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/ceo-reports', roles: ['ceo'] },
+  { label: 'مدراء الأقسام', icon: <Users className="h-5 w-5" />, path: '/director-managers', roles: ['director'] },
+  { label: 'التقييمات', icon: <FileText className="h-5 w-5" />, path: '/director-evaluate', roles: ['director'] },
+  { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/director-criteria', roles: ['director'] },
+  { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/director-evaluations', roles: ['director'] },
   { label: 'موظفو القسم', icon: <Users className="h-5 w-5" />, path: '/my-employees', roles: ['manager'] },
+  { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/department-criteria', roles: ['manager'] },
   { label: 'التقييمات', icon: <FileText className="h-5 w-5" />, path: '/evaluations', roles: ['manager'] },
-  { label: 'خطط التطوير', icon: <Target className="h-5 w-5" />, path: '/development-plans', roles: ['manager'] },
+  { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/manager-my-evaluations', roles: ['manager'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/my-evaluations', roles: ['employee'] },
-  { label: 'ملاحظاتي', icon: <ClipboardList className="h-5 w-5" />, path: '/my-notes', roles: ['employee'] },
-  { label: 'خطة التطوير', icon: <Target className="h-5 w-5" />, path: '/my-development', roles: ['employee'] },
-  { label: 'الإعدادات', icon: <Settings className="h-5 w-5" />, path: '/settings', roles: ['admin', 'manager', 'employee'] },
+
+  { label: 'الإعدادات', icon: <Settings className="h-5 w-5" />, path: '/settings', roles: ['admin', 'manager', 'employee', 'ceo', 'director'] },
 ];
 
 interface SidebarProps {
@@ -57,14 +71,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
 
   return (
     <div className="h-screen w-64 bg-white border-l border-gray-200 fixed right-0 top-0 overflow-y-auto">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-center mb-2">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">HL</span>
-          </div>
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-center">
+          <img src="/logo-color.png" alt="Half Lens" className="h-16 w-auto" />
         </div>
-        <h1 className="text-center text-lg font-bold text-gray-900">HALF LENS</h1>
-        <p className="text-center text-sm text-gray-600 mt-1">منصة التقييم الوظيفي</p>
+        <p className="text-center text-sm text-gray-600 mt-2">منصة التقييم الوظيفي</p>
       </div>
 
       <nav className="p-4">
@@ -93,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
             <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
             <p className="text-xs text-gray-600">{user.email}</p>
             <p className="text-xs text-gray-500 mt-1">
-              {user.role === 'admin' ? 'مدير النظام' : user.role === 'manager' ? 'مدير قسم' : 'موظف'}
+              {user.role === 'admin' ? 'مدير النظام' : user.role === 'ceo' ? 'الإدارة العليا' : user.role === 'director' ? 'مدير إدارة' : user.role === 'manager' ? 'مدير قسم' : 'موظف'}
             </p>
           </div>
           <Button

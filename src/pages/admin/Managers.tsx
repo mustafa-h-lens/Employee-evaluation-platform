@@ -5,10 +5,10 @@ import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
-import { UserCog, Building2, ArrowLeftRight, UserMinus, AlertTriangle, Search, Users, Pencil } from 'lucide-react';
+import { UserCog, Building2, ArrowLeftRight, UserMinus, AlertTriangle, Search, Users, Pencil, UserPlus } from 'lucide-react';
 import { Input } from '../../components/ui/Input';
-
 import { useAuth } from '../../contexts/AuthContext';
+import { RegisterUserModal } from '../../components/ui/RegisterUserModal';
 
 interface Manager {
   id: string;
@@ -37,6 +37,7 @@ export const Managers: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [editingManager, setEditingManager] = useState<Manager | null>(null);
   const [editFullName, setEditFullName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -240,6 +241,10 @@ export const Managers: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">إدارة مدراء الأقسام</h1>
           <p className="text-gray-600 mt-2">تعيين وإدارة مدراء الأقسام في المنظمة</p>
         </div>
+        <Button onClick={() => setIsRegisterModalOpen(true)} className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4" />
+          <span>تسجيل مدير جديد</span>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -304,16 +309,48 @@ export const Managers: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>الإجراءات</TableHead>
-                  <TableHead>عدد الموظفين</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>المدير المعين</TableHead>
                   <TableHead>القسم</TableHead>
+                  <TableHead>المدير المعين</TableHead>
+                  <TableHead>البريد الإلكتروني</TableHead>
+                  <TableHead>عدد الموظفين</TableHead>
+                  <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDepartments.map((dept) => (
                   <TableRow key={dept.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <span className="font-medium">{dept.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {dept.manager?.full_name ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-blue-700">
+                              {dept.manager.full_name.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="font-medium">{dept.manager.full_name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">لم يتم التعيين</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {dept.manager?.email ? (
+                        <span className="text-sm text-gray-600">{dept.manager.email}</span>
+                      ) : (
+                        <span className="text-gray-400">--</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{dept.employee_count}</span>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
@@ -338,38 +375,6 @@ export const Managers: React.FC = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{dept.employee_count}</span>
-                    </TableCell>
-                    <TableCell>
-                      {dept.manager?.email ? (
-                        <span className="text-sm text-gray-600">{dept.manager.email}</span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {dept.manager?.full_name ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-blue-700">
-                              {dept.manager.full_name.charAt(0)}
-                            </span>
-                          </div>
-                          <span className="font-medium">{dept.manager.full_name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 italic">لم يتم التعيين</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <span className="font-medium">{dept.name}</span>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -387,10 +392,10 @@ export const Managers: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>الإجراءات</TableHead>
-                  <TableHead>القسم</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
                   <TableHead>الاسم</TableHead>
+                  <TableHead>البريد الإلكتروني</TableHead>
+                  <TableHead>القسم</TableHead>
+                  <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -398,6 +403,26 @@ export const Managers: React.FC = () => {
                   const assignedDept = departments.find(d => d.manager_id === mgr.id);
                   return (
                     <TableRow key={mgr.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-blue-700">
+                              {mgr.full_name.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="font-medium">{mgr.full_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-600">{mgr.email}</span>
+                      </TableCell>
+                      <TableCell>
+                        {assignedDept ? (
+                          <Badge variant="info">{assignedDept.name}</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">غير معين لقسم</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Button
                           size="sm"
@@ -409,26 +434,6 @@ export const Managers: React.FC = () => {
                           <span>تعديل</span>
                         </Button>
                       </TableCell>
-                      <TableCell>
-                        {assignedDept ? (
-                          <Badge variant="info">{assignedDept.name}</Badge>
-                        ) : (
-                          <span className="text-gray-400 text-sm">غير معين لقسم</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-gray-600">{mgr.email}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-blue-700">
-                              {mgr.full_name.charAt(0)}
-                            </span>
-                          </div>
-                          <span className="font-medium">{mgr.full_name}</span>
-                        </div>
-                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -437,6 +442,13 @@ export const Managers: React.FC = () => {
           </CardBody>
         </Card>
       )}
+
+      <RegisterUserModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        role="manager"
+        onSuccess={fetchData}
+      />
 
       <Modal
         isOpen={isAssignModalOpen}

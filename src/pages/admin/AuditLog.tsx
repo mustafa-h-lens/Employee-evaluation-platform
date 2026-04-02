@@ -84,7 +84,7 @@ const formatDetails = (details: Record<string, unknown> | null): string => {
       parts.push(`الحالة: ${value}`);
     } else if (key === 'weight') {
       parts.push(`الوزن: ${value}%`);
-    } else if (key === 'quarter') {
+    } else if (key === 'month') {
       parts.push(String(value));
     } else if (key === 'year') {
       parts.push(String(value));
@@ -267,31 +267,16 @@ export const AuditLog: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>التفاصيل</TableHead>
-                    <TableHead>النوع</TableHead>
-                    <TableHead>العملية</TableHead>
                     <TableHead>المستخدم</TableHead>
+                    <TableHead>العملية</TableHead>
+                    <TableHead>النوع</TableHead>
+                    <TableHead>التفاصيل</TableHead>
                     <TableHead>التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {logs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell>
-                        <p className="text-gray-500 text-sm max-w-xs truncate">
-                          {formatDetails(log.details) || '-'}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-gray-600 text-sm">
-                          {entityTypeLabels[log.entity_type] || log.entity_type}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getActionBadgeVariant(log.action)} size="sm">
-                          {log.action}
-                        </Badge>
-                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getActionColor(log.action)}`}>
@@ -304,6 +289,21 @@ export const AuditLog: React.FC = () => {
                             </p>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getActionBadgeVariant(log.action)} size="sm">
+                          {log.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-600 text-sm">
+                          {entityTypeLabels[log.entity_type] || log.entity_type}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-gray-500 text-sm max-w-xs truncate">
+                          {formatDetails(log.details) || '-'}
+                        </p>
                       </TableCell>
                       <TableCell>
                         <div className="text-left">

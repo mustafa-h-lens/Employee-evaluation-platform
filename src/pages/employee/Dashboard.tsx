@@ -5,6 +5,12 @@ import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { FileText, TrendingUp, Target } from 'lucide-react';
 
+const monthLabels: Record<number, string> = {
+  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
+};
+
 export const EmployeeDashboard: React.FC = () => {
   const { user } = useAuth();
   const [latestEvaluation, setLatestEvaluation] = useState<any>(null);
@@ -44,10 +50,10 @@ export const EmployeeDashboard: React.FC = () => {
         .from('evaluations')
         .select(`
           *,
-          period:evaluation_periods(year, quarter)
+          period:evaluation_periods(year, month)
         `)
         .eq('employee_id', employee.id)
-        .in('status', ['تم الإرسال', 'اطلع الموظف', 'مغلق'])
+        .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -115,7 +121,7 @@ export const EmployeeDashboard: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">آخر تقييم</h2>
                 <Badge variant="info">
-                  الربع {latestEvaluation.period?.quarter} - {latestEvaluation.period?.year}
+                  {monthLabels[latestEvaluation.period?.month || 1]} {latestEvaluation.period?.year}
                 </Badge>
               </div>
             </CardHeader>

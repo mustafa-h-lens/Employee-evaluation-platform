@@ -1,0 +1,218 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { Card, CardBody } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { Users, FileCheck, FileClock, Crown, Eye, ClipboardEdit } from 'lucide-react';
+
+interface Director {
+  id: string;
+  full_name: string;
+  email: string;
+  job_title: string;
+  role: string;
+}
+
+interface DirectorEvaluation {
+  id: string;
+  director_id: string;
+  period_id: string;
+  status: string;
+}
+
+interface CeoDirectorsProps {
+  onNavigate: (path: string) => void;
+}
+
+const getEvalStatusLabel = (status: string | null): string => {
+  if (!status || status === 'مسودة') return 'بانتظار التقييم';
+  if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق' || status === 'مكتمل') return 'تم اعتماد التقييم';
+  if (status === 'مرفوض') return 'مرفوض';
+  return status;
+};
+
+const getEvalStatusVariant = (status: string | null): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
+  if (!status || status === 'مسودة') return 'default';
+  const map: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
+    'بانتظار الموافقة': 'warning',
+    'موافقة': 'success',
+    'اطلع الموظف': 'success',
+    'مغلق': 'success',
+    'مكتمل': 'success',
+    'مرفوض': 'danger',
+  };
+  return map[status] || 'default';
+};
+
+export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
+  const { user } = useAuth();
+  const [directors, setDirectors] = useState<Director[]>([]);
+  const [evalMap, setEvalMap] = useState<Map<string, DirectorEvaluation>>(new Map());
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: dirs, error: dirsError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'director')
+        .order('full_name');
+
+      if (dirsError || !dirs) {
+        setLoading(false);
+        return;
+      }
+
+      setDirectors(dirs);
+
+      const { data: activePeriod } = await supabase
+        .from('evaluation_periods')
+        .select('*')
+        .eq('status', 'نشطة')
+        .maybeSingle();
+
+      if (activePeriod) {
+        const { data: evals } = await supabase
+          .from('director_evaluations')
+          .select('*')
+          .eq('period_id', activePeriod.id);
+
+        if (evals) {
+          setEvalMap(new Map(evals.map(ev => [ev.director_id, ev])));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching directors:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const totalCount = directors.length;
+  const evaluatedCount = directors.filter(d => {
+    const ev = evalMap.get(d.id);
+    return ev && ev.status !== 'مسودة';
+  }).length;
+  const pendingCount = totalCount - evaluatedCount;
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-1">
+          <Crown className="h-8 w-8 text-amber-500" />
+          <h1 className="text-3xl font-bold text-gray-900">مديري الإدارات</h1>
+        </div>
+        <p className="text-gray-600 mt-2">عرض وإدارة تقييمات مديري الإدارات</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">إجمالي المديرين</p>
+                <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
+              </div>
+              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                <Users className="h-6 w-6" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">تم تقييمهم</p>
+                <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
+              </div>
+              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                <FileCheck className="h-6 w-6" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">بانتظار التقييم</p>
+                <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
+              </div>
+              <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                <FileClock className="h-6 w-6" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Directors Table */}
+      <Card>
+        <CardBody>
+          {directors.length === 0 ? (
+            <EmptyState
+              message="لا يوجد مديري إدارات حاليًا"
+              icon={<Users className="h-12 w-12 text-gray-400" />}
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>الاسم</TableHead>
+                  <TableHead>البريد الإلكتروني</TableHead>
+                  <TableHead>المسمى الوظيفي</TableHead>
+                  <TableHead>حالة التقييم</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {directors.map((director) => {
+                  const evaluation = evalMap.get(director.id);
+                  const evalStatus = evaluation?.status || null;
+                  const isEvaluated = evalStatus && evalStatus !== 'مسودة';
+
+                  return (
+                    <TableRow key={director.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                            {director.full_name.charAt(0)}
+                          </div>
+                          <span className="font-medium text-gray-900">{director.full_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-500 text-sm">{director.email}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-600 text-sm">{director.job_title}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getEvalStatusVariant(evalStatus)} size="sm">
+                          {getEvalStatusLabel(evalStatus)}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+};

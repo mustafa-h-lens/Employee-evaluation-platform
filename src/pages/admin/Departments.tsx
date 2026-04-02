@@ -207,15 +207,35 @@ export const Departments: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>الإجراءات</TableHead>
-                  <TableHead>عدد الموظفين</TableHead>
-                  <TableHead>مدير القسم</TableHead>
                   <TableHead>اسم القسم</TableHead>
+                  <TableHead>مدير القسم</TableHead>
+                  <TableHead>عدد الموظفين</TableHead>
+                  <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {departments.map((dept) => (
                   <TableRow key={dept.id}>
+                    <TableCell>
+                      <span className="font-medium">{dept.name}</span>
+                    </TableCell>
+                    <TableCell>
+                      {dept.manager?.full_name ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-blue-700">
+                              {dept.manager.full_name.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="font-medium">{dept.manager.full_name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">غير محدد</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{dept.employee_count}</span>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
@@ -237,26 +257,6 @@ export const Departments: React.FC = () => {
                           <span>حذف</span>
                         </Button>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{dept.employee_count}</span>
-                    </TableCell>
-                    <TableCell>
-                      {dept.manager?.full_name ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-blue-700">
-                              {dept.manager.full_name.charAt(0)}
-                            </span>
-                          </div>
-                          <span className="font-medium">{dept.manager.full_name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">غير محدد</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{dept.name}</span>
                     </TableCell>
                   </TableRow>
                 ))}

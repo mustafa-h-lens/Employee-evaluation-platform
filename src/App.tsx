@@ -6,20 +6,40 @@ import { PageLayout } from './components/layout/PageLayout';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { Departments } from './pages/admin/Departments';
 import { Employees } from './pages/admin/Employees';
-import { RegisterUser } from './pages/admin/RegisterUser';
 import { Reports } from './pages/admin/Reports';
 import { Managers } from './pages/admin/Managers';
 import { EvaluationPeriods } from './pages/admin/EvaluationPeriods';
 import { EvaluationCriteria } from './pages/admin/EvaluationCriteria';
 import { AuditLog } from './pages/admin/AuditLog';
+import { AdminSettings } from './pages/admin/Settings';
+import { DirectorManagement } from './pages/admin/DirectorManagement';
+import { Directorates } from './pages/admin/Directorates';
+import { AllEvaluations } from './pages/admin/AllEvaluations';
+
+import { CeoDashboard } from './pages/ceo/Dashboard';
+import { CeoDirectors } from './pages/ceo/Directors';
+import { DirectorEvaluationForm } from './pages/ceo/DirectorEvaluationForm';
+import { CeoReports } from './pages/ceo/Reports';
+import { PendingApprovals } from './pages/ceo/PendingApprovals';
+import { DirectorCriteria } from './pages/ceo/DirectorCriteria';
+
 
 import { ManagerDashboard } from './pages/manager/Dashboard';
 import { EvaluationForm } from './pages/manager/EvaluationForm';
 import { MyEmployees } from './pages/manager/MyEmployees';
+import { DepartmentCriteria } from './pages/manager/DepartmentCriteria';
+import { ManagerMyEvaluations } from './pages/manager/ManagerMyEvaluations';
+
+import { DirectorDashboard } from './pages/director/Dashboard';
+import { DirectorMyEvaluations } from './pages/director/MyEvaluations';
+import { MyManagers } from './pages/director/MyManagers';
+import { ManagerEvaluationForm } from './pages/director/ManagerEvaluationForm';
+import { DirectorSpecificCriteria } from './pages/director/DirectorCriteria';
 
 import { EmployeeDashboard } from './pages/employee/Dashboard';
 import { MyEvaluations } from './pages/employee/MyEvaluations';
-import { MyNotes } from './pages/employee/MyNotes';
+
+import { ChangePassword } from './pages/shared/ChangePassword';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -49,8 +69,6 @@ function AppContent() {
           return <Departments />;
         case '/employees':
           return <Employees />;
-        case '/register-user':
-          return <RegisterUser />;
         case '/reports':
           return <Reports />;
         case '/managers':
@@ -61,10 +79,64 @@ function AppContent() {
           return <EvaluationCriteria />;
         case '/audit':
           return <AuditLog />;
+        case '/directors':
+          return <DirectorManagement />;
+        case '/directorates':
+          return <Directorates />;
+        case '/all-evaluations':
+          return <AllEvaluations />;
         case '/settings':
-          return <ComingSoonPage />;
+          return <AdminSettings />;
         default:
           return <AdminDashboard />;
+      }
+    }
+
+    if (user.role === 'ceo') {
+      const basePath = currentPath.split('?')[0];
+      const params = new URLSearchParams(currentPath.split('?')[1] || '');
+
+      switch (basePath) {
+        case '/':
+          return <CeoDashboard />;
+        case '/ceo-directors':
+          return <CeoDirectors onNavigate={setCurrentPath} />;
+        case '/ceo-evaluations':
+          return <DirectorEvaluationForm directorId={params.get('director') || undefined} />;
+        case '/ceo-reports':
+          return <CeoReports />;
+        case '/ceo-approvals':
+          return <PendingApprovals />;
+        case '/ceo-all-evaluations':
+          return <AllEvaluations />;
+        case '/ceo-director-criteria':
+          return <DirectorCriteria />;
+        case '/settings':
+          return <ChangePassword />;
+        default:
+          return <CeoDashboard />;
+      }
+    }
+
+    if (user.role === 'director') {
+      const basePath = currentPath.split('?')[0];
+      const params = new URLSearchParams(currentPath.split('?')[1] || '');
+
+      switch (basePath) {
+        case '/':
+          return <DirectorDashboard />;
+        case '/director-managers':
+          return <MyManagers onNavigate={setCurrentPath} />;
+        case '/director-evaluate':
+          return <ManagerEvaluationForm managerId={params.get('manager') || undefined} />;
+        case '/director-criteria':
+          return <DirectorSpecificCriteria />;
+        case '/director-evaluations':
+          return <DirectorMyEvaluations />;
+        case '/settings':
+          return <ChangePassword />;
+        default:
+          return <DirectorDashboard />;
       }
     }
 
@@ -79,10 +151,12 @@ function AppContent() {
           return <MyEmployees onNavigate={setCurrentPath} />;
         case '/evaluations':
           return <EvaluationForm employeeId={params.get('employee') || undefined} />;
-        case '/development-plans':
-          return <DevelopmentPlansPage />;
+        case '/department-criteria':
+          return <DepartmentCriteria />;
+        case '/manager-my-evaluations':
+          return <ManagerMyEvaluations />;
         case '/settings':
-          return <ComingSoonPage />;
+          return <ChangePassword />;
         default:
           return <ManagerDashboard />;
       }
@@ -94,12 +168,8 @@ function AppContent() {
           return <EmployeeDashboard />;
         case '/my-evaluations':
           return <MyEvaluations />;
-        case '/my-notes':
-          return <MyNotes />;
-        case '/my-development':
-          return <MyDevelopmentPage />;
-        case '/settings':
-          return <ComingSoonPage />;
+case '/settings':
+          return <ChangePassword />;
         default:
           return <EmployeeDashboard />;
       }
@@ -115,28 +185,6 @@ function AppContent() {
   );
 }
 
-const ComingSoonPage: React.FC = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <div className="text-center">
-      <p className="text-2xl font-semibold text-gray-400">قريبًا...</p>
-    </div>
-  </div>
-);
-
-const DevelopmentPlansPage: React.FC = () => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold text-gray-900">خطط التطوير</h1>
-    <p className="text-gray-600">قريبًا...</p>
-  </div>
-);
-
-
-const MyDevelopmentPage: React.FC = () => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold text-gray-900">خطة التطوير</h1>
-    <p className="text-gray-600">قريبًا...</p>
-  </div>
-);
 
 function App() {
   return (
