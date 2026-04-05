@@ -93,15 +93,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
   );
 
   return (
-    <div className="h-screen w-64 bg-white border-l border-gray-200 fixed right-0 top-0 overflow-y-auto">
-      <div className="p-4 border-b border-gray-200">
+    <div className="h-screen w-64 bg-white border-l border-gray-200 fixed right-0 top-0 flex flex-col">
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-center">
           <img src="/logo-color.png" alt="Half Lens" className="h-16 w-auto" />
         </div>
         <p className="text-center text-sm text-gray-600 mt-2">منصة التقييم الوظيفي</p>
       </div>
 
-      <nav className="p-4 pb-40">
+      <nav className="p-4 flex-1 overflow-y-auto">
         <ul className="space-y-1">
           {filteredMenuItems.map((item) => {
             // Insert supervisor item before settings for employee/manager
@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
       </nav>
 
       {user && (
-        <div className="absolute bottom-0 right-0 left-0 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50">
           <div className="text-right">
             <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
             <p className="text-xs text-gray-600">{user.email}</p>
