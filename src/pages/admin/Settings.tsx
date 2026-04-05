@@ -33,6 +33,9 @@ export const AdminSettings: React.FC = () => {
   const [saved, setSaved] = useState(false);
   const [recalcCount, setRecalcCount] = useState<number | null>(null);
 
+  // Section visibility
+  const [showWeights, setShowWeights] = useState(false);
+
   // Password change state
   const [showPwForm, setShowPwForm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -306,6 +309,22 @@ export const AdminSettings: React.FC = () => {
         <p className="text-gray-600 mt-2">إدارة إعدادات نظام التقييم</p>
       </div>
 
+      {!showWeights ? (
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowWeights(true)}>
+          <CardBody className="flex items-center justify-between py-5 px-6">
+            <ChevronLeft className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center gap-3">
+              <div>
+                <h3 className="font-semibold text-gray-900">توزيع أوزان التقييم</h3>
+                <p className="text-sm text-gray-500">تحديد نسبة المعايير العامة والمعايير الخاصة لكل فترة تقييم</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Scale className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ) : (
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -446,9 +465,18 @@ export const AdminSettings: React.FC = () => {
                 تم حفظ الإعدادات وإعادة حساب {recalcCount} تقييم بنجاح
               </span>
             )}
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              onClick={() => setShowWeights(false)}
+            >
+              رجوع
+            </Button>
           </div>
         </CardBody>
       </Card>
+      )}
 
       {/* Name Change */}
       {nameSuccess && (
