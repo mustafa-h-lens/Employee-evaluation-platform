@@ -109,33 +109,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
             return (
               <React.Fragment key={item.path}>
                 {showSupervisorBefore && (
-                  <li>
-                    <button
-                      onClick={() => hasSupervisorAccess && onNavigate('/supervisor-evaluate')}
-                      disabled={!hasSupervisorAccess}
-                      title={!hasSupervisorAccess ? 'سيتم تفعيل هذا القسم عند تعيينك كمشرف من قبل الموارد البشرية' : ''}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                        !hasSupervisorAccess
-                          ? 'text-gray-400 cursor-not-allowed opacity-60'
-                          : currentPath.split('?')[0] === '/supervisor-evaluate'
-                            ? 'bg-blue-50 text-blue-600 font-medium'
-                            : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span>التقييم كمشرف</span>
-                      <span className="mr-auto">
-                        {hasSupervisorAccess
-                          ? <Shield className="h-5 w-5" />
-                          : <Lock className="h-5 w-5" />
-                        }
-                      </span>
-                    </button>
-                    {!hasSupervisorAccess && (
-                      <p className="text-xs text-gray-400 px-4 mt-0.5 mb-1">
-                        يتم التفعيل من الموارد البشرية
-                      </p>
-                    )}
-                  </li>
+                  <>
+                    <li className="pt-2 pb-1">
+                      <div className="border-t border-gray-200 mx-2"></div>
+                    </li>
+                    <li>
+                      {hasSupervisorAccess ? (
+                        <button
+                          onClick={() => onNavigate('/supervisor-evaluate')}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
+                            currentPath.split('?')[0] === '/supervisor-evaluate'
+                              ? 'bg-blue-50 text-blue-600 font-medium'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span>التقييم كمشرف</span>
+                          <span className="mr-auto">
+                            <Shield className="h-5 w-5" />
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="px-4 py-3 rounded-lg bg-gray-50/50">
+                          <div className="flex items-center gap-3 text-gray-400">
+                            <span>التقييم كمشرف</span>
+                            <span className="mr-auto">
+                              <Lock className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                            يتم التفعيل عند تعيينك كمشرف من الموارد البشرية
+                          </p>
+                        </div>
+                      )}
+                    </li>
+                  </>
                 )}
                 <li>
                   <button

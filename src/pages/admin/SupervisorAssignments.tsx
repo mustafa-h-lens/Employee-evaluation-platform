@@ -7,18 +7,20 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Users, UserPlus, Shield, ShieldCheck, ShieldOff, ShieldX, Calendar, CreditCard as Edit, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, Shield, ShieldCheck, ShieldOff, ShieldX, Calendar, CreditCard as Edit, AlertTriangle, Search, Clock, Building2, Trash2 } from 'lucide-react';
 
 interface Assignment {
   id: string;
   user_id: string;
-  department_id: string;
+  user_type: 'employee' | 'manager';
+  team_department_id: string;
   title?: string;
   start_date: string;
   end_date: string;
   status: 'active' | 'inactive' | 'ended';
   notes?: string;
   created_by: string;
+  created_at: string;
   user?: { full_name: string; email: string; role: string };
   department?: { name: string };
   creator?: { full_name: string };
@@ -39,7 +41,7 @@ interface DepartmentOption {
 interface AssignmentForm {
   user_type: 'employee' | 'manager';
   user_id: string;
-  department_id: string;
+  team_department_id: string;
   title: string;
   start_date: string;
   end_date: string;
@@ -49,11 +51,25 @@ interface AssignmentForm {
 const emptyForm: AssignmentForm = {
   user_type: 'employee',
   user_id: '',
-  department_id: '',
+  team_department_id: '',
   title: '',
   start_date: '',
   end_date: '',
   notes: '',
+};
+
+const formatDate = (dateStr: string): string => {
+  if (!dateStr) return '--';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const getRemainingDays = (endDate: string): number => {
+  const end = new Date(endDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 };
 
 export const SupervisorAssignments: React.FC = () => {
@@ -62,11 +78,14 @@ export const SupervisorAssignments: React.FC = () => {
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [form, setForm] = useState<AssignmentForm>(emptyForm);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const [confirmEndTarget, setConfirmEndTarget] = useState<Assignment | null>(null);
 
   const { user } = useAuth();
 
@@ -79,7 +98,7 @@ export const SupervisorAssignments: React.FC = () => {
       const [assignmentsRes, usersRes, departmentsRes] = await Promise.all([
         supabase
           .from('supervisor_assignments')
-          .select('*, user:users!supervisor_assignments_user_id_fkey(full_name, email, role), department:departments(name), creator:users!supervisor_assignments_created_by_fkey(full_name)')
+          .select('*, user:users!supervisor_assignments_user_id_fkey(full_name, email, role), department:departments!supervisor_assignments_team_department_id_fkey(name), creator:users!supervisor_assignments_created_by_fkey(full_name)')
           .order('created_at', { ascending: false }),
         supabase
           .from('users')
@@ -106,32 +125,61 @@ export const SupervisorAssignments: React.FC = () => {
   const totalAssignments = assignments.length;
   const activeAssignments = assignments.filter(a => a.status === 'active').length;
   const endedAssignments = assignments.filter(a => a.status === 'ended').length;
+  const inactiveAssignments = assignments.filter(a => a.status === 'inactive').length;
 
   const filteredUsers = users.filter(u =>
     form.user_type === 'employee' ? u.role === 'employee' : u.role === 'manager'
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const filteredAssignments = assignments.filter(a => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (a.user?.full_name || '').toLowerCase().includes(q) ||
+      (a.user?.email || '').toLowerCase().includes(q) ||
+      (a.department?.name || '').toLowerCase().includes(q) ||
+      (a.title || '').toLowerCase().includes(q)
+    );
+  });
+
+  const getStatusBadge = (assignment: Assignment) => {
+    const remaining = getRemainingDays(assignment.end_date);
+    switch (assignment.status) {
       case 'active':
-        return <Badge variant="success">نشط</Badge>;
+        return (
+          <div className="flex flex-col items-start gap-1">
+            <Badge variant="success">نشط</Badge>
+            {remaining <= 7 && remaining >= 0 && (
+              <span className="text-xs text-amber-600 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {remaining === 0 ? 'ينتهي اليوم' : `متبقي ${remaining} يوم`}
+              </span>
+            )}
+            {remaining < 0 && (
+              <span className="text-xs text-red-500 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                منتهي الصلاحية
+              </span>
+            )}
+          </div>
+        );
       case 'inactive':
         return <Badge variant="warning">معطل</Badge>;
       case 'ended':
         return <Badge variant="default">منتهي</Badge>;
       default:
-        return <Badge variant="default">{status}</Badge>;
+        return <Badge variant="default">{assignment.status}</Badge>;
     }
   };
 
-  const getUserTypeBadge = (role?: string) => {
-    switch (role) {
+  const getUserTypeBadge = (userType?: string) => {
+    switch (userType) {
       case 'employee':
         return <Badge variant="info">موظف</Badge>;
       case 'manager':
         return <Badge variant="warning">مدير قسم</Badge>;
       default:
-        return <Badge variant="default">{role || '--'}</Badge>;
+        return <Badge variant="default">{userType || '--'}</Badge>;
     }
   };
 
@@ -145,9 +193,9 @@ export const SupervisorAssignments: React.FC = () => {
   const openEditModal = (assignment: Assignment) => {
     setEditingAssignment(assignment);
     setForm({
-      user_type: assignment.user?.role === 'manager' ? 'manager' : 'employee',
+      user_type: assignment.user_type || (assignment.user?.role === 'manager' ? 'manager' : 'employee'),
       user_id: assignment.user_id,
-      department_id: assignment.department_id,
+      team_department_id: assignment.team_department_id,
       title: assignment.title || '',
       start_date: assignment.start_date,
       end_date: assignment.end_date,
@@ -160,13 +208,21 @@ export const SupervisorAssignments: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate dates
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      setFeedback({ type: 'error', message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' });
+      return;
+    }
+
     setSaving(true);
     setFeedback(null);
 
     try {
       const payload = {
         user_id: form.user_id,
-        department_id: form.department_id,
+        user_type: form.user_type,
+        team_department_id: form.team_department_id,
         title: form.title || null,
         start_date: form.start_date,
         end_date: form.end_date,
@@ -188,6 +244,8 @@ export const SupervisorAssignments: React.FC = () => {
           entity_id: editingAssignment.id,
           details: payload,
         });
+
+        setFeedback({ type: 'success', message: 'تم تحديث التعيين بنجاح' });
       } else {
         const { data, error } = await supabase
           .from('supervisor_assignments')
@@ -204,11 +262,15 @@ export const SupervisorAssignments: React.FC = () => {
           entity_id: data.id,
           details: payload,
         });
+
+        setFeedback({ type: 'success', message: 'تم إنشاء التعيين بنجاح' });
       }
 
-      setIsModalOpen(false);
-      setEditingAssignment(null);
-      fetchData();
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setEditingAssignment(null);
+        fetchData();
+      }, 600);
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -245,14 +307,14 @@ export const SupervisorAssignments: React.FC = () => {
     }
   };
 
-  const handleEndAssignment = async (assignment: Assignment) => {
-    if (!user) return;
+  const handleEndAssignment = async () => {
+    if (!user || !confirmEndTarget) return;
 
     try {
       const { error } = await supabase
         .from('supervisor_assignments')
         .update({ status: 'ended' })
-        .eq('id', assignment.id);
+        .eq('id', confirmEndTarget.id);
 
       if (error) throw error;
 
@@ -260,10 +322,11 @@ export const SupervisorAssignments: React.FC = () => {
         user_id: user.id,
         action: 'إنهاء تعيين مشرف',
         entity_type: 'supervisor_assignments',
-        entity_id: assignment.id,
-        details: { previous_status: assignment.status },
+        entity_id: confirmEndTarget.id,
+        details: { previous_status: confirmEndTarget.status },
       });
 
+      setConfirmEndTarget(null);
       fetchData();
     } catch (error) {
       console.error('Error ending assignment:', error);
@@ -275,7 +338,14 @@ export const SupervisorAssignments: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-500 text-sm">جاري تحميل التعيينات...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -283,8 +353,8 @@ export const SupervisorAssignments: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">تعيين مشرف</h1>
-          <p className="text-gray-600 mt-2">إدارة تعيينات المشرفين المؤقتين</p>
+          <h1 className="text-3xl font-bold text-gray-900">إدارة تعيينات المشرفين</h1>
+          <p className="text-gray-600 mt-2">تعيين موظفين أو مدراء أقسام كمشرفين مؤقتين لتقييم فرق أخرى</p>
         </div>
         <Button onClick={openCreateModal} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -293,7 +363,7 @@ export const SupervisorAssignments: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card>
           <CardBody className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -311,33 +381,54 @@ export const SupervisorAssignments: React.FC = () => {
               <ShieldCheck className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">تعيينات نشطة</p>
+              <p className="text-sm text-gray-500">نشطة</p>
               <p className="text-2xl font-bold text-green-700">{activeAssignments}</p>
             </div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <ShieldOff className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">معطلة</p>
+              <p className="text-2xl font-bold text-amber-700">{inactiveAssignments}</p>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
               <ShieldX className="h-6 w-6 text-gray-500" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">تعيينات منتهية</p>
+              <p className="text-sm text-gray-500">منتهية</p>
               <p className="text-2xl font-bold text-gray-700">{endedAssignments}</p>
             </div>
           </CardBody>
         </Card>
       </div>
 
-      {/* Assignments Table */}
+      {/* Search + Table */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-lg font-semibold text-gray-900">جميع التعيينات</h2>
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="بحث بالاسم أو القسم..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+            />
+          </div>
         </div>
         <CardBody className="p-0">
-          {assignments.length === 0 ? (
+          {filteredAssignments.length === 0 ? (
             <EmptyState
-              message="لا يوجد تعيينات مشرفين حاليًا"
+              message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد تعيينات مشرفين حاليًا'}
               icon={<Users className="h-12 w-12 text-gray-400" />}
             />
           ) : (
@@ -346,25 +437,25 @@ export const SupervisorAssignments: React.FC = () => {
                 <TableRow>
                   <TableHead>المشرف</TableHead>
                   <TableHead>نوع المستخدم</TableHead>
-                  <TableHead>القسم/الفريق</TableHead>
-                  <TableHead>تاريخ البداية</TableHead>
-                  <TableHead>تاريخ النهاية</TableHead>
+                  <TableHead>القسم المعين</TableHead>
+                  <TableHead>فترة التعيين</TableHead>
                   <TableHead>الحالة</TableHead>
+                  <TableHead>بواسطة</TableHead>
                   <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {assignments.map((assignment) => (
+                {filteredAssignments.map((assignment) => (
                   <TableRow key={assignment.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                           <span className="text-sm font-bold text-blue-700">
                             {assignment.user?.full_name?.charAt(0) || '?'}
                           </span>
                         </div>
                         <div>
-                          <span className="font-medium">{assignment.user?.full_name || '--'}</span>
+                          <p className="font-medium text-gray-900">{assignment.user?.full_name || '--'}</p>
                           {assignment.title && (
                             <p className="text-xs text-gray-500">{assignment.title}</p>
                           )}
@@ -372,19 +463,31 @@ export const SupervisorAssignments: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getUserTypeBadge(assignment.user?.role)}
+                      {getUserTypeBadge(assignment.user_type)}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-700">{assignment.department?.name || '--'}</span>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-700">{assignment.department?.name || '--'}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">{assignment.start_date}</span>
+                      <div className="text-sm">
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                          <span>{formatDate(assignment.start_date)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-gray-500 mt-0.5">
+                          <span className="text-gray-400 mr-5">←</span>
+                          <span>{formatDate(assignment.end_date)}</span>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">{assignment.end_date}</span>
+                      {getStatusBadge(assignment)}
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(assignment.status)}
+                      <span className="text-xs text-gray-500">{assignment.creator?.full_name || '--'}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -420,10 +523,10 @@ export const SupervisorAssignments: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleEndAssignment(assignment)}
+                              onClick={() => setConfirmEndTarget(assignment)}
                               className="flex items-center gap-1 text-red-600 hover:text-red-700"
                             >
-                              <ShieldX className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5" />
                               <span>إنهاء</span>
                             </Button>
                           </>
@@ -437,6 +540,42 @@ export const SupervisorAssignments: React.FC = () => {
           )}
         </CardBody>
       </Card>
+
+      {/* End Assignment Confirmation Modal */}
+      <Modal
+        isOpen={!!confirmEndTarget}
+        onClose={() => setConfirmEndTarget(null)}
+        title="تأكيد إنهاء التعيين"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+            <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-800">
+                هل أنت متأكد من إنهاء تعيين <span className="font-bold">{confirmEndTarget?.user?.full_name}</span> كمشرف؟
+              </p>
+              <p className="text-xs text-red-600 mt-1">
+                سيتم إلغاء صلاحية المشرف فورًا ولن يتمكن من تقييم أعضاء الفريق بعد ذلك.
+              </p>
+            </div>
+          </div>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setConfirmEndTarget(null)}>
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleEndAssignment}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <span className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                <span>تأكيد الإنهاء</span>
+              </span>
+            </Button>
+          </ModalFooter>
+        </div>
+      </Modal>
 
       {/* Create/Edit Modal */}
       <Modal
@@ -490,10 +629,10 @@ export const SupervisorAssignments: React.FC = () => {
 
             {/* Department */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">القسم/الفريق</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">القسم / الفريق المعين للإشراف عليه</label>
               <select
-                value={form.department_id}
-                onChange={(e) => setForm(prev => ({ ...prev, department_id: e.target.value }))}
+                value={form.team_department_id}
+                onChange={(e) => setForm(prev => ({ ...prev, team_department_id: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 required
               >
@@ -506,7 +645,7 @@ export const SupervisorAssignments: React.FC = () => {
 
             {/* Title */}
             <Input
-              label="عنوان التعيين"
+              label="عنوان التعيين (اختياري)"
               value={form.title}
               onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
               placeholder="مثال: مشرف مؤقت لفريق التطوير"

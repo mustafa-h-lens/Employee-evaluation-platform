@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar, Shield } from 'lucide-react';
+import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar, Shield, Clock } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 
 interface EmployeeInfo {
@@ -179,8 +179,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
       const { data: employees } = await supabase
         .from('employees')
         .select('id, full_name, job_title, employee_number, department_id, department:departments(name)')
-        .in('department_id', deptIds)
-        .eq('status', 'active');
+        .in('department_id', deptIds);
 
       // Fetch existing supervisor evals for selected period
       let evalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
@@ -507,8 +506,13 @@ export const SupervisorEvaluateForm: React.FC = () => {
         </div>
         <Card>
           <CardBody className="text-center py-16">
-            <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">لا يوجد لديك تعيين مشرف نشط حالياً</p>
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <Shield className="h-10 w-10 text-gray-400" />
+            </div>
+            <p className="text-gray-700 text-lg font-medium">لا يوجد لديك تعيين مشرف نشط حالياً</p>
+            <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
+              سيظهر فريقك هنا عند تعيينك كمشرف من قِبل إدارة الموارد البشرية
+            </p>
           </CardBody>
         </Card>
       </div>
@@ -532,6 +536,21 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const assignmentEndDate = assignments.length > 0
     ? assignments.reduce((max, a) => a.end_date > max ? a.end_date : max, assignments[0].end_date)
     : '';
+
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '--';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+  const getRemainingDays = (): number => {
+    if (!assignmentEndDate) return 0;
+    const end = new Date(assignmentEndDate);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  };
+  const remainingDays = getRemainingDays();
 
   // Table view when no employee selected
   const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
@@ -565,19 +584,28 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
         {/* Assignment Info Banner */}
         <Card>
-          <CardBody className="bg-indigo-50 border-indigo-200">
+          <CardBody className="bg-indigo-50 border border-indigo-200">
             <div className="flex items-center gap-4">
-              <div className="bg-indigo-100 text-indigo-600 p-3 rounded-xl">
+              <div className="bg-indigo-100 text-indigo-600 p-3 rounded-xl flex-shrink-0">
                 <Shield className="h-6 w-6" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
                 <div>
-                  <p className="text-sm text-indigo-600">الفريق المعين</p>
+                  <p className="text-xs text-indigo-500">الفريق المعين</p>
                   <p className="font-semibold text-indigo-900">{assignmentDeptNames}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-indigo-600">فترة التعيين</p>
-                  <p className="font-semibold text-indigo-900">{assignmentStartDate} - {assignmentEndDate}</p>
+                  <p className="text-xs text-indigo-500">فترة التعيين</p>
+                  <p className="font-semibold text-indigo-900">
+                    {formatDate(assignmentStartDate)} — {formatDate(assignmentEndDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-indigo-500">المدة المتبقية</p>
+                  <p className={`font-semibold flex items-center gap-1.5 ${remainingDays <= 7 ? 'text-amber-700' : 'text-indigo-900'}`}>
+                    <Clock className="h-4 w-4" />
+                    {remainingDays <= 0 ? 'منتهية الصلاحية' : `${remainingDays} يوم`}
+                  </p>
                 </div>
               </div>
             </div>
