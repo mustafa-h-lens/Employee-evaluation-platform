@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/Button';
 import {
   LayoutDashboard,
@@ -16,7 +17,9 @@ import {
   LogOut,
   ListChecks,
   Crown,
-  Landmark
+  Landmark,
+  Shield,
+  Lock
 } from 'lucide-react';
 
 interface MenuItem {
@@ -37,6 +40,7 @@ const menuItems: MenuItem[] = [
   { label: 'إدارة المعايير', icon: <ClipboardList className="h-5 w-5" />, path: '/criteria', roles: ['admin'] },
   { label: 'جميع التقييمات', icon: <FileText className="h-5 w-5" />, path: '/all-evaluations', roles: ['admin'] },
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/reports', roles: ['admin'] },
+  { label: 'تعيين مشرف', icon: <Shield className="h-5 w-5" />, path: '/supervisor-assignments', roles: ['admin'] },
   { label: 'سجل النشاط', icon: <Activity className="h-5 w-5" />, path: '/audit', roles: ['admin'] },
   { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/ceo-directors', roles: ['ceo'] },
   { label: 'تقييم المديرين', icon: <FileText className="h-5 w-5" />, path: '/ceo-evaluations', roles: ['ceo'] },
@@ -64,6 +68,25 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
   const { user, logout } = useAuth();
+  const [hasSupervisorAccess, setHasSupervisorAccess] = useState(false);
+
+  useEffect(() => {
+    if (user && (user.role === 'employee' || user.role === 'manager')) {
+      const checkAccess = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabase
+          .from('supervisor_assignments')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .lte('start_date', today)
+          .gte('end_date', today)
+          .limit(1);
+        setHasSupervisorAccess(!!data && data.length > 0);
+      };
+      checkAccess();
+    }
+  }, [user]);
 
   const filteredMenuItems = menuItems.filter(item =>
     user && item.roles.includes(user.role)
@@ -80,21 +103,56 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
 
       <nav className="p-4">
         <ul className="space-y-1">
-          {filteredMenuItems.map((item) => (
-            <li key={item.path}>
-              <button
-                onClick={() => onNavigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                  currentPath.split('?')[0] === item.path
-                    ? 'bg-blue-50 text-blue-600 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span>{item.label}</span>
-                <span className="mr-auto">{item.icon}</span>
-              </button>
-            </li>
-          ))}
+          {filteredMenuItems.map((item) => {
+            // Insert supervisor item before settings for employee/manager
+            const showSupervisorBefore = item.path === '/settings' && user && (user.role === 'employee' || user.role === 'manager');
+            return (
+              <React.Fragment key={item.path}>
+                {showSupervisorBefore && (
+                  <li>
+                    <button
+                      onClick={() => hasSupervisorAccess && onNavigate('/supervisor-evaluate')}
+                      disabled={!hasSupervisorAccess}
+                      title={!hasSupervisorAccess ? 'سيتم تفعيل هذا القسم عند تعيينك كمشرف من قبل الموارد البشرية' : ''}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
+                        !hasSupervisorAccess
+                          ? 'text-gray-400 cursor-not-allowed opacity-60'
+                          : currentPath.split('?')[0] === '/supervisor-evaluate'
+                            ? 'bg-blue-50 text-blue-600 font-medium'
+                            : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>التقييم كمشرف</span>
+                      <span className="mr-auto">
+                        {hasSupervisorAccess
+                          ? <Shield className="h-5 w-5" />
+                          : <Lock className="h-5 w-5" />
+                        }
+                      </span>
+                    </button>
+                    {!hasSupervisorAccess && (
+                      <p className="text-xs text-gray-400 px-4 mt-0.5 mb-1">
+                        يتم التفعيل من الموارد البشرية
+                      </p>
+                    )}
+                  </li>
+                )}
+                <li>
+                  <button
+                    onClick={() => onNavigate(item.path)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
+                      currentPath.split('?')[0] === item.path
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className="mr-auto">{item.icon}</span>
+                  </button>
+                </li>
+              </React.Fragment>
+            );
+          })}
         </ul>
       </nav>
 

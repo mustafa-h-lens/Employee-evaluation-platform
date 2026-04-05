@@ -15,6 +15,7 @@ import { AdminSettings } from './pages/admin/Settings';
 import { DirectorManagement } from './pages/admin/DirectorManagement';
 import { Directorates } from './pages/admin/Directorates';
 import { AllEvaluations } from './pages/admin/AllEvaluations';
+import { SupervisorAssignments } from './pages/admin/SupervisorAssignments';
 
 import { CeoDashboard } from './pages/ceo/Dashboard';
 import { CeoDirectors } from './pages/ceo/Directors';
@@ -38,6 +39,8 @@ import { DirectorSpecificCriteria } from './pages/director/DirectorCriteria';
 
 import { EmployeeDashboard } from './pages/employee/Dashboard';
 import { MyEvaluations } from './pages/employee/MyEvaluations';
+
+import { SupervisorEvaluateForm } from './pages/supervisor/SupervisorEvaluateForm';
 
 import { ChangePassword } from './pages/shared/ChangePassword';
 
@@ -85,6 +88,8 @@ function AppContent() {
           return <Directorates />;
         case '/all-evaluations':
           return <AllEvaluations />;
+        case '/supervisor-assignments':
+          return <SupervisorAssignments />;
         case '/settings':
           return <AdminSettings />;
         default:
@@ -155,6 +160,8 @@ function AppContent() {
           return <DepartmentCriteria />;
         case '/manager-my-evaluations':
           return <ManagerMyEvaluations />;
+        case '/supervisor-evaluate':
+          return <SupervisorEvaluateForm />;
         case '/settings':
           return <ChangePassword />;
         default:
@@ -168,7 +175,9 @@ function AppContent() {
           return <EmployeeDashboard />;
         case '/my-evaluations':
           return <MyEvaluations />;
-case '/settings':
+        case '/supervisor-evaluate':
+          return <SupervisorEvaluateForm />;
+        case '/settings':
           return <ChangePassword />;
         default:
           return <EmployeeDashboard />;

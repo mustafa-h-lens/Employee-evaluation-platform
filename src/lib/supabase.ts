@@ -171,4 +171,48 @@ export type Database = {
     created_at: string;
     updated_at: string;
   };
+  supervisor_assignments: {
+    id: string;
+    user_id: string;
+    user_type: 'employee' | 'manager';
+    team_department_id: string;
+    title: string | null;
+    start_date: string;
+    end_date: string;
+    status: 'active' | 'inactive' | 'ended';
+    notes: string | null;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  supervisor_evaluations: {
+    id: string;
+    assignment_id: string;
+    supervisor_id: string;
+    employee_id: string;
+    period_id: string;
+    status: 'مسودة' | 'تم الإرسال' | 'اطلع الموظف' | 'مغلق';
+    final_score_500: number;
+    final_score_5: number;
+    percentage: number;
+    general_rating: string | null;
+    supervisor_note: string | null;
+    employee_note: string | null;
+    submitted_at: string | null;
+    viewed_by_employee_at: string | null;
+    closed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  supervisor_evaluation_scores: {
+    id: string;
+    evaluation_id: string;
+    criterion_id: string | null;
+    criterion_type: 'general' | 'specific';
+    department_criterion_id: string | null;
+    score_1_to_5: number;
+    weighted_result: number;
+    created_at: string;
+    updated_at: string;
+  };
 };
