@@ -4,8 +4,8 @@
   ## Demo Data Includes:
   
   1. Admin User
-     - Email: Abdulkarim@h-lens.co
-     - Password: 159357Abdul (hashed)
+     - Email: hr@h-lens.co
+     - Password: 12345678 (hashed)
   
   2. Departments
      - الموارد البشرية
@@ -27,13 +27,13 @@
 */
 
 -- Insert admin user
--- Password: 159357Abdul (this is a simple hash for demo - in production use proper bcrypt)
+-- Password: 12345678 (this is a simple hash for demo - in production use proper bcrypt)
 INSERT INTO users (id, email, password_hash, full_name, role, status)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
-  'Abdulkarim@h-lens.co',
+  'hr@h-lens.co',
   '$2a$10$rQZ9vXqZ3kJZ8vXqZ3kJZ.vXqZ3kJZ8vXqZ3kJZ8vXqZ3kJZ8vXqZ',
-  'عبدالكريم الإدارة',
+  'الموارد البشرية',
   'admin',
   'active'
 ) ON CONFLICT (email) DO NOTHING;

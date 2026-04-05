@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
       const { data: existingUser } = await supabaseAdmin
         .from("users")
         .select("id, auth_id, email")
-        .eq("email", "Abdulkarim@h-lens.co")
+        .eq("email", "hr@h-lens.co")
         .maybeSingle();
 
       if (existingUser?.auth_id) {
@@ -38,8 +38,8 @@ Deno.serve(async (req: Request) => {
 
       const { data: authData, error: authError } =
         await supabaseAdmin.auth.admin.createUser({
-          email: "Abdulkarim@h-lens.co",
-          password: "159357Abdul",
+          email: "hr@h-lens.co",
+          password: "12345678",
           email_confirm: true,
         });
 
@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
           const { data: listData } =
             await supabaseAdmin.auth.admin.listUsers();
           const found = listData?.users?.find(
-            (u: { email?: string }) => u.email === "Abdulkarim@h-lens.co"
+            (u: { email?: string }) => u.email === "hr@h-lens.co"
           );
           if (found && existingUser) {
             await supabaseAdmin
