@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronLeft } from 'lucide-react';
+import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronLeft, User } from 'lucide-react';
 import { computeFinalScores } from '../../lib/scoring';
 
 const monthLabels: Record<number, string> = {
@@ -22,7 +22,7 @@ interface Period {
 }
 
 export const AdminSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [periods, setPeriods] = useState<Period[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
   const [generalWeight, setGeneralWeight] = useState(50);
@@ -42,6 +42,43 @@ export const AdminSettings: React.FC = () => {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwSuccess, setPwSuccess] = useState<string | null>(null);
   const [pwError, setPwError] = useState<string | null>(null);
+
+  // Name change state
+  const [showNameForm, setShowNameForm] = useState(false);
+  const [newName, setNewName] = useState(user?.full_name || '');
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameSuccess, setNameSuccess] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const handleChangeName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNameError(null);
+    setNameSuccess(null);
+
+    if (!newName.trim()) {
+      setNameError('يرجى إدخال الاسم');
+      return;
+    }
+    if (!user) return;
+
+    setNameLoading(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ full_name: newName.trim() })
+        .eq('id', user.id);
+
+      if (error) { setNameError('حدث خطأ أثناء تحديث الاسم'); return; }
+
+      await refreshUser();
+      setNameSuccess('تم تحديث الاسم بنجاح');
+      setTimeout(() => { setNameSuccess(null); setShowNameForm(false); }, 3000);
+    } catch {
+      setNameError('حدث خطأ غير متوقع');
+    } finally {
+      setNameLoading(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -412,6 +449,80 @@ export const AdminSettings: React.FC = () => {
           </div>
         </CardBody>
       </Card>
+
+      {/* Name Change */}
+      {nameSuccess && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+          <CheckCircle2 className="h-5 w-5" />
+          <span className="font-medium">{nameSuccess}</span>
+        </div>
+      )}
+
+      {!showNameForm ? (
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setShowNameForm(true); setNewName(user?.full_name || ''); }}>
+          <CardBody className="flex items-center justify-between py-5 px-6">
+            <ChevronLeft className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center gap-3">
+              <div>
+                <h3 className="font-semibold text-gray-900">تغيير الاسم</h3>
+                <p className="text-sm text-gray-500">الاسم الحالي: {user?.full_name}</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <User className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ) : (
+        <Card>
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div />
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold text-gray-900 text-lg">تغيير الاسم</h3>
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <User className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangeName} className="space-y-4 max-w-md mr-auto">
+              {nameError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-sm">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>{nameError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الجديد</label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  placeholder="أدخل الاسم الجديد"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => { setShowNameForm(false); setNameError(null); }}
+                >
+                  رجوع
+                </Button>
+                <Button type="submit" size="sm" loading={nameLoading} disabled={!newName.trim()}>
+                  حفظ الاسم
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Password Change */}
       {pwSuccess && (
