@@ -101,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
         <p className="text-center text-sm text-gray-600 mt-2">منصة التقييم الوظيفي</p>
       </div>
 
-      <nav className="p-4">
+      <nav className="p-4 pb-40">
         <ul className="space-y-1">
           {filteredMenuItems.map((item) => {
             // Insert supervisor item before settings for employee/manager
