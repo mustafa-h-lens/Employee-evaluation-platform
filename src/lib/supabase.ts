@@ -175,7 +175,6 @@ export type Database = {
     id: string;
     user_id: string;
     user_type: 'employee' | 'manager';
-    team_department_id: string;
     title: string | null;
     start_date: string;
     end_date: string;
@@ -184,6 +183,12 @@ export type Database = {
     created_by: string | null;
     created_at: string;
     updated_at: string;
+  };
+  supervisor_assignment_members: {
+    id: string;
+    assignment_id: string;
+    employee_id: string;
+    created_at: string;
   };
   supervisor_evaluations: {
     id: string;

@@ -22,15 +22,18 @@ interface EmployeeInfo {
   eval_percentage?: number | null;
 }
 
+interface AssignmentMember {
+  employee_id: string;
+}
+
 interface Assignment {
   id: string;
   user_id: string;
-  team_department_id: string;
   title: string | null;
   start_date: string;
   end_date: string;
   status: string;
-  department?: { id: string; name: string };
+  members?: AssignmentMember[];
 }
 
 interface Criterion {
@@ -112,17 +115,37 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Fetch active assignments
+  // Fetch active assignments with their members
   const fetchAssignments = useCallback(async () => {
     if (!user) return [];
     const { data } = await supabase
       .from('supervisor_assignments')
-      .select('*, department:departments(id, name)')
+      .select('id, user_id, title, start_date, end_date, status')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .lte('start_date', today)
       .gte('end_date', today);
-    return data || [];
+
+    if (!data || data.length === 0) return [];
+
+    // Fetch members for these assignments
+    const assignmentIds = data.map(a => a.id);
+    const { data: members } = await supabase
+      .from('supervisor_assignment_members')
+      .select('assignment_id, employee_id')
+      .in('assignment_id', assignmentIds);
+
+    const membersByAssignment = new Map<string, AssignmentMember[]>();
+    (members || []).forEach((m: any) => {
+      const list = membersByAssignment.get(m.assignment_id) || [];
+      list.push({ employee_id: m.employee_id });
+      membersByAssignment.set(m.assignment_id, list);
+    });
+
+    return data.map(a => ({
+      ...a,
+      members: membersByAssignment.get(a.id) || [],
+    }));
   }, [user, today]);
 
   // Filter periods to those within assignment date range
@@ -169,17 +192,25 @@ export const SupervisorEvaluateForm: React.FC = () => {
     init();
   }, [user, fetchAssignments, filterPeriodsForAssignments]);
 
-  // Fetch employees in assigned departments
+  // Fetch employees assigned to this supervisor via members table
   useEffect(() => {
     const fetchEmployees = async () => {
       if (!user || !tablePeriodId || assignments.length === 0) return;
 
-      const deptIds = assignments.map(a => a.team_department_id);
+      // Collect all employee IDs from all assignment members
+      const memberEmployeeIds = assignments.flatMap(a => (a.members || []).map(m => m.employee_id));
+      if (memberEmployeeIds.length === 0) {
+        setAllEmployees([]);
+        setEmployeesLoading(false);
+        return;
+      }
+
+      const uniqueIds = [...new Set(memberEmployeeIds)];
 
       const { data: employees } = await supabase
         .from('employees')
         .select('id, full_name, job_title, employee_number, department_id, department:departments(name)')
-        .in('department_id', deptIds);
+        .in('id', uniqueIds);
 
       // Fetch existing supervisor evals for selected period
       let evalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
@@ -395,9 +426,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
     try {
       const results = calculateResults();
 
-      // Find assignment_id from active assignments matching the employee's department
-      const emp = allEmployees.find(e => e.id === employeeId);
-      const assignment = assignments.find(a => a.team_department_id === emp?.department_id);
+      // Find assignment that includes this employee as a member
+      const assignment = assignments.find(a =>
+        (a.members || []).some(m => m.employee_id === employeeId)
+      );
       if (!assignment) {
         alert('لم يتم العثور على تعيين مشرف مطابق');
         setLoading(false);
@@ -529,7 +561,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
   );
 
   // Assignment info for banner
-  const assignmentDeptNames = assignments.map(a => a.department?.name || '').filter(Boolean).join('، ');
+  const assignmentTitle = assignments.map(a => a.title).filter(Boolean).join('، ') || 'مشرف مؤقت';
+  const totalAssignedMembers = assignments.reduce((sum, a) => sum + (a.members || []).length, 0);
   const assignmentStartDate = assignments.length > 0
     ? assignments.reduce((min, a) => a.start_date < min ? a.start_date : min, assignments[0].start_date)
     : '';
@@ -591,8 +624,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
                 <div>
-                  <p className="text-xs text-indigo-500">الفريق المعين</p>
-                  <p className="font-semibold text-indigo-900">{assignmentDeptNames}</p>
+                  <p className="text-xs text-indigo-500">التعيين</p>
+                  <p className="font-semibold text-indigo-900">{assignmentTitle} ({totalAssignedMembers} موظف)</p>
                 </div>
                 <div>
                   <p className="text-xs text-indigo-500">فترة التعيين</p>
