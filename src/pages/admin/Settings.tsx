@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronLeft, User } from 'lucide-react';
+import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronRight, User } from 'lucide-react';
 import { computeFinalScores } from '../../lib/scoring';
 
 const monthLabels: Record<number, string> = {
@@ -312,16 +312,16 @@ export const AdminSettings: React.FC = () => {
       {!showWeights ? (
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowWeights(true)}>
           <CardBody className="flex items-center justify-between py-5 px-6">
-            <ChevronLeft className="h-5 w-5 text-gray-400" />
             <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Scale className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
                 <h3 className="font-semibold text-gray-900">توزيع أوزان التقييم</h3>
                 <p className="text-sm text-gray-500">تحديد نسبة المعايير العامة والمعايير الخاصة لكل فترة تقييم</p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Scale className="h-5 w-5 text-blue-600" />
-              </div>
             </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
           </CardBody>
         </Card>
       ) : (
@@ -489,16 +489,16 @@ export const AdminSettings: React.FC = () => {
       {!showNameForm ? (
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setShowNameForm(true); setNewName(user?.full_name || ''); }}>
           <CardBody className="flex items-center justify-between py-5 px-6">
-            <ChevronLeft className="h-5 w-5 text-gray-400" />
             <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <User className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
                 <h3 className="font-semibold text-gray-900">تغيير الاسم</h3>
                 <p className="text-sm text-gray-500">الاسم الحالي: {user?.full_name}</p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <User className="h-5 w-5 text-blue-600" />
-              </div>
             </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
           </CardBody>
         </Card>
       ) : (
@@ -563,16 +563,16 @@ export const AdminSettings: React.FC = () => {
       {!showPwForm ? (
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowPwForm(true)}>
           <CardBody className="flex items-center justify-between py-5 px-6">
-            <ChevronLeft className="h-5 w-5 text-gray-400" />
             <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Lock className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
                 <h3 className="font-semibold text-gray-900">تغيير كلمة المرور</h3>
                 <p className="text-sm text-gray-500">تحديث كلمة المرور الخاصة بحسابك</p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Lock className="h-5 w-5 text-blue-600" />
-              </div>
             </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
           </CardBody>
         </Card>
       ) : (
