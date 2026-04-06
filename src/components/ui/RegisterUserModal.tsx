@@ -215,16 +215,6 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                 ]}
               />
 
-              <Select
-                label="المدير المباشر"
-                name="manager_id"
-                value={form.manager_id}
-                onChange={handleChange}
-                options={[
-                  { value: '', label: '-- اختر المدير --' },
-                  ...managers.map(m => ({ value: m.id, label: m.full_name })),
-                ]}
-              />
             </>
           )}
         </div>
