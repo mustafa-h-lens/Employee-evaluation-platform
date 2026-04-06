@@ -535,7 +535,7 @@ export const EvaluationCriteria: React.FC = () => {
                           <Edit className="h-4 w-4" />
                           <span>تعديل</span>
                         </Button>
-                        <div className="mr-auto" />
+                        <div className="ml-auto" />
                         <Toggle
                           checked={criterion.is_active}
                           onChange={() => handleToggleActive(criterion)}

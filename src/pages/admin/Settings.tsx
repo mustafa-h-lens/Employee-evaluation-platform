@@ -440,7 +440,13 @@ export const AdminSettings: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center justify-end gap-3 flex-wrap">
+            {saved && recalcCount !== null && (
+              <span className="text-green-600 text-sm font-medium flex items-center gap-1 ml-auto">
+                <CheckCircle className="h-4 w-4" />
+                تم حفظ الإعدادات وإعادة حساب {recalcCount} تقييم بنجاح
+              </span>
+            )}
             <Button
               onClick={handleSave}
               loading={saving || recalculating}
@@ -459,12 +465,6 @@ export const AdminSettings: React.FC = () => {
                 </>
               )}
             </Button>
-            {saved && recalcCount !== null && (
-              <span className="text-green-600 text-sm font-medium flex items-center gap-1">
-                <CheckCircle className="h-4 w-4" />
-                تم حفظ الإعدادات وإعادة حساب {recalcCount} تقييم بنجاح
-              </span>
-            )}
             <Button
               variant="secondary"
               size="sm"
@@ -504,17 +504,14 @@ export const AdminSettings: React.FC = () => {
       ) : (
         <Card>
           <CardBody className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div />
-              <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900 text-lg">تغيير الاسم</h3>
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <User className="h-5 w-5 text-blue-600" />
-                </div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <User className="h-5 w-5 text-blue-600" />
               </div>
+              <h3 className="font-semibold text-gray-900 text-lg">تغيير الاسم</h3>
             </div>
 
-            <form onSubmit={handleChangeName} className="space-y-4 max-w-md mr-auto">
+            <form onSubmit={handleChangeName} className="space-y-4">
               {nameError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -522,19 +519,22 @@ export const AdminSettings: React.FC = () => {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الجديد</label>
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">الاسم الجديد</label>
                 <input
                   type="text"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                   placeholder="أدخل الاسم الجديد"
                 />
               </div>
 
               <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" size="sm" loading={nameLoading} disabled={!newName.trim()}>
+                  حفظ الاسم
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -542,9 +542,6 @@ export const AdminSettings: React.FC = () => {
                   onClick={() => { setShowNameForm(false); setNameError(null); }}
                 >
                   رجوع
-                </Button>
-                <Button type="submit" size="sm" loading={nameLoading} disabled={!newName.trim()}>
-                  حفظ الاسم
                 </Button>
               </div>
             </form>
@@ -578,17 +575,14 @@ export const AdminSettings: React.FC = () => {
       ) : (
         <Card>
           <CardBody className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div />
-              <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900 text-lg">تغيير كلمة المرور</h3>
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <Lock className="h-5 w-5 text-blue-600" />
-                </div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Lock className="h-5 w-5 text-blue-600" />
               </div>
+              <h3 className="font-semibold text-gray-900 text-lg">تغيير كلمة المرور</h3>
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-4 max-w-md mr-auto">
+            <form onSubmit={handleChangePassword} className="space-y-4">
               {pwError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -596,8 +590,8 @@ export const AdminSettings: React.FC = () => {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الجديدة</label>
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showNew ? 'text' : 'password'}
@@ -605,25 +599,25 @@ export const AdminSettings: React.FC = () => {
                     onChange={e => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     placeholder="أدخل كلمة المرور الجديدة"
                   />
                   <button type="button" onClick={() => setShowNew(!showNew)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">6 أحرف على الأقل</p>
+                <p className="text-xs text-gray-400 mt-1 text-right">6 أحرف على الأقل</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">تأكيد كلمة المرور الجديدة</label>
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">تأكيد كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showConfirm ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     placeholder="أعد إدخال كلمة المرور الجديدة"
                   />
                   <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -633,6 +627,9 @@ export const AdminSettings: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" size="sm" loading={pwLoading} disabled={!newPassword || !confirmPassword}>
+                  تغيير كلمة المرور
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -640,9 +637,6 @@ export const AdminSettings: React.FC = () => {
                   onClick={() => { setShowPwForm(false); setPwError(null); setNewPassword(''); setConfirmPassword(''); }}
                 >
                   رجوع
-                </Button>
-                <Button type="submit" size="sm" loading={pwLoading} disabled={!newPassword || !confirmPassword}>
-                  تغيير كلمة المرور
                 </Button>
               </div>
             </form>

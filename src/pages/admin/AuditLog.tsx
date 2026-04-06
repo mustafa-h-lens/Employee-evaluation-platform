@@ -306,7 +306,7 @@ export const AuditLog: React.FC = () => {
                         </p>
                       </TableCell>
                       <TableCell>
-                        <div className="text-left">
+                        <div className="text-right">
                           <p className="text-sm text-gray-900">{formatDate(log.created_at)}</p>
                           <p className="text-xs text-gray-500">{formatTime(log.created_at)}</p>
                         </div>

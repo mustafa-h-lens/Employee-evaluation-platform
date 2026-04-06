@@ -148,7 +148,7 @@ export const DirectorDashboard: React.FC = () => {
                   {monthLabels[activePeriod.month]} - {activePeriod.year}
                 </p>
               </div>
-              <div className="text-left">
+              <div className="text-right">
                 <p className="text-sm text-blue-600">ينتهي في</p>
                 <p className="font-medium text-blue-900">{new Date(activePeriod.end_date).toLocaleDateString('ar-SA')}</p>
               </div>

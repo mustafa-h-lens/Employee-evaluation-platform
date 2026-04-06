@@ -305,7 +305,7 @@ export const ManagerMyEvaluations: React.FC = () => {
                                     <p className="font-medium text-gray-900">{score.criterion?.title || '—'}</p>
                                     <p className="text-xs text-gray-500">الوزن: {score.criterion?.weight || 0}%</p>
                                   </div>
-                                  <div className="text-left">
+                                  <div className="text-right">
                                     <p className="font-semibold text-blue-600">{score.score_1_to_5} / 5</p>
                                     <p className="text-xs text-gray-500">المرجحة: {score.weighted_result.toFixed(1)}</p>
                                   </div>
@@ -328,7 +328,7 @@ export const ManagerMyEvaluations: React.FC = () => {
                                     <p className="font-medium text-gray-900">{score.department_criterion?.title || '—'}</p>
                                     <p className="text-xs text-gray-500">الوزن: {score.department_criterion?.weight || 0}%</p>
                                   </div>
-                                  <div className="text-left">
+                                  <div className="text-right">
                                     <p className="font-semibold text-emerald-600">{score.score_1_to_5} / 5</p>
                                     <p className="text-xs text-gray-500">المرجحة: {score.weighted_result.toFixed(1)}</p>
                                   </div>

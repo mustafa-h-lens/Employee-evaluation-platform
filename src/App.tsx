@@ -43,6 +43,7 @@ import { MyEvaluations } from './pages/employee/MyEvaluations';
 import { SupervisorEvaluateForm } from './pages/supervisor/SupervisorEvaluateForm';
 
 import { ChangePassword } from './pages/shared/ChangePassword';
+import { OrgStructure } from './pages/shared/OrgStructure';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -90,6 +91,8 @@ function AppContent() {
           return <AllEvaluations />;
         case '/supervisor-assignments':
           return <SupervisorAssignments />;
+        case '/org-structure':
+          return <OrgStructure />;
         case '/settings':
           return <AdminSettings />;
         default:
@@ -116,6 +119,8 @@ function AppContent() {
           return <AllEvaluations />;
         case '/ceo-director-criteria':
           return <DirectorCriteria />;
+        case '/ceo-org-structure':
+          return <OrgStructure />;
         case '/settings':
           return <ChangePassword />;
         default:

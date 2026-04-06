@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Users, UserPlus, CreditCard as Edit, Eye, EyeOff, Crown, FileCheck, FileClock, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, CreditCard as Edit, Eye, EyeOff, Crown, FileCheck, FileClock, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface Director {
   id: string;
@@ -48,6 +48,10 @@ export const DirectorManagement: React.FC = () => {
   const [editEmail, setEditEmail] = useState('');
   const [editJobTitle, setEditJobTitle] = useState('');
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Director | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -69,7 +73,7 @@ export const DirectorManagement: React.FC = () => {
       const { data: activePeriod } = await supabase
         .from('evaluation_periods')
         .select('id')
-        .eq('status', 'active')
+        .eq('status', 'نشطة')
         .maybeSingle();
 
       if (activePeriod) {
@@ -223,6 +227,46 @@ export const DirectorManagement: React.FC = () => {
     setRegisterForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=delete-user`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: deleteTarget.id }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'فشل في حذف المستخدم');
+
+      if (user) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'حذف مدير إدارة',
+          entity_type: 'users',
+          entity_id: deleteTarget.id,
+          details: { full_name: deleteTarget.full_name, email: deleteTarget.email },
+        });
+      }
+
+      setDeleteTarget(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting director:', error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
   }
@@ -283,7 +327,7 @@ export const DirectorManagement: React.FC = () => {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">جميع مديري الإدارات</h2>
         </div>
-        <CardBody className="p-0">
+        <CardBody className="p-0 overflow-x-auto">
           {directors.length === 0 ? (
             <EmptyState
               message="لا يوجد مديري إدارات مسجلين حاليًا"
@@ -296,9 +340,7 @@ export const DirectorManagement: React.FC = () => {
                   <TableHead>الاسم</TableHead>
                   <TableHead>البريد الإلكتروني</TableHead>
                   <TableHead>المسمى الوظيفي</TableHead>
-                  <TableHead>حالة التقييم</TableHead>
-                  <TableHead>النتيجة</TableHead>
-                  <TableHead>الإجراءات</TableHead>
+                  <TableHead className="min-w-[180px]">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -327,25 +369,26 @@ export const DirectorManagement: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(evaluation)}
-                      </TableCell>
-                      <TableCell>
-                        {evaluation && evaluation.percentage != null && evaluation.status !== 'مسودة' ? (
-                          <span className="font-semibold text-gray-900">{evaluation.percentage.toFixed(1)}%</span>
-                        ) : (
-                          <span className="text-gray-400">--</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEditModal(director)}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                          <span>تعديل</span>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditModal(director)}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                            <span>تعديل</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => setDeleteTarget(director)}
+                            className="flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>حذف</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -448,6 +491,37 @@ export const DirectorManagement: React.FC = () => {
             </Button>
           </ModalFooter>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="تأكيد حذف مدير الإدارة"
+        size="sm"
+      >
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+            <AlertTriangle className="h-8 w-8 text-red-600" />
+          </div>
+          <p className="text-gray-700">
+            هل أنت متأكد من حذف <span className="font-bold text-gray-900">{deleteTarget?.full_name}</span>؟
+          </p>
+          <p className="text-sm text-red-600">
+            سيتم حذف الحساب نهائيًا ولا يمكن التراجع عن هذا الإجراء.
+          </p>
+        </div>
+        <ModalFooter className="justify-center">
+          <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+            إلغاء
+          </Button>
+          <Button variant="danger" onClick={handleDelete} loading={deleting}>
+            <span className="flex items-center gap-1">
+              <Trash2 className="h-4 w-4" />
+              <span>حذف نهائي</span>
+            </span>
+          </Button>
+        </ModalFooter>
       </Modal>
 
       {/* Edit Director Modal */}

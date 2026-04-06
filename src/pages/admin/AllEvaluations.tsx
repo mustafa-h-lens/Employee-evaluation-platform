@@ -581,7 +581,7 @@ export const AllEvaluations: React.FC = () => {
                   <p className="font-bold text-gray-900 text-lg">{detailData.name}</p>
                   <p className="text-sm text-gray-600">{detailData.jobTitle}</p>
                 </div>
-                <div className="text-left">
+                <div className="text-right">
                   <p className="text-sm text-gray-500">فترة التقييم</p>
                   <p className="font-medium text-gray-900">{detailData.period}</p>
                 </div>

@@ -217,7 +217,7 @@ export const MyNotes: React.FC = () => {
                 </div>
 
                 {ev.submitted_at && (
-                  <p className="text-xs text-gray-400 text-left pt-1">
+                  <p className="text-xs text-gray-400 text-right pt-1">
                     تاريخ الإرسال: {new Date(ev.submitted_at).toLocaleDateString('ar-SA')}
                   </p>
                 )}

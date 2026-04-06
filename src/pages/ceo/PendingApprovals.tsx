@@ -762,7 +762,7 @@ export const PendingApprovals: React.FC = () => {
                     المقيّم: {detailEval?.manager?.full_name || detailDirEval?.evaluator?.full_name}
                   </p>
                 </div>
-                <div className="text-left">
+                <div className="text-right">
                   <p className="text-sm text-gray-500">فترة التقييم</p>
                   <p className="font-medium text-gray-900">
                     {(() => {
