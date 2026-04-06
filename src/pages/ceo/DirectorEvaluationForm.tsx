@@ -99,6 +99,22 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const [generalWeight, setGeneralWeight] = useState(50);
   const [specificWeight, setSpecificWeight] = useState(50);
   const [directorsLoading, setDirectorsLoading] = useState(true);
+  const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
+
+  // Check if CEO has specific criteria
+  useEffect(() => {
+    const checkCriteria = async () => {
+      if (!user) return;
+      const { count } = await supabase
+        .from('department_criteria')
+        .select('id', { count: 'exact', head: true })
+        .is('department_id', null)
+        .eq('created_by', user.id)
+        .eq('is_active', true);
+      setHasSpecificCriteria((count ?? 0) > 0);
+    };
+    checkCriteria();
+  }, [user]);
 
   const fetchDirector = useCallback(async () => {
     if (!directorId) return;
@@ -518,6 +534,13 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
           </Card>
         </div>
 
+        {!hasSpecificCriteria && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم المديرين. اذهب إلى صفحة "المعايير الخاصة" لإضافتها.</p>
+          </div>
+        )}
+
         <Card>
           <CardBody>
             <div className="flex items-center gap-3 mb-4">
@@ -584,26 +607,36 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                         </div>
                       </TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => setSelectedDirectorId(dir.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            !dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض'
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {!dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض' ? (
-                            <>
+                        {(!dir.eval_status || dir.eval_status === 'مسودة') && !hasSpecificCriteria ? (
+                          <div className="text-center">
+                            <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-gray-400 cursor-not-allowed">
                               <ClipboardEdit className="h-4 w-4" />
-                              <span>{dir.eval_status === 'مسودة' ? 'متابعة التقييم' : dir.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="h-4 w-4" />
-                              <span>عرض التقييم</span>
-                            </>
-                          )}
-                        </button>
+                              <span>تقييم</span>
+                            </button>
+                            <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedDirectorId(dir.id)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              !dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض'
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {!dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض' ? (
+                              <>
+                                <ClipboardEdit className="h-4 w-4" />
+                                <span>{dir.eval_status === 'مسودة' ? 'متابعة التقييم' : dir.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4" />
+                                <span>عرض التقييم</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
