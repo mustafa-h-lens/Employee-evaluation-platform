@@ -200,8 +200,10 @@ export const SupervisorAssignments: React.FC = () => {
     );
   });
 
-  // Employee picker: filter employees for the modal
+  // Employee picker: filter employees for the modal (exclude the supervisor themselves)
   const pickerEmployees = allEmployees.filter(emp => {
+    // Prevent self-assignment: supervisor cannot supervise themselves
+    if (form.user_id && emp.user_id === form.user_id) return false;
     if (empDeptFilter && emp.department_id !== empDeptFilter) return false;
     if (empSearch) {
       const q = empSearch.toLowerCase();
