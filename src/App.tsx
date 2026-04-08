@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 import { Login } from './pages/Login';
 import { PageLayout } from './components/layout/PageLayout';
+import { Shield, Settings, X } from 'lucide-react';
 
 import { AdminDashboard } from './pages/admin/Dashboard';
 
@@ -38,9 +40,106 @@ import { SupervisorCriteria } from './pages/supervisor/SupervisorCriteria';
 import { ChangePassword } from './pages/shared/ChangePassword';
 import { OrgStructure } from './pages/shared/OrgStructure';
 
+const AUTO_DISMISS_MS = 10000;
+
+function PasswordBanner({ onDismiss, onGoSettings }: { onDismiss: () => void; onGoSettings: () => void }) {
+  const [visible, setVisible] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const [paused, setPaused] = useState(false);
+  const startRef = useRef(Date.now());
+  const remainRef = useRef(AUTO_DISMISS_MS);
+  const rafRef = useRef<number>(0);
+
+  const close = () => {
+    setExiting(true);
+    setTimeout(onDismiss, 400);
+  };
+
+  // Slide in
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Progress bar tick
+  useEffect(() => {
+    if (paused) {
+      cancelAnimationFrame(rafRef.current);
+      return;
+    }
+    startRef.current = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startRef.current;
+      const left = remainRef.current - elapsed;
+      if (left <= 0) { close(); return; }
+      setProgress((left / AUTO_DISMISS_MS) * 100);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [paused]);
+
+  const handlePause = () => {
+    remainRef.current = remainRef.current - (Date.now() - startRef.current);
+    setPaused(true);
+  };
+
+  return (
+    <div
+      onMouseEnter={handlePause}
+      onMouseLeave={() => setPaused(false)}
+      className={`mb-5 rounded-2xl overflow-hidden shadow-lg border transition-all duration-500 ${
+        exiting ? 'opacity-0 -translate-y-4' : visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+      }`}
+      style={{ borderColor: 'rgba(99,102,241,0.2)', background: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 50%, #ede9fe 100%)' }}
+    >
+      <div className="px-5 py-4 flex items-center gap-4">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <Shield className="h-5 w-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0 text-right">
+          <p className="text-sm font-bold text-gray-800">تنبيه أمان</p>
+          <p className="text-sm text-gray-600 mt-0.5">
+            لا تنسَ تغيير كلمة المرور الافتراضية من صفحة{' '}
+            <button
+              onClick={() => { onGoSettings(); close(); }}
+              className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              الإعدادات
+            </button>
+          </p>
+        </div>
+        <button
+          onClick={close}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-white/60 hover:text-gray-600 transition-all flex-shrink-0"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      {/* Progress / timer bar */}
+      <div className="h-1 w-full" style={{ background: 'rgba(99,102,241,0.1)' }}>
+        <div
+          className="h-full rounded-full transition-none"
+          style={{
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa)',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, isFirstLogin } = useAuth();
   const [currentPath, setCurrentPath] = useState('/');
+  const [showPasswordBanner, setShowPasswordBanner] = useState(false);
+
+  useEffect(() => {
+    if (isFirstLogin) setShowPasswordBanner(true);
+  }, [isFirstLogin]);
 
   if (loading) {
     return (
@@ -169,8 +268,24 @@ function AppContent() {
     return <div>صفحة غير موجودة</div>;
   };
 
+  const dismissBanner = () => {
+    setShowPasswordBanner(false);
+    if (user) {
+      // Get auth user id to store dismissal
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) localStorage.setItem(`password_banner_dismissed_${session.user.id}`, '1');
+      });
+    }
+  };
+
   return (
     <PageLayout currentPath={currentPath} onNavigate={setCurrentPath}>
+      {showPasswordBanner && (
+        <PasswordBanner
+          onDismiss={dismissBanner}
+          onGoSettings={() => setCurrentPath('/settings')}
+        />
+      )}
       {renderPage()}
     </PageLayout>
   );

@@ -11,6 +11,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isFirstLogin: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -64,13 +66,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
       throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+    }
+
+    // Detect first login: created_at and last_sign_in_at within 5 seconds of each other
+    if (data.user) {
+      const created = new Date(data.user.created_at).getTime();
+      const lastSignIn = data.user.last_sign_in_at ? new Date(data.user.last_sign_in_at).getTime() : created;
+      const dismissed = localStorage.getItem(`password_banner_dismissed_${data.user.id}`);
+      if (Math.abs(lastSignIn - created) < 5000 && !dismissed) {
+        setIsFirstLogin(true);
+      }
     }
   };
 
@@ -87,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, isFirstLogin, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { UserPlus, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface DirectorateOption {
   id: string;
@@ -13,12 +13,10 @@ interface DirectorateOption {
 export const RegisterUser: React.FC = () => {
   const [directorates, setDirectorates] = useState<DirectorateOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const [form, setForm] = useState({
     email: '',
-    password: '',
     full_name: '',
     role: 'employee',
     job_title: '',
@@ -66,7 +64,7 @@ export const RegisterUser: React.FC = () => {
         },
         body: JSON.stringify({
           email: form.email,
-          password: form.password,
+          password: '12345678',
           full_name: form.full_name,
           role: form.role,
           job_title: form.job_title || undefined,
@@ -85,7 +83,6 @@ export const RegisterUser: React.FC = () => {
       setFeedback({ type: 'success', message: `تم إنشاء حساب ${form.full_name} بنجاح` });
       setForm({
         email: '',
-        password: '',
         full_name: '',
         role: 'employee',
         job_title: '',
@@ -157,28 +154,6 @@ export const RegisterUser: React.FC = () => {
                 placeholder="example@h-lens.co"
                 required
               />
-
-              <div className="relative">
-                <Input
-                  label="كلمة المرور"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="أدخل كلمة مرور قوية"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-8 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword
-                    ? <EyeOff className="h-4 w-4" />
-                    : <Eye className="h-4 w-4" />
-                  }
-                </button>
-              </div>
 
               <Select
                 label="الدور"

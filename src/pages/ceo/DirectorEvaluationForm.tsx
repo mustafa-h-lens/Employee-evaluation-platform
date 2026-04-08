@@ -258,7 +258,11 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   // Fetch all directors for the selector
   useEffect(() => {
     const fetchAllDirectors = async () => {
-      if (!tablePeriodId) return;
+      if (!tablePeriodId) {
+        setAllDirectors([]);
+        setDirectorsLoading(false);
+        return;
+      }
       const { data } = await supabase
         .from('users')
         .select('id, full_name, job_title, email')

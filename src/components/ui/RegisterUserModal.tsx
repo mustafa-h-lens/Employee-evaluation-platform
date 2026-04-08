@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Modal, ModalFooter } from './Modal';
 import { Input, Select } from './Input';
 import { Button } from './Button';
-import { UserPlus, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface DirectorateOption {
   id: string;
@@ -20,16 +20,13 @@ interface RegisterUserModalProps {
 export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, onClose, role, onSuccess }) => {
   const [directorates, setDirectorates] = useState<DirectorateOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const [form, setForm] = useState({
     email: '',
-    password: '',
     full_name: '',
     job_title: '',
     directorate_id: '',
-
     phone: '',
     employee_number: '',
   });
@@ -37,8 +34,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
   useEffect(() => {
     if (isOpen) {
       setFeedback(null);
-      setForm({ email: '', password: '', full_name: '', job_title: '', directorate_id: '', phone: '', employee_number: '' });
-      setShowPassword(false);
+      setForm({ email: '', full_name: '', job_title: '', directorate_id: '', phone: '', employee_number: '' });
       if (role === 'employee') {
         fetchDirectorates();
       }
@@ -77,7 +73,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
         },
         body: JSON.stringify({
           email: form.email,
-          password: form.password,
+          password: '12345678',
           full_name: form.full_name,
           role,
           job_title: form.job_title || undefined,
@@ -145,29 +141,6 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
             autoComplete="off"
             required
           />
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-            <div className="relative">
-              <input
-                name="new-password"
-                type={showPassword ? 'text' : 'password'}
-                value={form.password}
-                onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="أدخل كلمة مرور قوية"
-                autoComplete="new-password"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
 
           <Input
             label="المسمى الوظيفي"
