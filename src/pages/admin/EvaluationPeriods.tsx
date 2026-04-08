@@ -681,7 +681,7 @@ export const EvaluationPeriods: React.FC = () => {
           </p>
           <p className="text-gray-500 text-sm">
             {statusChangeTarget?.newStatus === 'نشطة'
-              ? 'سيتم تفعيل الفترة وستتمكن الأقسام من إنشاء تقييمات خلالها.'
+              ? 'سيتم تفعيل الفترة وستتمكن الإدارات من إنشاء تقييمات خلالها.'
               : 'سيتم إغلاق الفترة ولن يتمكن أحد من إنشاء تقييمات جديدة خلالها.'}
           </p>
           {statusChangeTarget && (

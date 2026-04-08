@@ -9,7 +9,7 @@ import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import {
   Users, UserPlus, Shield, ShieldCheck, ShieldOff, ShieldX,
-  Calendar, CreditCard as Edit, AlertTriangle, Search, Clock,
+  CreditCard as Edit, AlertTriangle, Search,
   Trash2, CheckSquare, Square, Filter
 } from 'lucide-react';
 
@@ -24,7 +24,7 @@ interface AssignmentMember {
 interface Assignment {
   id: string;
   user_id: string;
-  user_type: 'employee' | 'manager';
+  user_type: 'employee' | 'director';
   title?: string;
   start_date: string;
   end_date: string;
@@ -60,11 +60,8 @@ interface DepartmentOption {
 }
 
 interface AssignmentForm {
-  user_type: 'employee' | 'manager';
+  user_type: 'employee' | 'director';
   user_id: string;
-  title: string;
-  start_date: string;
-  end_date: string;
   notes: string;
   selected_employee_ids: Set<string>;
 }
@@ -72,25 +69,8 @@ interface AssignmentForm {
 const emptyForm: AssignmentForm = {
   user_type: 'employee',
   user_id: '',
-  title: '',
-  start_date: '',
-  end_date: '',
   notes: '',
   selected_employee_ids: new Set(),
-};
-
-const formatDate = (dateStr: string): string => {
-  if (!dateStr) return '--';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
-};
-
-const getRemainingDays = (endDate: string): number => {
-  const end = new Date(endDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 };
 
 // ─── Component ─────────────────────────────────────────
@@ -131,7 +111,7 @@ export const SupervisorAssignments: React.FC = () => {
         supabase
           .from('users')
           .select('id, full_name, role, email')
-          .in('role', ['employee', 'manager'])
+          .in('role', ['employee', 'director'])
           .order('full_name'),
         supabase
           .from('employees')
@@ -186,7 +166,7 @@ export const SupervisorAssignments: React.FC = () => {
   // ─── Filtered data ────────────────────────────────
 
   const filteredSupervisorUsers = supervisorUsers.filter(u =>
-    form.user_type === 'employee' ? u.role === 'employee' : u.role === 'manager'
+    form.user_type === 'director' ? u.role === 'director' : u.role === 'employee'
   );
 
   const filteredAssignments = assignments.filter(a => {
@@ -232,11 +212,8 @@ export const SupervisorAssignments: React.FC = () => {
     setEditingAssignment(assignment);
     const memberIds = new Set((assignment.members || []).map(m => m.employee_id));
     setForm({
-      user_type: assignment.user_type || (assignment.user?.role === 'manager' ? 'manager' : 'employee'),
+      user_type: assignment.user_type || 'employee',
       user_id: assignment.user_id,
-      title: assignment.title || '',
-      start_date: assignment.start_date,
-      end_date: assignment.end_date,
       notes: assignment.notes || '',
       selected_employee_ids: memberIds,
     });
@@ -284,11 +261,6 @@ export const SupervisorAssignments: React.FC = () => {
       return;
     }
 
-    if (form.start_date && form.end_date && form.end_date < form.start_date) {
-      setFeedback({ type: 'error', message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' });
-      return;
-    }
-
     setSaving(true);
     setFeedback(null);
 
@@ -296,9 +268,6 @@ export const SupervisorAssignments: React.FC = () => {
       const payload = {
         user_id: form.user_id,
         user_type: form.user_type,
-        title: form.title || null,
-        start_date: form.start_date,
-        end_date: form.end_date,
         notes: form.notes || null,
       };
 
@@ -421,39 +390,21 @@ export const SupervisorAssignments: React.FC = () => {
 
   // ─── Helpers ──────────────────────────────────────
 
-  const handleUserTypeChange = (newType: 'employee' | 'manager') => {
+  const handleUserTypeChange = (newType: 'employee' | 'director') => {
     setForm(prev => ({ ...prev, user_type: newType, user_id: '' }));
   };
 
   const getUserTypeBadge = (userType?: string) => {
     switch (userType) {
       case 'employee': return <Badge variant="info">موظف</Badge>;
-      case 'manager': return <Badge variant="warning">مدير قسم</Badge>;
+      case 'director': return <Badge variant="success">مدير إدارة</Badge>;
       default: return <Badge variant="default">{userType || '--'}</Badge>;
     }
   };
 
   const getStatusBadge = (assignment: Assignment) => {
-    const remaining = getRemainingDays(assignment.end_date);
     switch (assignment.status) {
-      case 'active':
-        return (
-          <div className="flex flex-col items-start gap-1">
-            <Badge variant="success">نشط</Badge>
-            {remaining <= 7 && remaining >= 0 && (
-              <span className="text-xs text-amber-600 flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {remaining === 0 ? 'ينتهي اليوم' : `متبقي ${remaining} يوم`}
-              </span>
-            )}
-            {remaining < 0 && (
-              <span className="text-xs text-red-500 flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                منتهي الصلاحية
-              </span>
-            )}
-          </div>
-        );
+      case 'active': return <Badge variant="success">نشط</Badge>;
       case 'inactive': return <Badge variant="warning">معطل</Badge>;
       case 'ended': return <Badge variant="default">منتهي</Badge>;
       default: return <Badge variant="default">{assignment.status}</Badge>;
@@ -481,7 +432,7 @@ export const SupervisorAssignments: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">إدارة تعيينات المشرفين</h1>
-          <p className="text-gray-600 mt-2">تعيين موظفين أو مدراء أقسام كمشرفين مؤقتين لتقييم موظفين محددين</p>
+          <p className="text-gray-600 mt-2">تعيين موظفين أو مدراء إدارات كمشرفين مؤقتين لتقييم موظفين محددين</p>
         </div>
         <Button onClick={openCreateModal} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -565,7 +516,7 @@ export const SupervisorAssignments: React.FC = () => {
                   <TableHead>المشرف</TableHead>
                   <TableHead>نوع المستخدم</TableHead>
                   <TableHead>الموظفون المعينون</TableHead>
-                  <TableHead>فترة التعيين</TableHead>
+
                   <TableHead>الحالة</TableHead>
                   <TableHead>بواسطة</TableHead>
                   <TableHead>الإجراءات</TableHead>
@@ -583,9 +534,6 @@ export const SupervisorAssignments: React.FC = () => {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">{assignment.user?.full_name || '--'}</p>
-                          {assignment.title && (
-                            <p className="text-xs text-gray-500">{assignment.title}</p>
-                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -608,18 +556,6 @@ export const SupervisorAssignments: React.FC = () => {
                               +{(assignment.members || []).length - 3} آخرين
                             </span>
                           )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                          <span>{formatDate(assignment.start_date)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-gray-500 mt-0.5">
-                          <span className="text-gray-400 mr-5">←</span>
-                          <span>{formatDate(assignment.end_date)}</span>
                         </div>
                       </div>
                     </TableCell>
@@ -716,12 +652,12 @@ export const SupervisorAssignments: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">نوع المشرف</label>
               <select
                 value={form.user_type}
-                onChange={(e) => handleUserTypeChange(e.target.value as 'employee' | 'manager')}
+                onChange={(e) => handleUserTypeChange(e.target.value as 'employee' | 'director')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 required
               >
                 <option value="employee">موظف</option>
-                <option value="manager">مدير قسم</option>
+                <option value="director">مدير إدارة</option>
               </select>
             </div>
             <div>
@@ -737,40 +673,6 @@ export const SupervisorAssignments: React.FC = () => {
                   <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          {/* Row 2: Dates + Title */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ البداية</label>
-              <input
-                type="date"
-                value={form.start_date}
-                onChange={(e) => setForm(prev => ({ ...prev, start_date: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ النهاية</label>
-              <input
-                type="date"
-                value={form.end_date}
-                onChange={(e) => setForm(prev => ({ ...prev, end_date: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">عنوان التعيين (اختياري)</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="مثال: مشرف مؤقت"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
             </div>
           </div>
 
@@ -824,7 +726,7 @@ export const SupervisorAssignments: React.FC = () => {
                   onChange={(e) => setEmpDeptFilter(e.target.value)}
                   className="pr-9 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm min-w-[180px]"
                 >
-                  <option value="">كل الأقسام</option>
+                  <option value="">كل الإدارات</option>
                   {departments.map(d => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
@@ -851,7 +753,7 @@ export const SupervisorAssignments: React.FC = () => {
                     </th>
                     <th className="px-3 py-2.5 text-right font-medium text-gray-700">اسم الموظف</th>
                     <th className="px-3 py-2.5 text-right font-medium text-gray-700">البريد الإلكتروني</th>
-                    <th className="px-3 py-2.5 text-right font-medium text-gray-700">القسم</th>
+                    <th className="px-3 py-2.5 text-right font-medium text-gray-700">الإدارة</th>
                     <th className="px-3 py-2.5 text-right font-medium text-gray-700">المسمى الوظيفي</th>
                   </tr>
                 </thead>

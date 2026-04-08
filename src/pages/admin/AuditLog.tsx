@@ -24,11 +24,10 @@ const PAGE_SIZE = 20;
 const entityTypeLabels: Record<string, string> = {
   evaluation_criteria: 'معايير التقييم',
   evaluation_periods: 'فترات التقييم',
-  departments: 'الأقسام',
+  departments: 'الإدارات',
   employees: 'الموظفين',
   evaluations: 'التقييمات',
   users: 'المستخدمين',
-  managers: 'المدراء',
 };
 
 const getActionIcon = (action: string) => {
@@ -174,7 +173,7 @@ export const AuditLog: React.FC = () => {
     { value: 'all', label: 'جميع الأنواع' },
     { value: 'evaluation_criteria', label: 'معايير التقييم' },
     { value: 'evaluation_periods', label: 'فترات التقييم' },
-    { value: 'departments', label: 'الأقسام' },
+    { value: 'departments', label: 'الإدارات' },
     { value: 'employees', label: 'الموظفين' },
     { value: 'evaluations', label: 'التقييمات' },
     { value: 'users', label: 'المستخدمين' },
@@ -285,7 +284,7 @@ export const AuditLog: React.FC = () => {
                           <div>
                             <p className="font-medium text-gray-900 text-sm">{log.user_full_name}</p>
                             <p className="text-xs text-gray-500">
-                              {log.user_role === 'admin' ? 'مدير النظام' : log.user_role === 'manager' ? 'مدير قسم' : 'موظف'}
+                              {log.user_role === 'admin' ? 'مدير النظام' : 'موظف'}
                             </p>
                           </div>
                         </div>

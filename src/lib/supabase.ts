@@ -15,7 +15,7 @@ export type Database = {
     email: string;
     password_hash: string;
     full_name: string;
-    role: 'admin' | 'manager' | 'employee' | 'ceo' | 'director';
+    role: 'admin' | 'employee' | 'ceo' | 'director';
     created_at: string;
     updated_at: string;
   };
@@ -43,6 +43,7 @@ export type Database = {
     phone: string | null;
     job_title: string;
     department_id: string | null;
+    directorate_id: string | null;
     manager_id: string | null;
     hire_date: string;
     created_at: string;
@@ -174,7 +175,7 @@ export type Database = {
   supervisor_assignments: {
     id: string;
     user_id: string;
-    user_type: 'employee' | 'manager';
+    user_type: 'employee' | 'director';
     title: string | null;
     start_date: string;
     end_date: string;

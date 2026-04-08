@@ -31,7 +31,7 @@ export const Header: React.FC = () => {
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
               <p className="text-xs text-gray-600">
-                {user.role === 'admin' ? 'مدير النظام' : user.role === 'manager' ? 'مدير قسم' : 'موظف'}
+                {user.role === 'admin' ? 'مدير النظام' : 'موظف'}
               </p>
             </div>
           )}

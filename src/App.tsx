@@ -4,15 +4,13 @@ import { Login } from './pages/Login';
 import { PageLayout } from './components/layout/PageLayout';
 
 import { AdminDashboard } from './pages/admin/Dashboard';
-import { Departments } from './pages/admin/Departments';
+
 import { Employees } from './pages/admin/Employees';
 import { Reports } from './pages/admin/Reports';
-import { Managers } from './pages/admin/Managers';
 import { EvaluationPeriods } from './pages/admin/EvaluationPeriods';
 import { EvaluationCriteria } from './pages/admin/EvaluationCriteria';
 import { AuditLog } from './pages/admin/AuditLog';
 import { AdminSettings } from './pages/admin/Settings';
-import { DirectorManagement } from './pages/admin/DirectorManagement';
 import { Directorates } from './pages/admin/Directorates';
 import { AllEvaluations } from './pages/admin/AllEvaluations';
 import { SupervisorAssignments } from './pages/admin/SupervisorAssignments';
@@ -25,22 +23,17 @@ import { PendingApprovals } from './pages/ceo/PendingApprovals';
 import { DirectorCriteria } from './pages/ceo/DirectorCriteria';
 
 
-import { ManagerDashboard } from './pages/manager/Dashboard';
-import { EvaluationForm } from './pages/manager/EvaluationForm';
-import { MyEmployees } from './pages/manager/MyEmployees';
-import { DepartmentCriteria } from './pages/manager/DepartmentCriteria';
-import { ManagerMyEvaluations } from './pages/manager/ManagerMyEvaluations';
-
 import { DirectorDashboard } from './pages/director/Dashboard';
 import { DirectorMyEvaluations } from './pages/director/MyEvaluations';
-import { MyManagers } from './pages/director/MyManagers';
-import { ManagerEvaluationForm } from './pages/director/ManagerEvaluationForm';
+import { DirectorEmployees } from './pages/director/DirectorEmployees';
+import { DirectorEvaluateEmployee } from './pages/director/DirectorEvaluateEmployee';
 import { DirectorSpecificCriteria } from './pages/director/DirectorCriteria';
 
 import { EmployeeDashboard } from './pages/employee/Dashboard';
 import { MyEvaluations } from './pages/employee/MyEvaluations';
 
 import { SupervisorEvaluateForm } from './pages/supervisor/SupervisorEvaluateForm';
+import { SupervisorCriteria } from './pages/supervisor/SupervisorCriteria';
 
 import { ChangePassword } from './pages/shared/ChangePassword';
 import { OrgStructure } from './pages/shared/OrgStructure';
@@ -69,22 +62,17 @@ function AppContent() {
       switch (currentPath) {
         case '/':
           return <AdminDashboard />;
-        case '/departments':
-          return <Departments />;
+
         case '/employees':
           return <Employees />;
         case '/reports':
           return <Reports />;
-        case '/managers':
-          return <Managers />;
         case '/periods':
           return <EvaluationPeriods />;
         case '/criteria':
           return <EvaluationCriteria />;
         case '/audit':
           return <AuditLog />;
-        case '/directors':
-          return <DirectorManagement />;
         case '/directorates':
           return <Directorates />;
         case '/all-evaluations':
@@ -121,6 +109,13 @@ function AppContent() {
           return <DirectorCriteria />;
         case '/ceo-org-structure':
           return <OrgStructure />;
+        // Director routes for CEO users assigned as department directors
+        case '/director-employees':
+          return <DirectorEmployees onNavigate={setCurrentPath} />;
+        case '/director-evaluate':
+          return <DirectorEvaluateEmployee employeeId={params.get('employee') || undefined} />;
+        case '/director-criteria':
+          return <DirectorSpecificCriteria />;
         case '/settings':
           return <ChangePassword />;
         default:
@@ -135,42 +130,22 @@ function AppContent() {
       switch (basePath) {
         case '/':
           return <DirectorDashboard />;
-        case '/director-managers':
-          return <MyManagers onNavigate={setCurrentPath} />;
+        case '/director-employees':
+          return <DirectorEmployees onNavigate={setCurrentPath} />;
         case '/director-evaluate':
-          return <ManagerEvaluationForm managerId={params.get('manager') || undefined} />;
+          return <DirectorEvaluateEmployee employeeId={params.get('employee') || undefined} />;
         case '/director-criteria':
           return <DirectorSpecificCriteria />;
         case '/director-evaluations':
           return <DirectorMyEvaluations />;
+        case '/supervisor-evaluate':
+          return <SupervisorEvaluateForm />;
+        case '/supervisor-criteria':
+          return <SupervisorCriteria />;
         case '/settings':
           return <ChangePassword />;
         default:
           return <DirectorDashboard />;
-      }
-    }
-
-    if (user.role === 'manager') {
-      const basePath = currentPath.split('?')[0];
-      const params = new URLSearchParams(currentPath.split('?')[1] || '');
-
-      switch (basePath) {
-        case '/':
-          return <ManagerDashboard />;
-        case '/my-employees':
-          return <MyEmployees onNavigate={setCurrentPath} />;
-        case '/evaluations':
-          return <EvaluationForm employeeId={params.get('employee') || undefined} />;
-        case '/department-criteria':
-          return <DepartmentCriteria />;
-        case '/manager-my-evaluations':
-          return <ManagerMyEvaluations />;
-        case '/supervisor-evaluate':
-          return <SupervisorEvaluateForm />;
-        case '/settings':
-          return <ChangePassword />;
-        default:
-          return <ManagerDashboard />;
       }
     }
 
@@ -182,6 +157,8 @@ function AppContent() {
           return <MyEvaluations />;
         case '/supervisor-evaluate':
           return <SupervisorEvaluateForm />;
+        case '/supervisor-criteria':
+          return <SupervisorCriteria />;
         case '/settings':
           return <ChangePassword />;
         default:

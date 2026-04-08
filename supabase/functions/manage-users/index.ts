@@ -126,6 +126,7 @@ Deno.serve(async (req: Request) => {
         role,
         job_title,
         department_id,
+        directorate_id,
         manager_id,
         phone,
         employee_number,
@@ -184,6 +185,7 @@ Deno.serve(async (req: Request) => {
           phone: phone || null,
           job_title: job_title || (role === "manager" ? "مدير قسم" : "موظف"),
           department_id: department_id || null,
+          directorate_id: directorate_id || null,
           manager_id: manager_id || null,
         };
 

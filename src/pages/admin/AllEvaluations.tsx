@@ -1,11 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { Crown, Users, UserCheck, Eye, Filter, Star } from 'lucide-react';
+import { Crown, Users, Eye, Filter, Star, Shield } from 'lucide-react';
+import { percentageToRating } from '../../lib/scoring';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -32,8 +33,9 @@ const getStatusVariant = (status: string): 'success' | 'info' | 'warning' | 'dan
   }
 };
 
-const getStatusLabel = (status: string): string => {
+const getStatusLabel = (status: string, context?: string): string => {
   if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
+  if (status === 'تم الإرسال' && context === 'ceo') return 'بانتظار تقييم الشريك';
   if (['موافقة', 'تم الإرسال', 'اطلع الموظف', 'اطلع المدير', 'مغلق', 'مكتمل'].includes(status)) return 'تم اعتماد التقييم';
   if (status === 'مرفوض') return 'مرفوض';
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
@@ -53,6 +55,8 @@ interface Department {
 
 interface DirectorEval {
   id: string;
+  director_id: string;
+  period_id: string;
   director: { id: string; full_name: string; email: string; job_title: string | null } | null;
   evaluator: { full_name: string } | null;
   period: { year: number; month: number } | null;
@@ -66,7 +70,7 @@ interface DirectorEval {
   submitted_at: string | null;
 }
 
-interface ManagerEval {
+interface EvalItem {
   id: string;
   employee: { full_name: string; job_title: string; employee_number: string } | null;
   manager: { full_name: string } | null;
@@ -83,6 +87,21 @@ interface ManagerEval {
   submitted_at: string | null;
 }
 
+interface SupervisorEval {
+  id: string;
+  supervisor: { full_name: string } | null;
+  employee: { full_name: string; job_title: string; employee_number: string } | null;
+  period: { year: number; month: number } | null;
+  status: string;
+  final_score_500: number;
+  final_score_5: number;
+  percentage: number;
+  general_rating: string | null;
+  supervisor_note: string | null;
+  employee_note: string | null;
+  submitted_at: string | null;
+}
+
 interface ScoreDetail {
   criterion_title: string;
   criterion_description: string;
@@ -92,16 +111,16 @@ interface ScoreDetail {
   type: 'general' | 'specific';
 }
 
-type TabType = 'directors' | 'managers' | 'employees';
+type TabType = 'ceo' | 'directors' | 'supervisors';
 
 export const AllEvaluations: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('managers');
+  const [activeTab, setActiveTab] = useState<TabType>('ceo');
   const [loading, setLoading] = useState(true);
 
   // Data
   const [directorEvals, setDirectorEvals] = useState<DirectorEval[]>([]);
-  const [managerEvals, setManagerEvals] = useState<ManagerEval[]>([]);
-  const [employeeEvals, setEmployeeEvals] = useState<ManagerEval[]>([]);
+  const [employeeEvals, setEmployeeEvals] = useState<EvalItem[]>([]);
+  const [supervisorEvals, setSupervisorEvals] = useState<SupervisorEval[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
 
@@ -140,7 +159,7 @@ export const AllEvaluations: React.FC = () => {
     let query = supabase
       .from('director_evaluations')
       .select(`
-        id, status, final_score_500, final_score_5, percentage, general_rating,
+        id, director_id, period_id, status, final_score_500, final_score_5, percentage, general_rating,
         evaluator_note, director_note, submitted_at,
         director:users!director_evaluations_director_id_fkey(id, full_name, email, job_title),
         evaluator:users!director_evaluations_evaluator_id_fkey(full_name),
@@ -155,22 +174,8 @@ export const AllEvaluations: React.FC = () => {
     setLoading(false);
   }, [filterPeriod]);
 
-  const fetchManagerEvals = useCallback(async () => {
+  const fetchEmployeeEvals = useCallback(async () => {
     setLoading(true);
-
-    // Fetch manager user IDs
-    const { data: managerUsers } = await supabase
-      .from('users')
-      .select('id')
-      .eq('role', 'manager');
-    const managerUserIds = (managerUsers || []).map((u: any) => u.id);
-
-    // Fetch employee records that are linked to manager users
-    const { data: managerEmployees } = await supabase
-      .from('employees')
-      .select('id')
-      .in('user_id', managerUserIds);
-    const managerEmployeeIds = (managerEmployees || []).map((e: any) => e.id);
 
     let query = supabase
       .from('evaluations')
@@ -184,73 +189,49 @@ export const AllEvaluations: React.FC = () => {
       `)
       .order('created_at', { ascending: false });
 
-    if (managerEmployeeIds.length > 0) {
-      query = query.in('employee_id', managerEmployeeIds);
-    } else {
-      // No manager employees found, return empty
-      setManagerEvals([]);
-      setLoading(false);
-      return;
-    }
-
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
     if (filterDepartment) query = query.eq('department_id', filterDepartment);
 
     const { data } = await query;
-    setManagerEvals((data as unknown as ManagerEval[]) || []);
+
+    setEmployeeEvals((data as unknown as EvalItem[]) || []);
     setLoading(false);
   }, [filterPeriod, filterDepartment]);
 
-  const fetchEmployeeEvals = useCallback(async () => {
+  const fetchSupervisorEvals = useCallback(async () => {
     setLoading(true);
 
-    // Get non-manager, non-director employee IDs
-    const { data: nonEmployeeUsers } = await supabase
-      .from('users')
-      .select('id')
-      .in('role', ['manager', 'director', 'ceo', 'admin']);
-    const nonEmployeeUserIds = (nonEmployeeUsers || []).map((u: any) => u.id);
-
     let query = supabase
-      .from('evaluations')
+      .from('supervisor_evaluations')
       .select(`
         id, status, final_score_500, final_score_5, percentage, general_rating,
-        manager_note, employee_note, submitted_at, department_id,
-        employee:employees(full_name, job_title, employee_number, user_id),
-        manager:users!evaluations_manager_id_fkey(full_name),
-        department:departments(name),
+        supervisor_note, employee_note, submitted_at,
+        supervisor:users!supervisor_evaluations_supervisor_id_fkey(full_name),
+        employee:employees!supervisor_evaluations_employee_id_fkey(full_name, job_title, employee_number),
         period:evaluation_periods(year, month)
       `)
       .order('created_at', { ascending: false });
 
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
-    if (filterDepartment) query = query.eq('department_id', filterDepartment);
 
     const { data } = await query;
-
-    // Filter client-side: only employees whose user_id is NOT a manager/director/ceo/admin
-    const filtered = ((data as unknown as any[]) || []).filter((ev: any) => {
-      if (!ev.employee?.user_id) return true;
-      return !nonEmployeeUserIds.includes(ev.employee.user_id);
-    });
-
-    setEmployeeEvals(filtered as ManagerEval[]);
+    setSupervisorEvals((data as unknown as SupervisorEval[]) || []);
     setLoading(false);
-  }, [filterPeriod, filterDepartment]);
+  }, [filterPeriod]);
 
   useEffect(() => {
     fetchFilters();
   }, [fetchFilters]);
 
   useEffect(() => {
-    if (activeTab === 'directors') {
+    if (activeTab === 'ceo') {
       fetchDirectorEvals();
-    } else if (activeTab === 'managers') {
-      fetchManagerEvals();
-    } else {
+    } else if (activeTab === 'directors') {
       fetchEmployeeEvals();
+    } else {
+      fetchSupervisorEvals();
     }
-  }, [activeTab, fetchDirectorEvals, fetchManagerEvals, fetchEmployeeEvals]);
+  }, [activeTab, fetchDirectorEvals, fetchEmployeeEvals, fetchSupervisorEvals]);
 
   const resetFilters = () => {
     setFilterPeriod('');
@@ -294,7 +275,7 @@ export const AllEvaluations: React.FC = () => {
     setDetailLoading(false);
   };
 
-  const viewEvalDetail = async (ev: ManagerEval) => {
+  const viewEvalDetail = async (ev: EvalItem) => {
     setDetailLoading(true);
     setDetailModal(true);
 
@@ -332,16 +313,134 @@ export const AllEvaluations: React.FC = () => {
     setDetailLoading(false);
   };
 
+  const viewSupervisorDetail = async (ev: SupervisorEval) => {
+    setDetailLoading(true);
+    setDetailModal(true);
+
+    const { data: scores } = await supabase
+      .from('supervisor_evaluation_scores')
+      .select(`
+        score_1_to_5, weighted_result, criterion_type,
+        criterion:evaluation_criteria(title, description, weight),
+        sup_criterion:supervisor_criteria(title, description, weight)
+      `)
+      .eq('evaluation_id', ev.id);
+
+    const scoreDetails: ScoreDetail[] = (scores || []).map((s: any) => ({
+      criterion_title: s.criterion_type === 'specific' ? (s.sup_criterion?.title || '') : (s.criterion?.title || ''),
+      criterion_description: s.criterion_type === 'specific' ? (s.sup_criterion?.description || '') : (s.criterion?.description || ''),
+      criterion_weight: s.criterion_type === 'specific' ? (s.sup_criterion?.weight || 0) : (s.criterion?.weight || 0),
+      score: s.score_1_to_5,
+      weighted_result: s.weighted_result,
+      type: s.criterion_type || 'general',
+    }));
+
+    setDetailData({
+      name: ev.employee?.full_name || '',
+      jobTitle: ev.employee?.job_title || '',
+      period: ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : '',
+      scores: scoreDetails,
+      finalScore500: ev.final_score_500,
+      finalScore5: ev.final_score_5,
+      percentage: ev.percentage,
+      generalRating: ev.general_rating,
+      evaluatorNote: ev.supervisor_note,
+      subjectNote: ev.employee_note,
+      status: ev.status,
+    });
+    setDetailLoading(false);
+  };
+
+  // Group director evaluations by director+period for combined display
+  const combinedDirectorEvals = useMemo(() => {
+    const groups = new Map<string, DirectorEval[]>();
+    directorEvals.forEach(ev => {
+      const key = `${ev.director_id}_${ev.period_id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(ev);
+    });
+    return Array.from(groups.values()).map(evals => {
+      const avgPercentage = evals.reduce((sum, e) => sum + (e.percentage || 0), 0) / evals.length;
+      const avgScore500 = evals.reduce((sum, e) => sum + (e.final_score_500 || 0), 0) / evals.length;
+      const avgScore5 = evals.reduce((sum, e) => sum + (e.final_score_5 || 0), 0) / evals.length;
+      return {
+        director_id: evals[0].director_id,
+        period_id: evals[0].period_id,
+        director: evals[0].director,
+        period: evals[0].period,
+        evals,
+        avg_percentage: avgPercentage,
+        avg_score_500: avgScore500,
+        avg_score_5: avgScore5,
+        avg_rating: percentageToRating(avgPercentage),
+        status: evals[0].status,
+      };
+    });
+  }, [directorEvals]);
+
+  const viewCombinedDirectorDetail = async (combined: { evals: DirectorEval[]; avg_percentage: number; avg_score_500: number; avg_score_5: number; avg_rating: string | null; director: DirectorEval['director']; period: DirectorEval['period'] }) => {
+    setDetailLoading(true);
+    setDetailModal(true);
+
+    const allIds = combined.evals.map(e => e.id);
+    const { data: scores } = await supabase
+      .from('director_evaluation_scores')
+      .select(`
+        evaluation_id, score_1_to_5, weighted_result, criterion_type,
+        criterion:evaluation_criteria(title, description, weight)
+      `)
+      .in('evaluation_id', allIds);
+
+    const criterionMap = new Map<string, { totalScore: number; totalWeighted: number; count: number; title: string; desc: string; weight: number; type: string }>();
+    (scores || []).forEach((s: any) => {
+      const title = s.criterion?.title || '';
+      const desc = s.criterion?.description || '';
+      const weight = s.criterion?.weight || 0;
+      const key = `${s.criterion_type}_${title}`;
+      if (!criterionMap.has(key)) criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title, desc, weight, type: s.criterion_type });
+      const entry = criterionMap.get(key)!;
+      entry.totalScore += s.score_1_to_5;
+      entry.totalWeighted += s.weighted_result;
+      entry.count += 1;
+    });
+
+    const scoreDetails: ScoreDetail[] = Array.from(criterionMap.values()).map(entry => ({
+      criterion_title: entry.title,
+      criterion_description: entry.desc,
+      criterion_weight: entry.weight,
+      score: Math.round((entry.totalScore / entry.count) * 100) / 100,
+      weighted_result: entry.totalWeighted / entry.count,
+      type: (entry.type || 'general') as 'general' | 'specific',
+    }));
+
+    const evaluatorNames = combined.evals.map(ev => `${ev.evaluator?.full_name} (${ev.percentage?.toFixed(0)}%)`).join(' | ');
+
+    setDetailData({
+      name: combined.director?.full_name || '',
+      jobTitle: `${combined.director?.job_title || ''} — المقيّمون: ${evaluatorNames}`,
+      period: combined.period ? `${monthLabels[combined.period.month]} ${combined.period.year}` : '',
+      scores: scoreDetails,
+      finalScore500: combined.avg_score_500,
+      finalScore5: combined.avg_score_5,
+      percentage: combined.avg_percentage,
+      generalRating: combined.avg_rating,
+      evaluatorNote: combined.evals.map(ev => ev.evaluator_note).filter(Boolean).join('\n---\n') || null,
+      subjectNote: combined.evals.find(ev => ev.director_note)?.director_note || null,
+      status: combined.status,
+    });
+    setDetailLoading(false);
+  };
+
   const generalScores = detailData?.scores.filter(s => s.type === 'general') || [];
   const specificScores = detailData?.scores.filter(s => s.type === 'specific') || [];
 
-  const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
-    { key: 'managers', label: 'تقييمات مدراء الأقسام', icon: <Users className="h-4 w-4" /> },
-    { key: 'directors', label: 'تقييمات مدراء الإدارات', icon: <Crown className="h-4 w-4" /> },
-    { key: 'employees', label: 'تقييمات الإدارة العليا', icon: <UserCheck className="h-4 w-4" /> },
+  const tabs: { key: TabType; label: string; icon: React.ReactNode; color: string }[] = [
+    { key: 'ceo', label: 'تقييمات الإدارة العليا', icon: <Crown className="h-4 w-4" />, color: 'amber' },
+    { key: 'directors', label: 'تقييمات مدراء الإدارات', icon: <Users className="h-4 w-4" />, color: 'blue' },
+    { key: 'supervisors', label: 'تقييمات المشرفين', icon: <Shield className="h-4 w-4" />, color: 'emerald' },
   ];
 
-  const renderEvalTable = (evals: ManagerEval[], emptyMessage: string) => (
+  const renderEvalTable = (evals: EvalItem[], emptyMessage: string) => (
     <Card>
       <CardBody className="p-0">
         {evals.length === 0 ? (
@@ -354,7 +453,7 @@ export const AllEvaluations: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>الموظف</TableHead>
-                <TableHead>القسم</TableHead>
+                <TableHead>الإدارة</TableHead>
                 <TableHead>المدير المقيّم</TableHead>
                 <TableHead>فترة التقييم</TableHead>
                 <TableHead>النتيجة</TableHead>
@@ -419,7 +518,7 @@ export const AllEvaluations: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">جميع التقييمات</h1>
-        <p className="text-gray-600 mt-2">عرض جميع تقييمات مديري الإدارات ومدراء الأقسام والموظفين</p>
+        <p className="text-gray-600 mt-2">عرض جميع تقييمات الإدارة العليا ومدراء الإدارات والمشرفين</p>
       </div>
 
       {/* Tabs */}
@@ -430,7 +529,7 @@ export const AllEvaluations: React.FC = () => {
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeTab === tab.key
-                ? 'border-blue-600 text-blue-600 bg-blue-50'
+                ? tab.color === 'amber' ? 'border-amber-600 text-amber-600 bg-amber-50' : tab.color === 'blue' ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-emerald-600 text-emerald-600 bg-emerald-50'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
@@ -458,13 +557,13 @@ export const AllEvaluations: React.FC = () => {
                 <option key={p.id} value={p.id}>{monthLabels[p.month]} {p.year}</option>
               ))}
             </select>
-            {(activeTab === 'managers' || activeTab === 'employees') && (
+            {activeTab === 'directors' && (
               <select
                 value={filterDepartment}
                 onChange={(e) => setFilterDepartment(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">جميع الأقسام</option>
+                <option value="">جميع الإدارات</option>
                 {departments.map(d => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
@@ -487,12 +586,12 @@ export const AllEvaluations: React.FC = () => {
         <div className="flex items-center justify-center h-48">
           <div className="text-gray-500">جاري التحميل...</div>
         </div>
-      ) : activeTab === 'directors' ? (
+      ) : activeTab === 'ceo' ? (
         <Card>
           <CardBody className="p-0">
-            {directorEvals.length === 0 ? (
+            {combinedDirectorEvals.length === 0 ? (
               <EmptyState
-                message="لا توجد تقييمات لمديري الإدارات"
+                message="لا توجد تقييمات من الإدارة العليا"
                 icon={<Crown className="h-12 w-12 text-gray-400" />}
               />
             ) : (
@@ -500,7 +599,81 @@ export const AllEvaluations: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>مدير الإدارة</TableHead>
-                    <TableHead>المسمى الوظيفي</TableHead>
+                    <TableHead>المقيّمون</TableHead>
+                    <TableHead>فترة التقييم</TableHead>
+                    <TableHead>النتيجة المجمّعة</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>الإجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {combinedDirectorEvals.map(combined => (
+                    <TableRow key={`${combined.director_id}_${combined.period_id}`}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                            {combined.director?.full_name?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-900">{combined.director?.full_name}</span>
+                            <p className="text-xs text-gray-500">{combined.director?.job_title}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                          {combined.evals.map(ev => (
+                            <span key={ev.id} className="text-sm text-gray-700">{ev.evaluator?.full_name} ({ev.percentage?.toFixed(0)}%)</span>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {combined.period && (
+                          <span className="text-sm text-gray-700">{monthLabels[combined.period.month]} {combined.period.year}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900">{combined.avg_percentage?.toFixed(0)}%</span>
+                          {combined.avg_rating && (
+                            <Badge variant={getRatingVariant(combined.avg_rating)} size="sm">
+                              {combined.avg_rating}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(combined.status)} size="sm">{getStatusLabel(combined.status, 'ceo')}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="outline" onClick={() => viewCombinedDirectorDetail(combined)} className="flex items-center gap-1">
+                          <Eye className="h-4 w-4" />
+                          <span>عرض التفاصيل</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardBody>
+        </Card>
+      ) : activeTab === 'directors' ? (
+        renderEvalTable(employeeEvals, 'لا توجد تقييمات من مدراء الإدارات')
+      ) : (
+        <Card>
+          <CardBody className="p-0">
+            {supervisorEvals.length === 0 ? (
+              <EmptyState
+                message="لا توجد تقييمات من المشرفين"
+                icon={<Shield className="h-12 w-12 text-gray-400" />}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الموظف</TableHead>
+                    <TableHead>المشرف</TableHead>
                     <TableHead>فترة التقييم</TableHead>
                     <TableHead>النتيجة</TableHead>
                     <TableHead>الحالة</TableHead>
@@ -508,21 +681,21 @@ export const AllEvaluations: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {directorEvals.map(ev => (
+                  {supervisorEvals.map(ev => (
                     <TableRow key={ev.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {ev.director?.full_name?.charAt(0) || '?'}
+                          <div className="w-9 h-9 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                            {ev.employee?.full_name?.charAt(0) || '?'}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900">{ev.director?.full_name}</span>
-                            <p className="text-xs text-gray-500">{ev.director?.email}</p>
+                            <span className="font-medium text-gray-900">{ev.employee?.full_name}</span>
+                            <p className="text-xs text-gray-500">{ev.employee?.job_title}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600 text-sm">{ev.director?.job_title || '-'}</span>
+                        <span className="text-sm text-gray-700">{ev.supervisor?.full_name || '-'}</span>
                       </TableCell>
                       <TableCell>
                         {ev.period && (
@@ -543,7 +716,7 @@ export const AllEvaluations: React.FC = () => {
                         <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline" onClick={() => viewDirectorDetail(ev)} className="flex items-center gap-1">
+                        <Button size="sm" variant="outline" onClick={() => viewSupervisorDetail(ev)} className="flex items-center gap-1">
                           <Eye className="h-4 w-4" />
                           <span>عرض التفاصيل</span>
                         </Button>
@@ -555,10 +728,6 @@ export const AllEvaluations: React.FC = () => {
             )}
           </CardBody>
         </Card>
-      ) : activeTab === 'managers' ? (
-        renderEvalTable(managerEvals, 'لا توجد تقييمات لمدراء الأقسام')
-      ) : (
-        renderEvalTable(employeeEvals, 'لا توجد تقييمات للموظفين')
       )}
 
       {/* Detail Modal */}

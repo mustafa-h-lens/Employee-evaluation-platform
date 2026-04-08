@@ -372,7 +372,7 @@ export const AdminSettings: React.FC = () => {
                 <span className="text-xs text-gray-500">(يحددها مسؤول الموارد البشرية)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">(يحددها مدير القسم)</span>
+                <span className="text-xs text-gray-500">(يحددها المدير المباشر)</span>
                 <span className="text-sm font-medium text-gray-700">المعايير الخاصة</span>
                 <div className="w-3 h-3 rounded-full bg-emerald-500" />
               </div>

@@ -27,8 +27,6 @@ interface DeptCriterion {
 interface Department {
   id: string;
   name: string;
-  manager_id: string | null;
-  manager?: { full_name: string } | null;
 }
 
 export const CriteriaOverview: React.FC = () => {
@@ -45,7 +43,7 @@ export const CriteriaOverview: React.FC = () => {
       const [settingsRes, criteriaRes, deptsRes, deptCriteriaRes] = await Promise.all([
         supabase.from('evaluation_settings').select('*').limit(1).single(),
         supabase.from('evaluation_criteria').select('*').order('order'),
-        supabase.from('departments').select('id, name, manager_id, manager:users!departments_manager_id_fkey(full_name)').eq('status', 'active').order('name'),
+        supabase.from('departments').select('id, name').eq('status', 'active').order('name'),
         supabase.from('department_criteria').select('*').order('order'),
       ]);
 
@@ -85,7 +83,7 @@ export const CriteriaOverview: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">نظرة عامة على المعايير</h1>
-        <p className="text-gray-600 mt-2">عرض المعايير العامة والخاصة لجميع الأقسام</p>
+        <p className="text-gray-600 mt-2">عرض المعايير العامة والخاصة لجميع الإدارات</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -119,7 +117,7 @@ export const CriteriaOverview: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">عدد الأقسام</p>
+                <p className="text-sm text-gray-600 mb-1">عدد الإدارات</p>
                 <p className="text-xl font-bold text-gray-900">{departments.length}</p>
               </div>
               <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
@@ -191,7 +189,7 @@ export const CriteriaOverview: React.FC = () => {
           onChange={(e) => setSelectedDeptId(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
         >
-          <option value="all">جميع الأقسام</option>
+          <option value="all">جميع الإدارات</option>
           {departments.map(dept => (
             <option key={dept.id} value={dept.id}>{dept.name}</option>
           ))}
@@ -212,9 +210,6 @@ export const CriteriaOverview: React.FC = () => {
                   <div className="w-3 h-3 rounded-full bg-emerald-500" />
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{dept.name}</h2>
-                    <p className="text-sm text-gray-500">
-                      مدير القسم: {(dept.manager as any)?.full_name || 'غير محدد'}
-                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -230,7 +225,7 @@ export const CriteriaOverview: React.FC = () => {
             <CardBody className="p-0">
               {deptCriteria.length === 0 ? (
                 <div className="p-6 text-center text-gray-500 text-sm">
-                  لم يتم تحديد معايير خاصة لهذا القسم بعد
+                  لم يتم تحديد معايير خاصة لهذه الإدارة بعد
                 </div>
               ) : (
                 <Table>

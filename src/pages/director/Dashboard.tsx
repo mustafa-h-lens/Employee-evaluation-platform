@@ -25,7 +25,7 @@ const ratingVariant = (rating: string): 'success' | 'info' | 'warning' | 'danger
 export const DirectorDashboard: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({
-    totalManagers: 0,
+    totalEmployees: 0,
     evaluated: 0,
     pending: 0,
   });
@@ -48,25 +48,34 @@ export const DirectorDashboard: React.FC = () => {
     setLoading(true);
 
     try {
-      // Find directorate
-      const { data: directorate } = await supabase
+      // Find directorate (check both primary and secondary director)
+      const { data: directoratesData } = await supabase
         .from('directorates')
         .select('id')
-        .eq('director_id', user.id)
-        .maybeSingle();
+        .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`);
+      const directorate = directoratesData?.[0] || null;
 
-      let totalManagers = 0;
+      let totalEmployees = 0;
       let evaluated = 0;
 
       if (directorate) {
-        // Count managers under this directorate
+        // Get department IDs under this directorate
         const { data: departments } = await supabase
           .from('departments')
-          .select('manager_id')
+          .select('id')
           .eq('directorate_id', directorate.id);
 
-        const managerIds = (departments || []).map(d => d.manager_id).filter(Boolean);
-        totalManagers = managerIds.length;
+        const deptIds = (departments || []).map(d => d.id).filter(Boolean);
+
+        // Count employees in those departments
+        if (deptIds.length > 0) {
+          const { count: empCount } = await supabase
+            .from('employees')
+            .select('*', { count: 'exact', head: true })
+            .in('department_id', deptIds);
+
+          totalEmployees = empCount || 0;
+        }
 
         // Get active period
         const { data: period } = await supabase
@@ -77,14 +86,13 @@ export const DirectorDashboard: React.FC = () => {
 
         setActivePeriod(period);
 
-        if (period && managerIds.length > 0) {
+        if (period && totalEmployees > 0) {
           // Count evaluations for this period
           const { data: evals } = await supabase
-            .from('director_evaluations')
-            .select('director_id, status')
-            .eq('evaluator_id', user.id)
+            .from('evaluations')
+            .select('id, status')
+            .eq('manager_id', user.id)
             .eq('period_id', period.id)
-            .eq('evaluation_type', 'director_manager')
             .in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال']);
 
           evaluated = evals?.length || 0;
@@ -92,9 +100,9 @@ export const DirectorDashboard: React.FC = () => {
       }
 
       setStats({
-        totalManagers,
+        totalEmployees,
         evaluated,
-        pending: totalManagers - evaluated,
+        pending: totalEmployees - evaluated,
       });
 
       // Fetch latest evaluation received (CEO → director)
@@ -162,8 +170,8 @@ export const DirectorDashboard: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">مدراء الأقسام</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalManagers}</p>
+                <p className="text-sm text-gray-600 mb-1">الموظفون</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.totalEmployees}</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                 <Users className="h-8 w-8" />
@@ -211,14 +219,14 @@ export const DirectorDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">التقدم الكلي</span>
               <span className="text-sm font-medium">
-                {stats.totalManagers > 0 ? Math.round((stats.evaluated / stats.totalManagers) * 100) : 0}%
+                {stats.totalEmployees > 0 ? Math.round((stats.evaluated / stats.totalEmployees) * 100) : 0}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-4">
               <div
                 className="bg-blue-600 h-4 rounded-full transition-all"
                 style={{
-                  width: `${stats.totalManagers > 0 ? (stats.evaluated / stats.totalManagers) * 100 : 0}%`
+                  width: `${stats.totalEmployees > 0 ? (stats.evaluated / stats.totalEmployees) * 100 : 0}%`
                 }}
               ></div>
             </div>

@@ -278,7 +278,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة</h1>
           <p className="text-gray-600 mt-2">
-            معايير التقييم الخاصة بتقييم مدراء الأقسام
+            معايير التقييم الخاصة بتقييم الموظفين
             {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
           </p>
         </div>

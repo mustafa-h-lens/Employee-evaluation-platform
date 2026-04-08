@@ -11,26 +11,15 @@ import { useAuth } from '../../contexts/AuthContext';
 interface Department {
   id: string;
   name: string;
-  manager_id: string | null;
-  manager?: {
-    full_name: string;
-  };
   employee_count?: number;
-}
-
-interface ManagerOption {
-  id: string;
-  full_name: string;
-  email: string;
 }
 
 export const Departments: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [availableManagers, setAvailableManagers] = useState<ManagerOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
-  const [formData, setFormData] = useState({ name: '', manager_id: '' });
+  const [formData, setFormData] = useState({ name: '' });
   const [deleteTarget, setDeleteTarget] = useState<Department | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -42,24 +31,10 @@ export const Departments: React.FC = () => {
 
   const fetchDepartments = async () => {
     try {
-      const [deptResult, managersResult] = await Promise.all([
-        supabase
-          .from('departments')
-          .select(`
-            id, name, manager_id,
-            manager:users!departments_manager_id_fkey(full_name)
-          `)
-          .order('name'),
-        supabase
-          .from('users')
-          .select('id, full_name, email')
-          .eq('role', 'manager')
-          .order('full_name'),
-      ]);
-
-      if (managersResult.data) {
-        setAvailableManagers(managersResult.data);
-      }
+      const deptResult = await supabase
+        .from('departments')
+        .select('id, name')
+        .order('name');
 
       if (!deptResult.error && deptResult.data) {
         const departmentsWithCount = await Promise.all(
@@ -86,14 +61,12 @@ export const Departments: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const managerId = formData.manager_id || null;
-    const managerName = availableManagers.find(m => m.id === managerId)?.full_name || null;
 
     try {
       if (editingDepartment) {
         await supabase
           .from('departments')
-          .update({ name: formData.name, manager_id: managerId })
+          .update({ name: formData.name })
           .eq('id', editingDepartment.id);
 
         if (user) {
@@ -102,13 +75,13 @@ export const Departments: React.FC = () => {
             action: 'تحديث قسم',
             entity_type: 'departments',
             entity_id: editingDepartment.id,
-            details: { name: formData.name, manager: managerName }
+            details: { name: formData.name }
           });
         }
       } else {
         const { data } = await supabase
           .from('departments')
-          .insert({ name: formData.name, manager_id: managerId })
+          .insert({ name: formData.name })
           .select()
           .single();
 
@@ -118,14 +91,14 @@ export const Departments: React.FC = () => {
             action: 'إضافة قسم',
             entity_type: 'departments',
             entity_id: data.id,
-            details: { name: formData.name, manager: managerName }
+            details: { name: formData.name }
           });
         }
       }
 
       setIsModalOpen(false);
       setEditingDepartment(null);
-      setFormData({ name: '', manager_id: '' });
+      setFormData({ name: '' });
       fetchDepartments();
     } catch (error) {
       console.error('Error saving department:', error);
@@ -134,13 +107,13 @@ export const Departments: React.FC = () => {
 
   const openEditModal = (department: Department) => {
     setEditingDepartment(department);
-    setFormData({ name: department.name, manager_id: department.manager_id || '' });
+    setFormData({ name: department.name });
     setIsModalOpen(true);
   };
 
   const openAddModal = () => {
     setEditingDepartment(null);
-    setFormData({ name: '', manager_id: '' });
+    setFormData({ name: '' });
     setIsModalOpen(true);
   };
 
@@ -188,7 +161,7 @@ export const Departments: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">إدارة الأقسام</h1>
-          <p className="text-gray-600 mt-2">إدارة أقسام الشركة ومدرائها</p>
+          <p className="text-gray-600 mt-2">إدارة أقسام الشركة</p>
         </div>
         <Button onClick={openAddModal} className="flex items-center gap-2">
           <span>إضافة قسم</span>
@@ -208,7 +181,6 @@ export const Departments: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>اسم القسم</TableHead>
-                  <TableHead>مدير القسم</TableHead>
                   <TableHead>عدد الموظفين</TableHead>
                   <TableHead>الإجراءات</TableHead>
                 </TableRow>
@@ -218,20 +190,6 @@ export const Departments: React.FC = () => {
                   <TableRow key={dept.id}>
                     <TableCell>
                       <span className="font-medium">{dept.name}</span>
-                    </TableCell>
-                    <TableCell>
-                      {dept.manager?.full_name ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-blue-700">
-                              {dept.manager.full_name.charAt(0)}
-                            </span>
-                          </div>
-                          <span className="font-medium">{dept.manager.full_name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">غير محدد</span>
-                      )}
                     </TableCell>
                     <TableCell>
                       <span className="font-medium">{dept.employee_count}</span>
@@ -280,26 +238,6 @@ export const Departments: React.FC = () => {
               required
               placeholder="مثال: تقنية المعلومات"
             />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                مدير القسم
-              </label>
-              <select
-                value={formData.manager_id}
-                onChange={(e) => setFormData({ ...formData, manager_id: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">-- بدون مدير --</option>
-                {availableManagers
-                  .filter(m => m.id === formData.manager_id || !departments.some(d => d.manager_id === m.id && d.id !== editingDepartment?.id))
-                  .map((mgr) => (
-                    <option key={mgr.id} value={mgr.id}>
-                      {mgr.full_name} ({mgr.email})
-                    </option>
-                  ))}
-              </select>
-            </div>
           </div>
 
           <ModalFooter>

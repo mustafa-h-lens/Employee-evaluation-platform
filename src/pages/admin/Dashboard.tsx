@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Building2, Users, UserCog, Calendar, FileCheck, FileClock } from 'lucide-react';
+import { Building2, Users, Calendar, FileCheck, FileClock } from 'lucide-react';
 
 interface Stats {
   departmentsCount: number;
   employeesCount: number;
-  managersCount: number;
   activePeriod: string;
   completedEvaluations: number;
   pendingEvaluations: number;
@@ -23,7 +22,6 @@ export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
     departmentsCount: 0,
     employeesCount: 0,
-    managersCount: 0,
     activePeriod: '',
     completedEvaluations: 0,
     pendingEvaluations: 0
@@ -39,14 +37,12 @@ export const AdminDashboard: React.FC = () => {
       const [
         { count: departmentsCount },
         { count: employeesCount },
-        { count: managersCount },
         { data: activePeriodData },
         { count: completedCount },
         { count: pendingCount }
       ] = await Promise.all([
         supabase.from('departments').select('*', { count: 'exact', head: true }),
         supabase.from('employees').select('*', { count: 'exact', head: true }),
-        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'manager'),
         supabase.from('evaluation_periods').select('*').eq('status', 'نشطة').maybeSingle(),
         supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']),
         supabase.from('evaluations').select('*', { count: 'exact', head: true }).eq('status', 'مسودة')
@@ -55,7 +51,6 @@ export const AdminDashboard: React.FC = () => {
       setStats({
         departmentsCount: departmentsCount || 0,
         employeesCount: employeesCount || 0,
-        managersCount: managersCount || 0,
         activePeriod: activePeriodData ? `${monthLabels[activePeriodData.month]} - ${activePeriodData.year}` : 'لا توجد فترة نشطة',
         completedEvaluations: completedCount || 0,
         pendingEvaluations: pendingCount || 0
@@ -69,7 +64,7 @@ export const AdminDashboard: React.FC = () => {
 
   const statCards = [
     {
-      title: 'عدد الأقسام',
+      title: 'عدد الإدارات',
       value: stats.departmentsCount,
       icon: <Building2 className="h-8 w-8" />,
       color: 'text-blue-600',
@@ -81,13 +76,6 @@ export const AdminDashboard: React.FC = () => {
       icon: <Users className="h-8 w-8" />,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
-    },
-    {
-      title: 'مدراء الأقسام',
-      value: stats.managersCount,
-      icon: <UserCog className="h-8 w-8" />,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
     },
     {
       title: 'التقييمات المكتملة',

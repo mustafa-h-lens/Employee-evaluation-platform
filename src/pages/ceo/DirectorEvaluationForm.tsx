@@ -20,6 +20,7 @@ interface Director {
   eval_status?: string | null;
   eval_rating?: string | null;
   eval_percentage?: number | null;
+  partner_eval_status?: string | null;
 }
 
 interface Criterion {
@@ -45,6 +46,7 @@ const monthLabels: Record<number, string> = {
 
 const getEvalStatusLabel = (status: string | null | undefined): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
+  if (status === 'تم الإرسال') return 'بانتظار تقييم الشريك';
   if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
   if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تم اعتماد التقييم';
   if (status === 'مرفوض') return 'مرفوض';
@@ -54,6 +56,7 @@ const getEvalStatusLabel = (status: string | null | undefined): string => {
 const getEvalStatusVariant = (status: string | null | undefined): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   if (!status || status === 'مسودة') return 'default';
   const map: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
+    'تم الإرسال': 'info',
     'بانتظار الموافقة': 'warning',
     'موافقة': 'success',
     'اطلع الموظف': 'success',
@@ -98,6 +101,8 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const [dataLoading, setDataLoading] = useState(false);
   const [generalWeight, setGeneralWeight] = useState(50);
   const [specificWeight, setSpecificWeight] = useState(50);
+  const [partnerStatus, setPartnerStatus] = useState<string | null>(null);
+  const [partnerName, setPartnerName] = useState<string>('');
   const [directorsLoading, setDirectorsLoading] = useState(true);
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
 
@@ -180,6 +185,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const loadExistingEvaluation = useCallback(async () => {
     if (!directorId || !user || !activePeriod) return;
 
+    // Fetch own evaluation
     const { data: evaluation } = await supabase
       .from('director_evaluations')
       .select('*')
@@ -213,6 +219,24 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       setScores(scoresMap);
       setSpecificScores(specScoresMap);
     }
+
+    // Fetch partner CEO's evaluation for the same director+period
+    const { data: partnerEval } = await supabase
+      .from('director_evaluations')
+      .select('status, evaluator:users!director_evaluations_evaluator_id_fkey(full_name)')
+      .eq('director_id', directorId)
+      .eq('period_id', activePeriod.id)
+      .eq('evaluation_type', 'ceo_director')
+      .neq('evaluator_id', user.id)
+      .maybeSingle();
+
+    if (partnerEval) {
+      setPartnerStatus(partnerEval.status);
+      setPartnerName((partnerEval.evaluator as any)?.full_name || '');
+    } else {
+      setPartnerStatus(null);
+      setPartnerName('');
+    }
   }, [directorId, user, activePeriod]);
 
   // Fetch periods for table view
@@ -241,22 +265,28 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         .eq('role', 'director')
         .order('full_name');
 
-      // Fetch eval statuses for selected period
+      // Fetch eval statuses for selected period (own + partner)
       let evalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
+      let partnerEvalMap = new Map<string, string>();
       if (user) {
-        const { data: evals } = await supabase
+        const { data: allEvals } = await supabase
           .from('director_evaluations')
-          .select('director_id, status, general_rating, percentage')
-          .eq('evaluator_id', user.id)
+          .select('director_id, evaluator_id, status, general_rating, percentage')
           .eq('period_id', tablePeriodId)
           .eq('evaluation_type', 'ceo_director');
 
-        if (evals) {
-          evalMap = new Map(evals.map(ev => [ev.director_id, {
-            status: ev.status,
-            rating: ev.general_rating,
-            percentage: ev.percentage,
-          }]));
+        if (allEvals) {
+          allEvals.forEach(ev => {
+            if (ev.evaluator_id === user.id) {
+              evalMap.set(ev.director_id, {
+                status: ev.status,
+                rating: ev.general_rating,
+                percentage: ev.percentage,
+              });
+            } else {
+              partnerEvalMap.set(ev.director_id, ev.status);
+            }
+          });
         }
       }
 
@@ -273,6 +303,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         eval_status: evalMap.get(d.id)?.status || null,
         eval_rating: evalMap.get(d.id)?.rating || null,
         eval_percentage: evalMap.get(d.id)?.percentage || null,
+        partner_eval_status: partnerEvalMap.get(d.id) || null,
       })));
       setDirectorsLoading(false);
     };
@@ -364,7 +395,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         evaluator_id: user.id,
         period_id: activePeriod.id,
         evaluation_type: 'ceo_director',
-        status: isDraft ? 'مسودة' : 'بانتظار الموافقة',
+        status: isDraft ? 'مسودة' : 'تم الإرسال',
         final_score_500: results.finalScore500,
         final_score_5: results.finalScore5,
         percentage: results.percentage,
@@ -432,8 +463,39 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         await supabase.from('director_evaluation_scores').insert(allScoreInserts);
       }
 
-      setEvaluationStatus(isDraft ? 'مسودة' : 'بانتظار الموافقة');
-      alert(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
+      if (!isDraft) {
+        // Check if partner CEO has also submitted
+        const { data: partnerEval } = await supabase
+          .from('director_evaluations')
+          .select('id, status')
+          .eq('director_id', directorId)
+          .eq('period_id', activePeriod.id)
+          .eq('evaluation_type', 'ceo_director')
+          .neq('evaluator_id', user.id)
+          .maybeSingle();
+
+        if (partnerEval && (partnerEval.status === 'تم الإرسال' || partnerEval.status === 'بانتظار الموافقة')) {
+          // Both CEOs have submitted — upgrade both to بانتظار الموافقة
+          await supabase
+            .from('director_evaluations')
+            .update({ status: 'بانتظار الموافقة' })
+            .eq('director_id', directorId)
+            .eq('period_id', activePeriod.id)
+            .eq('evaluation_type', 'ceo_director')
+            .in('status', ['تم الإرسال']);
+
+          setEvaluationStatus('بانتظار الموافقة');
+          setPartnerStatus('بانتظار الموافقة');
+          alert('تم إرسال التقييم بنجاح — كلا التقييمين الآن بانتظار الاعتماد');
+        } else {
+          setEvaluationStatus('تم الإرسال');
+          setPartnerStatus(partnerEval?.status || null);
+          alert('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
+        }
+      } else {
+        setEvaluationStatus('مسودة');
+        alert('تم حفظ التقييم كمسودة بنجاح');
+      }
     } catch (error) {
       console.error('Error saving director evaluation:', error);
       alert('حدث خطأ أثناء حفظ التقييم');
@@ -445,6 +507,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const results = calculateResults();
   const scoredCount = criteria.filter(c => scores[c.id] && scores[c.id] > 0).length;
   const isReadOnly = evaluationStatus !== '' && evaluationStatus !== 'مسودة' && evaluationStatus !== 'مرفوض';
+  const isWaitingForPartner = evaluationStatus === 'تم الإرسال';
 
   const evaluatedCount = allDirectors.filter(d => d.eval_status && d.eval_status !== 'مسودة').length;
   const pendingCount = allDirectors.filter(d => !d.eval_status || d.eval_status === 'مسودة').length;
@@ -594,20 +657,30 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                         <span className="text-gray-600 text-sm">{dir.job_title}</span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          {dir.eval_status && dir.eval_status !== 'مسودة' && dir.eval_rating ? (
-                            <Badge variant={getRatingBadgeVariant(dir.eval_rating)} size="sm">
-                              {dir.eval_rating}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400">أنت:</span>
+                            {dir.eval_status && dir.eval_status !== 'مسودة' && dir.eval_rating ? (
+                              <Badge variant={getRatingBadgeVariant(dir.eval_rating)} size="sm">
+                                {dir.eval_rating}
+                              </Badge>
+                            ) : (
+                              <Badge variant={getEvalStatusVariant(dir.eval_status)} size="sm">
+                                {getEvalStatusLabel(dir.eval_status)}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400">الشريك:</span>
+                            <Badge variant={getEvalStatusVariant(dir.partner_eval_status)} size="sm">
+                              {getEvalStatusLabel(dir.partner_eval_status)}
                             </Badge>
-                          ) : (
-                            <Badge variant={getEvalStatusVariant(dir.eval_status)} size="sm">
-                              {getEvalStatusLabel(dir.eval_status)}
-                            </Badge>
-                          )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         {(!dir.eval_status || dir.eval_status === 'مسودة') && !hasSpecificCriteria ? (
+
                           <div className="text-center">
                             <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-gray-400 cursor-not-allowed">
                               <ClipboardEdit className="h-4 w-4" />
@@ -730,13 +803,26 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         </div>
       )}
 
+      {/* Waiting for partner notice */}
+      {isWaitingForPartner && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <Lock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-blue-800">تم إرسال تقييمك بنجاح</p>
+            <p className="text-xs text-blue-600 mt-1">
+              بانتظار إرسال تقييم {partnerName || 'الشريك'} — سيتم إرسال التقييم المجمّع للاعتماد بعد إرسال كلا التقييمين
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Pending Approval Notice */}
       {evaluationStatus === 'بانتظار الموافقة' && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
           <Lock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-bold text-amber-800">التقييم بانتظار الاعتماد</p>
-            <p className="text-xs text-amber-600 mt-1">لا يمكن تعديل التقييم حتى تتم المراجعة من صفحة اعتمادية التقييمات</p>
+            <p className="text-xs text-amber-600 mt-1">تم إرسال كلا التقييمين — بانتظار المراجعة والاعتماد</p>
           </div>
         </div>
       )}

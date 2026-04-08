@@ -5,15 +5,13 @@ import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { UserPlus, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 
-interface Department {
+interface DirectorateOption {
   id: string;
   name: string;
-  manager_id: string | null;
 }
 
 export const RegisterUser: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [managers, setManagers] = useState<{ id: string; full_name: string }[]>([]);
+  const [directorates, setDirectorates] = useState<DirectorateOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -24,32 +22,21 @@ export const RegisterUser: React.FC = () => {
     full_name: '',
     role: 'employee',
     job_title: '',
-    department_id: '',
-    manager_id: '',
+    directorate_id: '',
     phone: '',
     employee_number: '',
   });
 
   useEffect(() => {
-    fetchDepartments();
-    fetchManagers();
+    fetchDirectorates();
   }, []);
 
-  const fetchDepartments = async () => {
+  const fetchDirectorates = async () => {
     const { data } = await supabase
-      .from('departments')
-      .select('id, name, manager_id')
+      .from('directorates')
+      .select('id, name')
       .order('name');
-    if (data) setDepartments(data);
-  };
-
-  const fetchManagers = async () => {
-    const { data } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .eq('role', 'manager')
-      .order('full_name');
-    if (data) setManagers(data);
+    if (data) setDirectorates(data);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -83,8 +70,7 @@ export const RegisterUser: React.FC = () => {
           full_name: form.full_name,
           role: form.role,
           job_title: form.job_title || undefined,
-          department_id: form.department_id || undefined,
-          manager_id: form.manager_id || undefined,
+          directorate_id: form.directorate_id || undefined,
           phone: form.phone || undefined,
           employee_number: form.employee_number || undefined,
         }),
@@ -103,8 +89,7 @@ export const RegisterUser: React.FC = () => {
         full_name: '',
         role: 'employee',
         job_title: '',
-        department_id: '',
-        manager_id: '',
+        directorate_id: '',
         phone: '',
         employee_number: '',
       });
@@ -202,7 +187,6 @@ export const RegisterUser: React.FC = () => {
                 onChange={handleChange}
                 options={[
                   { value: 'employee', label: 'موظف' },
-                  { value: 'manager', label: 'مدير قسم' },
                 ]}
                 required
               />
@@ -226,24 +210,13 @@ export const RegisterUser: React.FC = () => {
                   />
 
                   <Select
-                    label="القسم"
-                    name="department_id"
-                    value={form.department_id}
+                    label="الإدارة"
+                    name="directorate_id"
+                    value={form.directorate_id}
                     onChange={handleChange}
                     options={[
-                      { value: '', label: '-- اختر القسم --' },
-                      ...departments.map(d => ({ value: d.id, label: d.name })),
-                    ]}
-                  />
-
-                  <Select
-                    label="المدير المباشر"
-                    name="manager_id"
-                    value={form.manager_id}
-                    onChange={handleChange}
-                    options={[
-                      { value: '', label: '-- اختر المدير --' },
-                      ...managers.map(m => ({ value: m.id, label: m.full_name })),
+                      { value: '', label: '-- اختر الإدارة --' },
+                      ...directorates.map(d => ({ value: d.id, label: d.name })),
                     ]}
                   />
 

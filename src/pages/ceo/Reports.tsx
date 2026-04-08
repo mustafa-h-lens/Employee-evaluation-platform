@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { BarChart3, Search, User, Calendar, Star, MessageSquare, FileText, ChevronDown, Crown, Users, UserCheck } from 'lucide-react';
+import { BarChart3, Search, User, Calendar, Star, MessageSquare, FileText, ChevronDown, Crown, UserCheck } from 'lucide-react';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -74,21 +74,6 @@ interface DirectorEvalRecord {
   period: { year: number; month: number } | null;
 }
 
-interface ManagerEvalRecord {
-  id: string;
-  status: string;
-  final_score_500: number;
-  final_score_5: number;
-  percentage: number;
-  general_rating: string | null;
-  manager_note: string | null;
-  employee_note: string | null;
-  ceo_comment: string | null;
-  submitted_at: string | null;
-  period: { year: number; month: number } | null;
-  employee: { full_name: string; job_title: string } | null;
-}
-
 interface EmployeeEvalRecord {
   id: string;
   status: string;
@@ -115,14 +100,13 @@ interface ScoreDetail {
 }
 
 type PeriodMode = 'monthly' | 'quarterly' | 'annual';
-type ViewTab = 'directors' | 'managers' | 'employees';
+type ViewTab = 'directors' | 'employees';
 
 export const CeoReports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ViewTab>('directors');
 
   // People selection
   const [directors, setDirectors] = useState<PersonOption[]>([]);
-  const [managers, setManagers] = useState<PersonOption[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<PersonOption | null>(null);
@@ -137,7 +121,6 @@ export const CeoReports: React.FC = () => {
 
   // Data
   const [directorEvals, setDirectorEvals] = useState<DirectorEvalRecord[]>([]);
-  const [managerEvals, setManagerEvals] = useState<ManagerEvalRecord[]>([]);
   const [employeeEvals, setEmployeeEvals] = useState<EmployeeEvalRecord[]>([]);
   const [scores, setScores] = useState<Record<string, ScoreDetail[]>>({});
   const [loading, setLoading] = useState(false);
@@ -145,13 +128,11 @@ export const CeoReports: React.FC = () => {
 
   useEffect(() => {
     const fetchPeople = async () => {
-      const [{ data: dirs }, { data: mgrs }, { data: emps }] = await Promise.all([
+      const [{ data: dirs }, { data: emps }] = await Promise.all([
         supabase.from('users').select('id, full_name, job_title, role, email').eq('role', 'director').order('full_name'),
-        supabase.from('users').select('id, full_name, job_title, role, email').eq('role', 'manager').order('full_name'),
         supabase.from('employees').select('id, full_name, job_title, employee_number, department:departments(name)').eq('status', 'active').order('full_name'),
       ]);
       setDirectors((dirs || []) as PersonOption[]);
-      setManagers((mgrs || []) as PersonOption[]);
       setEmployees((emps || []) as unknown as EmployeeOption[]);
     };
 
@@ -179,14 +160,13 @@ export const CeoReports: React.FC = () => {
     setSelectedEmployee(null);
     setSearchQuery('');
     setDirectorEvals([]);
-    setManagerEvals([]);
     setEmployeeEvals([]);
     setScores({});
   }, [activeTab]);
 
   const filteredPeople = activeTab === 'employees'
     ? []
-    : (activeTab === 'directors' ? directors : managers).filter(p =>
+    : directors.filter(p =>
         p.full_name.includes(searchQuery) || p.email.includes(searchQuery)
       );
 
@@ -220,7 +200,6 @@ export const CeoReports: React.FC = () => {
 
     if (periodIds.length === 0) {
       setDirectorEvals([]);
-      setManagerEvals([]);
       setEmployeeEvals([]);
       setScores({});
       setLoading(false);
@@ -257,45 +236,6 @@ export const CeoReports: React.FC = () => {
           criterion_title: s.criterion?.title || '',
           criterion_description: s.criterion?.description || '',
           criterion_weight: s.criterion?.weight || 0,
-          score: s.score_1_to_5,
-          weighted_result: s.weighted_result,
-          type: s.criterion_type || 'general',
-        }));
-      }));
-      setScores(scoresMap);
-    } else if (activeTab === 'managers') {
-      // For managers, fetch employee evaluations where they are the manager
-      const { data: evals } = await supabase
-        .from('evaluations')
-        .select(`
-          id, status, final_score_500, final_score_5, percentage, general_rating,
-          manager_note, employee_note, ceo_comment, submitted_at,
-          period:evaluation_periods(year, month),
-          employee:employees(full_name, job_title)
-        `)
-        .eq('manager_id', selectedPerson!.id)
-        .in('period_id', periodIds)
-        .in('status', ['بانتظار الموافقة', 'موافقة', 'مرفوض', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
-        .order('submitted_at', { ascending: false });
-
-      const evalList = (evals as unknown as ManagerEvalRecord[]) || [];
-      setManagerEvals(evalList);
-
-      const scoresMap: Record<string, ScoreDetail[]> = {};
-      await Promise.all(evalList.map(async (ev) => {
-        const { data: scoreData } = await supabase
-          .from('evaluation_scores')
-          .select(`
-            score_1_to_5, weighted_result, criterion_type,
-            criterion:evaluation_criteria(title, description, weight),
-            dept_criterion:department_criteria(title, description, weight)
-          `)
-          .eq('evaluation_id', ev.id);
-
-        scoresMap[ev.id] = (scoreData || []).map((s: any) => ({
-          criterion_title: s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || ''),
-          criterion_description: s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || ''),
-          criterion_weight: s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0),
           score: s.score_1_to_5,
           weighted_result: s.weighted_result,
           type: s.criterion_type || 'general',
@@ -351,7 +291,7 @@ export const CeoReports: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const currentEvals: any[] = activeTab === 'directors' ? directorEvals : activeTab === 'managers' ? managerEvals : employeeEvals;
+  const currentEvals: any[] = activeTab === 'directors' ? directorEvals : employeeEvals;
 
   const summary = (periodMode === 'annual' || (periodMode === 'quarterly' && selectedQuarter > 0)) && currentEvals.length > 0
     ? {
@@ -386,12 +326,6 @@ export const CeoReports: React.FC = () => {
       subjectNote = ev.director_note;
       evaluatorLabel = 'ملاحظات المقيّم';
       subjectLabel = 'رد مدير الإدارة';
-    } else if (activeTab === 'managers') {
-      evaluatorNote = ev.manager_note;
-      subjectNote = ev.employee_note;
-      evaluatorLabel = 'ملاحظات المدير';
-      subjectLabel = 'رد الموظف';
-      subtitle = ev.employee ? `الموظف: ${ev.employee.full_name} — ${ev.employee.job_title}` : null;
     } else {
       evaluatorNote = ev.manager_note;
       subjectNote = ev.employee_note;
@@ -544,11 +478,11 @@ export const CeoReports: React.FC = () => {
     );
   };
 
-  const tabColor = activeTab === 'directors' ? 'purple' : activeTab === 'managers' ? 'blue' : 'emerald';
+  const tabColor = activeTab === 'directors' ? 'purple' : 'emerald';
 
-  const selectedLabel = activeTab === 'directors' ? 'اختر مدير الإدارة' : activeTab === 'managers' ? 'اختر مدير القسم' : 'اختر الموظف';
-  const emptyLabel = activeTab === 'directors' ? 'اختر مدير إدارة لعرض تقرير الأداء' : activeTab === 'managers' ? 'اختر مدير قسم لعرض تقرير الأداء' : 'اختر موظف لعرض تقرير الأداء';
-  const roleLabel = activeTab === 'directors' ? 'مدير إدارة' : activeTab === 'managers' ? 'مدير قسم' : 'موظف';
+  const selectedLabel = activeTab === 'directors' ? 'اختر مدير الإدارة' : 'اختر الموظف';
+  const emptyLabel = activeTab === 'directors' ? 'اختر مدير إدارة لعرض تقرير الأداء' : 'اختر موظف لعرض تقرير الأداء';
+  const roleLabel = activeTab === 'directors' ? 'مدير إدارة' : 'موظف';
 
   const selectedInfo = activeTab === 'employees'
     ? selectedEmployee
@@ -562,14 +496,13 @@ export const CeoReports: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">تقارير الأداء</h1>
-        <p className="text-gray-600 mt-2">تقارير مفصلة عن أداء مديري الإدارات ومدراء الأقسام والموظفين</p>
+        <p className="text-gray-600 mt-2">تقارير مفصلة عن أداء مديري الإدارات والموظفين</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200 pb-0">
         {([
           { key: 'directors' as ViewTab, label: 'مديري الإدارات', icon: <Crown className="h-4 w-4" /> },
-          { key: 'managers' as ViewTab, label: 'مدراء الأقسام', icon: <Users className="h-4 w-4" /> },
           { key: 'employees' as ViewTab, label: 'الموظفين', icon: <UserCheck className="h-4 w-4" /> },
         ]).map(tab => (
           <button
@@ -656,7 +589,7 @@ export const CeoReports: React.FC = () => {
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-right transition-colors border-b border-gray-50 last:border-0"
                         >
-                          <div className={`w-8 h-8 ${activeTab === 'directors' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'} rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold`}>
+                          <div className={`w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold`}>
                             {person.full_name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -777,7 +710,7 @@ export const CeoReports: React.FC = () => {
                   </div>
                   {activeTab === 'employees' && selectedInfo?.extra ? (
                     <div>
-                      <p className="text-sm text-emerald-600">القسم</p>
+                      <p className="text-sm text-emerald-600">الإدارة</p>
                       <p className="font-semibold text-emerald-900">{selectedInfo.extra}</p>
                     </div>
                   ) : (

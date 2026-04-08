@@ -10,11 +10,13 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptySta
 import { Save, Send, User, AlertTriangle, Lock, MessageSquare, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 
-interface ManagerInfo {
-  id: string;
+interface EmployeeInfo {
+  id: string;           // employees table id
+  user_id: string;
   full_name: string;
   job_title: string;
   email: string;
+  department_id: string;
   department_name?: string;
   employee_number?: string;
   eval_status?: string | null;
@@ -74,15 +76,15 @@ const getRatingBadgeVariant = (rating: string | null | undefined): 'success' | '
   return map[rating] || 'default';
 };
 
-export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ managerId: propManagerId }) => {
+export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ employeeId: propEmployeeId }) => {
   const { user } = useAuth();
-  const [allManagers, setAllManagers] = useState<ManagerInfo[]>([]);
-  const [selectedManagerId, setSelectedManagerId] = useState<string | undefined>(propManagerId);
-  const managerId = selectedManagerId;
+  const [allEmployees, setAllEmployees] = useState<EmployeeInfo[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(propEmployeeId);
+  const employeeId = selectedEmployeeId;
   const [searchQuery, setSearchQuery] = useState('');
   const [tablePeriods, setTablePeriods] = useState<EvaluationPeriod[]>([]);
   const [tablePeriodId, setTablePeriodId] = useState<string>('');
-  const [manager, setManager] = useState<ManagerInfo | null>(null);
+  const [employee, setEmployee] = useState<EmployeeInfo | null>(null);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [specificCriteria, setSpecificCriteria] = useState<Criterion[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -93,12 +95,12 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
   const [evaluationStatus, setEvaluationStatus] = useState('');
   const [existingEvaluationId, setExistingEvaluationId] = useState<string | null>(null);
   const [ceoComment, setCeoComment] = useState('');
-  const [managerReply, setManagerReply] = useState('');
+  const [employeeReply, setEmployeeReply] = useState('');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const [generalWeight, setGeneralWeight] = useState(50);
   const [specificWeight, setSpecificWeight] = useState(50);
-  const [managersLoading, setManagersLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] = useState(true);
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
 
   // Check if director has specific criteria
@@ -132,100 +134,81 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
     fetchPeriods();
   }, []);
 
-  // Fetch managers under this director's directorate
+  // Fetch employees under this director's directorate departments
   useEffect(() => {
-    const fetchAllManagers = async () => {
+    const fetchAllEmployees = async () => {
       if (!user || !tablePeriodId) return;
 
-      const { data: directorate } = await supabase
+      const { data: directorates } = await supabase
         .from('directorates')
-        .select('id')
-        .eq('director_id', user.id)
-        .maybeSingle();
+        .select('id, name')
+        .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`);
 
+      const directorate = directorates?.[0];
       if (!directorate) {
-        setManagersLoading(false);
+        setEmployeesLoading(false);
         return;
       }
 
-      const { data: departments } = await supabase
-        .from('departments')
-        .select('id, name, manager_id')
-        .eq('directorate_id', directorate.id);
-
-      if (!departments || departments.length === 0) {
-        setManagersLoading(false);
-        return;
-      }
-
-      const managerIds = departments.map(d => d.manager_id).filter(Boolean);
-      if (managerIds.length === 0) {
-        setManagersLoading(false);
-        return;
-      }
-
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, full_name, job_title, email')
-        .in('id', managerIds)
+      const { data: employees } = await supabase
+        .from('employees')
+        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id')
+        .eq('directorate_id', directorate.id)
         .order('full_name');
 
-      // Fetch eval statuses for selected period
+      if (!employees || employees.length === 0) {
+        setEmployeesLoading(false);
+        return;
+      }
+
+      // Get eval statuses for selected period
+      const empIds = employees.map(e => e.id);
       let evalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
       const { data: evals } = await supabase
-        .from('director_evaluations')
-        .select('director_id, status, general_rating, percentage')
-        .eq('evaluator_id', user.id)
+        .from('evaluations')
+        .select('employee_id, status, general_rating, percentage')
+        .eq('manager_id', user.id)
         .eq('period_id', tablePeriodId)
-        .eq('evaluation_type', 'director_manager');
+        .in('employee_id', empIds);
 
       if (evals) {
-        evalMap = new Map(evals.map(ev => [ev.director_id, {
+        evalMap = new Map(evals.map(ev => [ev.employee_id, {
           status: ev.status,
           rating: ev.general_rating,
           percentage: ev.percentage,
         }]));
       }
 
-      // Fetch employee_number from employees table via user_id
-      const { data: empRecords } = await supabase
-        .from('employees')
-        .select('user_id, employee_number')
-        .in('user_id', managerIds);
-      const empNumMap = new Map((empRecords || []).map(e => [e.user_id, e.employee_number]));
-
-      const deptMap = new Map(departments.map(d => [d.manager_id, d.name]));
-      setAllManagers((users || []).map(u => ({
-        ...u,
-        department_name: deptMap.get(u.id) || '',
-        employee_number: empNumMap.get(u.id) || '',
-        eval_status: evalMap.get(u.id)?.status || null,
-        eval_rating: evalMap.get(u.id)?.rating || null,
-        eval_percentage: evalMap.get(u.id)?.percentage || null,
+      setAllEmployees(employees.map(e => ({
+        ...e,
+        department_name: directorate.name,
+        eval_status: evalMap.get(e.id)?.status || null,
+        eval_rating: evalMap.get(e.id)?.rating || null,
+        eval_percentage: evalMap.get(e.id)?.percentage || null,
       })));
-      setManagersLoading(false);
+      setEmployeesLoading(false);
     };
-    fetchAllManagers();
+    fetchAllEmployees();
   }, [user, tablePeriodId]);
 
   useEffect(() => {
-    if (propManagerId) setSelectedManagerId(propManagerId);
-  }, [propManagerId]);
+    if (propEmployeeId) setSelectedEmployeeId(propEmployeeId);
+  }, [propEmployeeId]);
 
-  const fetchManager = useCallback(async () => {
-    if (!managerId) return;
-    const found = allManagers.find(m => m.id === managerId);
+  const fetchEmployee = useCallback(async () => {
+    if (!employeeId) return;
+    const found = allEmployees.find(e => e.id === employeeId);
     if (found) {
-      setManager(found);
+      setEmployee(found);
       return;
     }
     const { data } = await supabase
-      .from('users')
-      .select('id, full_name, job_title, email')
-      .eq('id', managerId)
+      .from('employees')
+      .select('id, user_id, full_name, email, job_title, department_id, employee_number')
+      .eq('id', employeeId)
       .single();
-    if (data) setManager({ ...data, department_name: '' });
-  }, [managerId, allManagers]);
+    if (data) setEmployee({ ...data, department_name: '' });
+  }, [employeeId, allEmployees]);
 
   const fetchActivePeriod = useCallback(async () => {
     const { data: periods } = await supabase
@@ -282,26 +265,25 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
   }, []);
 
   const loadExistingEvaluation = useCallback(async () => {
-    if (!managerId || !user || !activePeriod) return;
+    if (!employeeId || !user || !activePeriod) return;
 
     const { data: evaluation } = await supabase
-      .from('director_evaluations')
+      .from('evaluations')
       .select('*')
-      .eq('director_id', managerId)
-      .eq('evaluator_id', user.id)
+      .eq('employee_id', employeeId)
+      .eq('manager_id', user.id)
       .eq('period_id', activePeriod.id)
-      .eq('evaluation_type', 'director_manager')
       .maybeSingle();
 
     if (evaluation) {
       setExistingEvaluationId(evaluation.id);
-      setEvaluatorNotes(evaluation.evaluator_note || '');
+      setEvaluatorNotes(evaluation.manager_note || '');
       setEvaluationStatus(evaluation.status || '');
       setCeoComment(evaluation.ceo_comment || '');
-      setManagerReply(evaluation.director_note || '');
+      setEmployeeReply(evaluation.employee_note || '');
 
       const { data: evalScores } = await supabase
-        .from('director_evaluation_scores')
+        .from('evaluation_scores')
         .select('*')
         .eq('evaluation_id', evaluation.id);
 
@@ -317,31 +299,31 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
       setScores(scoresMap);
       setSpecificScores(specScoresMap);
     }
-  }, [managerId, user, activePeriod]);
+  }, [employeeId, user, activePeriod]);
 
   useEffect(() => {
-    if (user && managerId) {
+    if (user && employeeId) {
       setDataLoading(true);
       setScores({});
       setSpecificScores({});
       setEvaluatorNotes('');
       setEvaluationStatus('');
       setExistingEvaluationId(null);
-      setManager(null);
+      setEmployee(null);
       Promise.all([
-        fetchManager(),
+        fetchEmployee(),
         fetchActivePeriod(),
         fetchCriteria(),
         fetchSettings(),
       ]).finally(() => setDataLoading(false));
     }
-  }, [user, managerId]);
+  }, [user, employeeId]);
 
   useEffect(() => {
-    if (managerId && activePeriod && user) {
+    if (employeeId && activePeriod && user) {
       loadExistingEvaluation();
     }
-  }, [managerId, activePeriod, user, loadExistingEvaluation]);
+  }, [employeeId, activePeriod, user, loadExistingEvaluation]);
 
   const calculateResults = useCallback(() => {
     let generalRawTotal = 0;
@@ -373,7 +355,7 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
   }, [criteria, specificCriteria, scores, specificScores, generalWeight, specificWeight]);
 
   const handleSubmit = async (isDraft: boolean) => {
-    if (!managerId || !user || !activePeriod) return;
+    if (!employeeId || !user || !activePeriod) return;
 
     if (!isDraft) {
       const allGeneralScored = criteria.every(c => scores[c.id] && scores[c.id] > 0);
@@ -390,16 +372,16 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
       const results = calculateResults();
 
       const evaluationData = {
-        director_id: managerId,
-        evaluator_id: user.id,
+        employee_id: employeeId,
+        manager_id: user.id,
+        department_id: employee?.department_id || null,
         period_id: activePeriod.id,
-        evaluation_type: 'director_manager',
         status: isDraft ? 'مسودة' : 'بانتظار الموافقة',
         final_score_500: results.finalScore500,
         final_score_5: results.finalScore5,
         percentage: results.percentage,
         general_rating: results.generalRating,
-        evaluator_note: evaluatorNotes,
+        manager_note: evaluatorNotes,
         submitted_at: isDraft ? null : new Date().toISOString(),
       };
 
@@ -407,13 +389,13 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
 
       if (existingEvaluationId) {
         await supabase
-          .from('director_evaluations')
+          .from('evaluations')
           .update(evaluationData)
           .eq('id', existingEvaluationId);
         evaluationId = existingEvaluationId;
       } else {
         const { data: newEval } = await supabase
-          .from('director_evaluations')
+          .from('evaluations')
           .insert(evaluationData)
           .select()
           .single();
@@ -423,7 +405,7 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
 
       // Delete old scores and insert new ones
       await supabase
-        .from('director_evaluation_scores')
+        .from('evaluation_scores')
         .delete()
         .eq('evaluation_id', evaluationId);
 
@@ -457,13 +439,13 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
 
       const allScoreInserts = [...generalScoreInserts, ...specificScoreInserts];
       if (allScoreInserts.length > 0) {
-        await supabase.from('director_evaluation_scores').insert(allScoreInserts);
+        await supabase.from('evaluation_scores').insert(allScoreInserts);
       }
 
       setEvaluationStatus(isDraft ? 'مسودة' : 'بانتظار الموافقة');
       alert(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
     } catch (error) {
-      console.error('Error saving manager evaluation:', error);
+      console.error('Error saving employee evaluation:', error);
       alert('حدث خطأ أثناء حفظ التقييم');
     } finally {
       setLoading(false);
@@ -474,7 +456,7 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
   const scoredCount = criteria.filter(c => scores[c.id] && scores[c.id] > 0).length;
   const isReadOnly = evaluationStatus !== '' && evaluationStatus !== 'مسودة' && evaluationStatus !== 'مرفوض';
 
-  if (managersLoading) {
+  if (employeesLoading) {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -482,28 +464,28 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
     );
   }
 
-  const evaluatedCount = allManagers.filter(m => m.eval_status && m.eval_status !== 'مسودة').length;
-  const pendingCount = allManagers.filter(m => !m.eval_status || m.eval_status === 'مسودة').length;
-  const filteredManagers = allManagers.filter(m =>
-    m.full_name.includes(searchQuery) ||
-    m.email.includes(searchQuery) ||
-    (m.department_name || '').includes(searchQuery) ||
-    m.job_title.includes(searchQuery)
+  const evaluatedCount = allEmployees.filter(e => e.eval_status && e.eval_status !== 'مسودة').length;
+  const pendingCount = allEmployees.filter(e => !e.eval_status || e.eval_status === 'مسودة').length;
+  const filteredEmployees = allEmployees.filter(e =>
+    e.full_name.includes(searchQuery) ||
+    e.email.includes(searchQuery) ||
+    (e.department_name || '').includes(searchQuery) ||
+    e.job_title.includes(searchQuery)
   );
 
-  // Table view when no manager selected
+  // Table view when no employee selected
   const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
   const tablePeriodLabel = selectedTablePeriod
     ? `${monthLabels[selectedTablePeriod.month]} ${selectedTablePeriod.year}`
     : '';
 
-  if (!managerId) {
+  if (!employeeId) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">تقييم مدراء الأقسام</h1>
-            <p className="text-gray-600 mt-2">اختر مدير القسم لبدء أو عرض التقييم</p>
+            <h1 className="text-3xl font-bold text-gray-900">تقييم الموظفين</h1>
+            <p className="text-gray-600 mt-2">اختر الموظف لبدء أو عرض التقييم</p>
           </div>
           <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
             <Calendar className="h-5 w-5 text-blue-600" />
@@ -526,8 +508,8 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">إجمالي المدراء</p>
-                  <p className="text-2xl font-bold text-gray-900">{allManagers.length}</p>
+                  <p className="text-sm text-gray-600 mb-1">إجمالي الموظفين</p>
+                  <p className="text-2xl font-bold text-gray-900">{allEmployees.length}</p>
                 </div>
                 <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                   <Users className="h-6 w-6" />
@@ -566,7 +548,7 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
         {!hasSpecificCriteria && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم المدراء. اذهب إلى صفحة "المعايير الخاصة" لإضافتها.</p>
+            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم الموظفين. اذهب إلى صفحة "المعايير الخاصة" لإضافتها.</p>
           </div>
         )}
 
@@ -577,7 +559,7 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="بحث بالاسم أو البريد أو القسم..."
+                  placeholder="بحث بالاسم أو البريد أو الإدارة..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pr-10 pl-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
@@ -585,63 +567,63 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
               </div>
             </div>
 
-            {filteredManagers.length === 0 ? (
+            {filteredEmployees.length === 0 ? (
               <EmptyState
-                message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد مدراء أقسام تابعون لإدارتك حاليًا'}
+                message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد موظفون تابعون لإدارتك حاليًا'}
                 icon={<Users className="h-12 w-12 text-gray-400" />}
               />
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>المدير</TableHead>
+                    <TableHead>الموظف</TableHead>
                     <TableHead>الرقم الوظيفي</TableHead>
                     <TableHead>البريد الإلكتروني</TableHead>
-                    <TableHead>القسم</TableHead>
+                    <TableHead>الإدارة</TableHead>
                     <TableHead>التقييم الحالي</TableHead>
                     <TableHead>الإجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredManagers.map((mgr) => (
-                    <TableRow key={mgr.id}>
+                  {filteredEmployees.map((emp) => (
+                    <TableRow key={emp.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {mgr.full_name.charAt(0)}
+                            {emp.full_name.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900">{mgr.full_name}</span>
-                            {mgr.job_title && (
-                              <p className="text-xs text-gray-500">{mgr.job_title}</p>
+                            <span className="font-medium text-gray-900">{emp.full_name}</span>
+                            {emp.job_title && (
+                              <p className="text-xs text-gray-500">{emp.job_title}</p>
                             )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm font-mono">{mgr.employee_number || '-'}</span>
+                        <span className="text-gray-500 text-sm font-mono">{emp.employee_number || '-'}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm">{mgr.email}</span>
+                        <span className="text-gray-500 text-sm">{emp.email}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600 text-sm">{mgr.department_name}</span>
+                        <span className="text-gray-600 text-sm">{emp.department_name}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {mgr.eval_status && mgr.eval_status !== 'مسودة' && mgr.eval_rating ? (
-                            <Badge variant={getRatingBadgeVariant(mgr.eval_rating)} size="sm">
-                              {mgr.eval_rating}
+                          {emp.eval_status && emp.eval_status !== 'مسودة' && emp.eval_rating ? (
+                            <Badge variant={getRatingBadgeVariant(emp.eval_rating)} size="sm">
+                              {emp.eval_rating}
                             </Badge>
                           ) : (
-                            <Badge variant={getEvalStatusVariant(mgr.eval_status)} size="sm">
-                              {getEvalStatusLabel(mgr.eval_status)}
+                            <Badge variant={getEvalStatusVariant(emp.eval_status)} size="sm">
+                              {getEvalStatusLabel(emp.eval_status)}
                             </Badge>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {(!mgr.eval_status || mgr.eval_status === 'مسودة') && !hasSpecificCriteria ? (
+                        {(!emp.eval_status || emp.eval_status === 'مسودة') && !hasSpecificCriteria ? (
                           <div className="text-center">
                             <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-gray-400 cursor-not-allowed">
                               <ClipboardEdit className="h-4 w-4" />
@@ -651,17 +633,17 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
                           </div>
                         ) : (
                           <button
-                            onClick={() => setSelectedManagerId(mgr.id)}
+                            onClick={() => setSelectedEmployeeId(emp.id)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                              !mgr.eval_status || mgr.eval_status === 'مسودة' || mgr.eval_status === 'مرفوض'
+                              !emp.eval_status || emp.eval_status === 'مسودة' || emp.eval_status === 'مرفوض'
                                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
-                            {!mgr.eval_status || mgr.eval_status === 'مسودة' || mgr.eval_status === 'مرفوض' ? (
+                            {!emp.eval_status || emp.eval_status === 'مسودة' || emp.eval_status === 'مرفوض' ? (
                               <>
                                 <ClipboardEdit className="h-4 w-4" />
-                                <span>{mgr.eval_status === 'مسودة' ? 'متابعة التقييم' : mgr.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
+                                <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : emp.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
                               </>
                             ) : (
                               <>
@@ -689,13 +671,13 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
       <div className="flex items-center gap-4">
         <button
           onClick={() => {
-            setSelectedManagerId(undefined);
+            setSelectedEmployeeId(undefined);
             setScores({});
             setSpecificScores({});
             setEvaluatorNotes('');
             setEvaluationStatus('');
             setExistingEvaluationId(null);
-            setManager(null);
+            setEmployee(null);
           }}
           className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
         >
@@ -704,8 +686,8 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
         </button>
       </div>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقييم مدير القسم</h1>
-        <p className="text-gray-600 mt-2">تقييم أداء مدير القسم للفترة الحالية</p>
+        <h1 className="text-3xl font-bold text-gray-900">تقييم الموظف</h1>
+        <p className="text-gray-600 mt-2">تقييم أداء الموظف للفترة الحالية</p>
       </div>
 
       {/* Period Selector */}
@@ -719,8 +701,8 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
                 const p = allPeriods.find(pr => pr.id === e.target.value);
                 if (p) {
                   setActivePeriod(p);
-                  setGeneralWeight(p.general_weight ?? 50);
-                  setSpecificWeight(p.specific_weight ?? 50);
+                  setGeneralWeight((p as any).general_weight ?? 50);
+                  setSpecificWeight((p as any).specific_weight ?? 50);
                 }
               }}
               className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -785,8 +767,8 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
           </div>
         )}
 
-        {/* Manager Info */}
-        {manager && (
+        {/* Employee Info */}
+        {employee && (
           <Card>
             <CardBody className="bg-blue-50">
               <div className="flex items-center gap-4">
@@ -795,12 +777,12 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
                   <div>
-                    <p className="text-sm text-blue-600">اسم مدير القسم</p>
-                    <p className="font-semibold text-blue-900">{manager.full_name}</p>
+                    <p className="text-sm text-blue-600">اسم الموظف</p>
+                    <p className="font-semibold text-blue-900">{employee.full_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-blue-600">القسم</p>
-                    <p className="font-semibold text-blue-900">{manager.department_name || manager.job_title}</p>
+                    <p className="text-sm text-blue-600">الإدارة</p>
+                    <p className="font-semibold text-blue-900">{employee.department_name || employee.job_title}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">فترة التقييم</p>
@@ -963,21 +945,21 @@ export const ManagerEvaluationForm: React.FC<{ managerId?: string }> = ({ manage
               value={evaluatorNotes}
               onChange={(e) => setEvaluatorNotes(e.target.value)}
               rows={4}
-              placeholder="اكتب ملاحظاتك حول أداء مدير القسم..."
+              placeholder="اكتب ملاحظاتك حول أداء الموظف..."
               disabled={isReadOnly}
             />
           </CardBody>
         </Card>
 
-        {/* Manager Reply */}
-        {managerReply && (
+        {/* Employee Reply */}
+        {employeeReply && (
           <Card>
             <CardBody className="bg-teal-50 border-teal-100">
               <div className="flex items-center gap-2 mb-2">
                 <MessageSquare className="h-4 w-4 text-teal-600" />
-                <h2 className="text-sm font-bold text-teal-800">رد مدير القسم على التقييم</h2>
+                <h2 className="text-sm font-bold text-teal-800">رد الموظف على التقييم</h2>
               </div>
-              <p className="text-gray-800 leading-relaxed">{managerReply}</p>
+              <p className="text-gray-800 leading-relaxed">{employeeReply}</p>
             </CardBody>
           </Card>
         )}

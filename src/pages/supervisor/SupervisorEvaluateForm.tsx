@@ -30,8 +30,6 @@ interface Assignment {
   id: string;
   user_id: string;
   title: string | null;
-  start_date: string;
-  end_date: string;
   status: string;
   members?: AssignmentMember[];
 }
@@ -112,19 +110,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const [specificWeight, setSpecificWeight] = useState(50);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [noAssignment, setNoAssignment] = useState(false);
-
-  const today = new Date().toISOString().split('T')[0];
+  const [hasSupervisorCriteria, setHasSupervisorCriteria] = useState(true);
 
   // Fetch active assignments with their members
   const fetchAssignments = useCallback(async () => {
     if (!user) return [];
     const { data } = await supabase
       .from('supervisor_assignments')
-      .select('id, user_id, title, start_date, end_date, status')
+      .select('id, user_id, title, status')
       .eq('user_id', user.id)
-      .eq('status', 'active')
-      .lte('start_date', today)
-      .gte('end_date', today);
+      .eq('status', 'active');
 
     if (!data || data.length === 0) return [];
 
@@ -146,21 +141,12 @@ export const SupervisorEvaluateForm: React.FC = () => {
       ...a,
       members: membersByAssignment.get(a.id) || [],
     }));
-  }, [user, today]);
+  }, [user]);
 
-  // Filter periods to those within assignment date range
+  // Return all periods (no date filtering since assignments no longer have dates)
   const filterPeriodsForAssignments = useCallback((periods: EvaluationPeriod[], assignmentList: Assignment[]) => {
     if (assignmentList.length === 0) return [];
-    return periods.filter(p => {
-      // Check if the period's month/year falls within any assignment's date range
-      const periodDate = new Date(p.year, p.month - 1, 1);
-      const periodEndOfMonth = new Date(p.year, p.month, 0); // last day of month
-      return assignmentList.some(a => {
-        const startDate = new Date(a.start_date);
-        const endDate = new Date(a.end_date);
-        return periodEndOfMonth >= startDate && periodDate <= endDate;
-      });
-    });
+    return periods;
   }, []);
 
   // Fetch periods for table view
@@ -176,6 +162,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
         setEmployeesLoading(false);
         return;
       }
+
+      // Check if supervisor has added criteria for any active assignment
+      const assignmentIds = assignmentList.map(a => a.id);
+      const { data: supCriteria } = await supabase
+        .from('supervisor_criteria')
+        .select('id')
+        .in('assignment_id', assignmentIds)
+        .eq('is_active', true)
+        .limit(1);
+      setHasSupervisorCriteria(!!supCriteria && supCriteria.length > 0);
 
       const { data: periods } = await supabase
         .from('evaluation_periods')
@@ -277,14 +273,17 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   const fetchCriteria = useCallback(async () => {
     if (!employeeId) return;
-    const emp = allEmployees.find(e => e.id === employeeId);
-    const deptId = emp?.department_id;
+
+    // Find the assignment that includes this employee
+    const assignment = assignments.find(a =>
+      (a.members || []).some(m => m.employee_id === employeeId)
+    );
 
     const [{ data: general }, { data: specific }] = await Promise.all([
       supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
-      deptId
-        ? supabase.from('department_criteria').select('*')
-            .eq('department_id', deptId)
+      assignment
+        ? supabase.from('supervisor_criteria').select('*')
+            .eq('assignment_id', assignment.id)
             .eq('is_active', true)
             .order('order')
         : Promise.resolve({ data: [] }),
@@ -297,7 +296,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
       weight: s.weight,
       order: s.order,
     })));
-  }, [employeeId, allEmployees]);
+  }, [employeeId, assignments]);
 
   const fetchSettings = useCallback(async () => {
     const { data: period } = await supabase
@@ -345,8 +344,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
       const scoresMap: Record<string, number> = {};
       const specScoresMap: Record<string, number> = {};
       evalScores?.forEach((score: any) => {
-        if (score.criterion_type === 'specific' && score.department_criterion_id) {
-          specScoresMap[score.department_criterion_id] = score.score_1_to_5;
+        if (score.criterion_type === 'specific' && score.supervisor_criterion_id) {
+          specScoresMap[score.supervisor_criterion_id] = score.score_1_to_5;
         } else if (score.criterion_id) {
           scoresMap[score.criterion_id] = score.score_1_to_5;
         }
@@ -494,7 +493,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
         .map(criterion => ({
           evaluation_id: evaluationId,
           criterion_id: null,
-          department_criterion_id: criterion.id,
+          department_criterion_id: null,
+          supervisor_criterion_id: criterion.id,
           criterion_type: 'specific',
           score_1_to_5: specificScores[criterion.id],
           weighted_result: specificTotalWeight > 0
@@ -687,6 +687,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
           </Card>
         </div>
 
+        {!hasSupervisorCriteria && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <div>
+              <p className="text-amber-800 text-sm font-medium">يجب إضافة المعايير الخاصة بالمشرف أولاً</p>
+              <p className="text-amber-600 text-xs mt-0.5">لا يمكن تقييم الموظفين بدون إضافة معايير التقييم الخاصة بك. انتقل إلى صفحة "معايير المشرف" لإضافتها.</p>
+            </div>
+          </div>
+        )}
+
         <Card>
           <CardBody>
             <div className="flex items-center gap-3 mb-4">
@@ -694,7 +704,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="بحث بالاسم أو الرقم الوظيفي أو القسم..."
+                  placeholder="بحث بالاسم أو الرقم الوظيفي أو الإدارة..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pr-10 pl-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
@@ -704,7 +714,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
             {filteredEmployees.length === 0 ? (
               <EmptyState
-                message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد أعضاء فريق في الأقسام المعينة لك حاليًا'}
+                message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد أعضاء فريق في الإدارات المعينة لك حاليًا'}
                 icon={<Users className="h-12 w-12 text-gray-400" />}
               />
             ) : (
@@ -714,7 +724,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                     <TableHead>الموظف</TableHead>
                     <TableHead>الرقم الوظيفي</TableHead>
                     <TableHead>المسمى الوظيفي</TableHead>
-                    <TableHead>القسم</TableHead>
+                    <TableHead>الإدارة</TableHead>
                     <TableHead>التقييم الحالي</TableHead>
                     <TableHead>الإجراء</TableHead>
                   </TableRow>
@@ -755,26 +765,39 @@ export const SupervisorEvaluateForm: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => setSelectedEmployeeId(emp.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            !emp.eval_status || emp.eval_status === 'مسودة'
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {!emp.eval_status || emp.eval_status === 'مسودة' ? (
-                            <>
+                        {(!emp.eval_status || emp.eval_status === 'مسودة') && !hasSupervisorCriteria ? (
+                          <div className="text-center">
+                            <button
+                              disabled
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-gray-400 cursor-not-allowed"
+                            >
                               <ClipboardEdit className="h-4 w-4" />
-                              <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : 'تقييم'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="h-4 w-4" />
-                              <span>عرض التقييم</span>
-                            </>
-                          )}
-                        </button>
+                              <span>تقييم</span>
+                            </button>
+                            <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedEmployeeId(emp.id)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              !emp.eval_status || emp.eval_status === 'مسودة'
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {!emp.eval_status || emp.eval_status === 'مسودة' ? (
+                              <>
+                                <ClipboardEdit className="h-4 w-4" />
+                                <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : 'تقييم'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4" />
+                                <span>عرض التقييم</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -885,7 +908,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                     <p className="font-semibold text-blue-900">{employee.employee_number || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-blue-600">القسم</p>
+                    <p className="text-sm text-blue-600">الإدارة</p>
                     <p className="font-semibold text-blue-900">{employee.department_name || employee.job_title}</p>
                   </div>
                   <div>

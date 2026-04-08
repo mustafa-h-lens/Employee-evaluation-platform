@@ -440,7 +440,7 @@ export const Reports: React.FC = () => {
                     <p className="font-semibold text-blue-900">{selectedEmployee.job_title}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-blue-600">القسم</p>
+                    <p className="text-sm text-blue-600">الإدارة</p>
                     <p className="font-semibold text-blue-900">{selectedEmployee.department_name}</p>
                   </div>
                   <div>

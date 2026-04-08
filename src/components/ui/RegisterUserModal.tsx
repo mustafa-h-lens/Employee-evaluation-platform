@@ -5,7 +5,7 @@ import { Input, Select } from './Input';
 import { Button } from './Button';
 import { UserPlus, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 
-interface Department {
+interface DirectorateOption {
   id: string;
   name: string;
 }
@@ -13,13 +13,12 @@ interface Department {
 interface RegisterUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  role: 'employee' | 'manager';
+  role: 'employee';
   onSuccess: () => void;
 }
 
 export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, onClose, role, onSuccess }) => {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [managers, setManagers] = useState<{ id: string; full_name: string }[]>([]);
+  const [directorates, setDirectorates] = useState<DirectorateOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -29,8 +28,8 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
     password: '',
     full_name: '',
     job_title: '',
-    department_id: '',
-    manager_id: '',
+    directorate_id: '',
+
     phone: '',
     employee_number: '',
   });
@@ -38,23 +37,17 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
   useEffect(() => {
     if (isOpen) {
       setFeedback(null);
-      setForm({ email: '', password: '', full_name: '', job_title: '', department_id: '', manager_id: '', phone: '', employee_number: '' });
+      setForm({ email: '', password: '', full_name: '', job_title: '', directorate_id: '', phone: '', employee_number: '' });
       setShowPassword(false);
       if (role === 'employee') {
-        fetchDepartments();
-        fetchManagers();
+        fetchDirectorates();
       }
     }
   }, [isOpen, role]);
 
-  const fetchDepartments = async () => {
-    const { data } = await supabase.from('departments').select('id, name').order('name');
-    if (data) setDepartments(data);
-  };
-
-  const fetchManagers = async () => {
-    const { data } = await supabase.from('users').select('id, full_name').eq('role', 'manager').order('full_name');
-    if (data) setManagers(data);
+  const fetchDirectorates = async () => {
+    const { data } = await supabase.from('directorates').select('id, name').order('name');
+    if (data) setDirectorates(data);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -88,8 +81,8 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
           full_name: form.full_name,
           role,
           job_title: form.job_title || undefined,
-          department_id: form.department_id || undefined,
-          manager_id: form.manager_id || undefined,
+          directorate_id: form.directorate_id || undefined,
+
           phone: form.phone || undefined,
           employee_number: form.employee_number || undefined,
         }),
@@ -113,7 +106,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
     }
   };
 
-  const title = role === 'employee' ? 'تسجيل موظف جديد' : 'تسجيل مدير جديد';
+  const title = 'تسجيل موظف جديد';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
@@ -181,7 +174,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
             name="job_title"
             value={form.job_title}
             onChange={handleChange}
-            placeholder={role === 'employee' ? 'مثال: مطور برمجيات' : 'مثال: مدير تقنية المعلومات'}
+            placeholder="مثال: مطور برمجيات"
           />
 
           <Input
@@ -189,7 +182,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
             name="employee_number"
             value={form.employee_number}
             onChange={handleChange}
-            placeholder={role === 'employee' ? 'مثال: EMP017' : 'مثال: MGR001'}
+            placeholder="مثال: EMP017"
           />
 
           {role === 'employee' && (
@@ -205,13 +198,13 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
               />
 
               <Select
-                label="القسم"
-                name="department_id"
-                value={form.department_id}
+                label="الإدارة"
+                name="directorate_id"
+                value={form.directorate_id}
                 onChange={handleChange}
                 options={[
-                  { value: '', label: '-- اختر القسم --' },
-                  ...departments.map(d => ({ value: d.id, label: d.name })),
+                  { value: '', label: '-- اختر الإدارة --' },
+                  ...directorates.map(d => ({ value: d.id, label: d.name })),
                 ]}
               />
 

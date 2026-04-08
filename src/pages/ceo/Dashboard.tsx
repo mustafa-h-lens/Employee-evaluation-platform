@@ -76,7 +76,7 @@ export const CeoDashboard: React.FC = () => {
       bgColor: 'bg-purple-50'
     },
     {
-      title: 'عدد الأقسام',
+      title: 'عدد الإدارات',
       value: stats.departmentsCount,
       icon: <Building2 className="h-8 w-8" />,
       color: 'text-blue-600',
