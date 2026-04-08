@@ -241,6 +241,8 @@ function AppContent() {
           return <SupervisorEvaluateForm />;
         case '/supervisor-criteria':
           return <SupervisorCriteria />;
+        case '/director-org-structure':
+          return <OrgStructure />;
         case '/settings':
           return <ChangePassword />;
         default:
@@ -258,6 +260,8 @@ function AppContent() {
           return <SupervisorEvaluateForm />;
         case '/supervisor-criteria':
           return <SupervisorCriteria />;
+        case '/employee-org-structure':
+          return <OrgStructure />;
         case '/settings':
           return <ChangePassword />;
         default:

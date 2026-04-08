@@ -53,6 +53,7 @@ interface OrgUser {
 }
 interface Directorate {
   id: string; name: string; director_id: string | null; director?: OrgUser | null;
+  secondary_director_id?: string | null; secondary_director?: OrgUser | null;
 }
 interface Employee {
   id: string; user_id: string; full_name: string; email: string;
@@ -575,18 +576,32 @@ const FlowChart: React.FC<FlowChartProps> = ({
         position: { x: 0, y: 0 },
         data: {
           name: dir.name,
-          directorName: dir.director?.full_name,
-          directorIsCeo: dir.director?.role === 'ceo',
+          directorName: [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') || null,
+          directorIsCeo: dir.director?.role === 'ceo' || dir.secondary_director?.role === 'ceo',
           empCount: dirEmps.length,
           expanded,
           onToggle: () => onToggleDir(dir.id),
-          onShowDetails: dir.director ? () => {
-            onClickPerson({
-              name: dir.director!.full_name, email: dir.director!.email, role: dir.director!.role || 'director',
-              jobTitle: dir.director!.job_title, phone: dir.director!.phone,
-              directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
-              userId: dir.director!.id, teamSize: dirEmps.length,
-            });
+          onShowDetails: (dir.director || dir.secondary_director) ? () => {
+            const directors = [dir.director, dir.secondary_director].filter(Boolean) as OrgUser[];
+            if (directors.length === 1) {
+              const d = directors[0];
+              onClickPerson({
+                name: d.full_name, email: d.email, role: d.role || 'director',
+                jobTitle: d.job_title, phone: d.phone,
+                directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
+                userId: d.id, teamSize: dirEmps.length,
+              });
+            } else {
+              onClickPerson({
+                name: directors.map(d => d.full_name).join(' و '),
+                email: directors.map(d => d.email).filter(Boolean).join(' | '),
+                role: directors.some(d => d.role === 'ceo') ? 'ceo' : 'director',
+                jobTitle: directors.map(d => d.job_title).filter(Boolean).join(' | ') || undefined,
+                phone: directors.map(d => d.phone).filter(Boolean).join(' | ') || undefined,
+                directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
+                userId: directors[0].id, teamSize: dirEmps.length,
+              });
+            }
           } : undefined,
         },
       });
@@ -614,7 +629,7 @@ const FlowChart: React.FC<FlowChartProps> = ({
                 name: emp.full_name, email: emp.email, role: 'employee',
                 jobTitle: emp.job_title, phone: emp.phone,
                 directorate: dir.name, employeeNumber: emp.employee_number,
-                reportsTo: dir.director?.full_name, userId: emp.user_id,
+                reportsTo: [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') || undefined, userId: emp.user_id,
               }),
             },
           });
@@ -1025,7 +1040,7 @@ export const OrgStructure: React.FC = () => {
     try {
       // Use exact same FK join pattern as admin/Directorates.tsx (only full_name — proven to work)
       const [directoratesRes, , employeesRes, supervisorRes] = await Promise.all([
-        supabase.from('directorates').select('id, name, director_id, director:users!directorates_director_id_fkey(full_name)'),
+        supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)'),
         supabase.from('departments').select('id, name, manager_id, directorate_id').eq('status', 'active'),
         supabase.from('employees').select('id, user_id, full_name, email, job_title, phone, employee_number, department_id, directorate_id, manager_id').eq('status', 'active'),
         supabase.from('supervisor_assignments').select('id, user_id, title, status, start_date, end_date').eq('status', 'active'),
@@ -1044,28 +1059,38 @@ export const OrgStructure: React.FC = () => {
       setCeoUsers(ceoUsers_);
 
       // Build director OrgUser from FK join (full_name) + director_id
+      const buildDirectorUser = (id: string | null, joinData: any): OrgUser | null => {
+        if (!id || !joinData?.full_name) return null;
+        return { id, full_name: joinData.full_name, email: '', role: ceoIdSet.has(id) ? 'ceo' : 'director' };
+      };
+
       const dirs = dirData.map((d: any) => ({
         id: d.id,
         name: d.name,
         director_id: d.director_id,
-        director: d.director_id && d.director?.full_name ? {
-          id: d.director_id,
-          full_name: d.director.full_name,
-          email: '',
-          role: ceoIdSet.has(d.director_id) ? 'ceo' : 'director',
-        } as OrgUser : null,
+        director: buildDirectorUser(d.director_id, d.director),
+        secondary_director_id: d.secondary_director_id || null,
+        secondary_director: buildDirectorUser(d.secondary_director_id, d.secondary_director),
       })) as Directorate[];
 
       // Enrich director data from employee records
       dirs.forEach(d => {
-        if (d.director) {
-          const empRecord = emps.find(e => e.user_id === d.director_id);
-          if (empRecord) {
-            d.director.email = empRecord.email;
-            d.director.job_title = empRecord.job_title;
-            d.director.phone = empRecord.phone;
+        [d.director, d.secondary_director].forEach((dir, i) => {
+          if (dir) {
+            const dirId = i === 0 ? d.director_id : d.secondary_director_id;
+            const empRecord = emps.find(e => e.user_id === dirId);
+            if (empRecord) {
+              dir.email = empRecord.email;
+              dir.job_title = empRecord.job_title;
+              dir.phone = empRecord.phone;
+            }
+            // Also enrich from CEO user data
+            const ceoRecord = ceoUsers_.find(c => c.id === dirId);
+            if (ceoRecord && !dir.email) {
+              dir.email = ceoRecord.email;
+            }
           }
-        }
+        });
       });
 
       setDirectorates(dirs);

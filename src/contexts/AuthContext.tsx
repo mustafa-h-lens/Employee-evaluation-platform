@@ -75,12 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
     }
 
-    // Detect first login: created_at and last_sign_in_at within 5 seconds of each other
+    // Show password change reminder until user dismisses it
     if (data.user) {
-      const created = new Date(data.user.created_at).getTime();
-      const lastSignIn = data.user.last_sign_in_at ? new Date(data.user.last_sign_in_at).getTime() : created;
       const dismissed = localStorage.getItem(`password_banner_dismissed_${data.user.id}`);
-      if (Math.abs(lastSignIn - created) < 5000 && !dismissed) {
+      if (!dismissed) {
         setIsFirstLogin(true);
       }
     }
