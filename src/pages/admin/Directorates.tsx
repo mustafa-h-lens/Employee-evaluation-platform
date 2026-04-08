@@ -8,7 +8,7 @@ import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import {
   Plus, CreditCard as Edit, Trash2, Landmark, AlertTriangle,
-  ChevronDown, ChevronUp, UserPlus, Eye, EyeOff, Crown, Users, ArrowLeftRight
+  ChevronDown, ChevronUp, UserPlus, Crown, Users, ArrowLeftRight
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -51,9 +51,8 @@ export const Directorates: React.FC = () => {
 
   // Register director modal
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [registerForm, setRegisterForm] = useState({ full_name: '', email: '', password: '', job_title: '', employee_number: '' });
+  const [registerForm, setRegisterForm] = useState({ full_name: '', email: '', job_title: '', employee_number: '' });
   const [registerFeedback, setRegisterFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Edit director modal
@@ -176,7 +175,7 @@ export const Directorates: React.FC = () => {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=create-user`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...registerForm, role: 'director' }),
+        body: JSON.stringify({ ...registerForm, password: '12345678', role: 'director' }),
       });
 
       const result = await response.json();
@@ -185,7 +184,7 @@ export const Directorates: React.FC = () => {
       if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'تسجيل مدير إدارة', entity_type: 'users', entity_id: result.user?.id, details: { full_name: registerForm.full_name } });
 
       setIsRegisterOpen(false);
-      setRegisterForm({ full_name: '', email: '', password: '', job_title: '', employee_number: '' });
+      setRegisterForm({ full_name: '', email: '', job_title: '', employee_number: '' });
       fetchData();
     } catch (err) {
       setRegisterFeedback({ type: 'error', message: err instanceof Error ? err.message : 'حدث خطأ' });
@@ -526,15 +525,6 @@ export const Directorates: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <Input label="الاسم الكامل" name="full_name" value={registerForm.full_name} onChange={(e) => setRegisterForm(prev => ({ ...prev, full_name: e.target.value }))} required placeholder="أحمد محمد" />
             <Input label="البريد الإلكتروني" name="new-email" type="email" value={registerForm.email} onChange={(e) => setRegisterForm(prev => ({ ...prev, email: e.target.value }))} autoComplete="off" required placeholder="example@h-lens.co" />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-              <div className="relative">
-                <input name="new-password" type={showPassword ? 'text' : 'password'} value={registerForm.password} onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))} placeholder="كلمة مرور قوية" autoComplete="new-password" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
             <Input label="المسمى الوظيفي" value={registerForm.job_title} onChange={(e) => setRegisterForm(prev => ({ ...prev, job_title: e.target.value }))} placeholder="مدير إدارة التقنية" />
             <Input label="الرقم الوظيفي" value={registerForm.employee_number} onChange={(e) => setRegisterForm(prev => ({ ...prev, employee_number: e.target.value }))} placeholder="DIR001" />
           </div>

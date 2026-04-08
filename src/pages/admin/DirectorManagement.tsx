@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Users, UserPlus, CreditCard as Edit, Eye, EyeOff, Crown, FileCheck, FileClock, AlertTriangle, Trash2 } from 'lucide-react';
+import { Users, UserPlus, CreditCard as Edit, Crown, FileCheck, FileClock, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface Director {
   id: string;
@@ -31,11 +31,9 @@ export const DirectorManagement: React.FC = () => {
 
   // Register modal
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [registerForm, setRegisterForm] = useState({
     full_name: '',
     email: '',
-    password: '',
     job_title: '',
     employee_number: '',
   });
@@ -146,7 +144,7 @@ export const DirectorManagement: React.FC = () => {
         },
         body: JSON.stringify({
           email: registerForm.email,
-          password: registerForm.password,
+          password: '12345678',
           full_name: registerForm.full_name,
           role: 'director',
           job_title: registerForm.job_title || undefined,
@@ -171,7 +169,7 @@ export const DirectorManagement: React.FC = () => {
       }
 
       setIsRegisterModalOpen(false);
-      setRegisterForm({ full_name: '', email: '', password: '', job_title: '', employee_number: '' });
+      setRegisterForm({ full_name: '', email: '', job_title: '', employee_number: '' });
       fetchData();
     } catch (err) {
       setRegisterFeedback({
@@ -279,7 +277,7 @@ export const DirectorManagement: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">مديري الإدارات</h1>
           <p className="text-gray-600 mt-2">إدارة وتسجيل مديري الإدارات في المنظمة</p>
         </div>
-        <Button onClick={() => { setIsRegisterModalOpen(true); setRegisterFeedback(null); setRegisterForm({ full_name: '', email: '', password: '', job_title: '' }); setShowPassword(false); }} className="flex items-center gap-2">
+        <Button onClick={() => { setIsRegisterModalOpen(true); setRegisterFeedback(null); setRegisterForm({ full_name: '', email: '', job_title: '' }); }} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
           <span>تسجيل مدير إدارة</span>
         </Button>
@@ -438,29 +436,6 @@ export const DirectorManagement: React.FC = () => {
               autoComplete="off"
               required
             />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-              <div className="relative">
-                <input
-                  name="new-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={registerForm.password}
-                  onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="أدخل كلمة مرور قوية"
-                  autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
 
             <Input
               label="المسمى الوظيفي"
