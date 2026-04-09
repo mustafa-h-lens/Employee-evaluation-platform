@@ -57,6 +57,8 @@ export const Directorates: React.FC = () => {
   const [isDirModalOpen, setIsDirModalOpen] = useState(false);
   const [editingDir, setEditingDir] = useState<Directorate | null>(null);
   const [dirForm, setDirForm] = useState({ name: '', director_id: '', secondary_director_id: '' });
+  const [newDeptNames, setNewDeptNames] = useState<string[]>([]);
+  const [newDeptInput, setNewDeptInput] = useState('');
 
   // Register director modal
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -130,11 +132,24 @@ export const Directorates: React.FC = () => {
       } else {
         const { data } = await supabase.from('directorates').insert(payload).select().single();
         if (user && data) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'إضافة إدارة', entity_type: 'directorates', entity_id: data.id, details: payload });
+
+        // Create departments for the new directorate
+        if (data && newDeptNames.length > 0) {
+          const deptPayloads = newDeptNames.map(name => ({ name, directorate_id: data.id, status: 'active' }));
+          await supabase.from('departments').insert(deptPayloads);
+          if (user) {
+            for (const dp of deptPayloads) {
+              await supabase.from('audit_logs').insert({ user_id: user.id, action: 'إضافة قسم', entity_type: 'departments', entity_id: data.id, details: dp });
+            }
+          }
+        }
       }
 
       setIsDirModalOpen(false);
       setEditingDir(null);
       setDirForm({ name: '', director_id: '', secondary_director_id: '' });
+      setNewDeptNames([]);
+      setNewDeptInput('');
       fetchData();
     } catch (error: any) {
       alert('حدث خطأ: ' + (error?.message || ''));
@@ -311,7 +326,7 @@ export const Directorates: React.FC = () => {
             <UserPlus className="h-4 w-4" />
             <span>تسجيل مدير جديد</span>
           </Button>
-          <Button onClick={() => { setEditingDir(null); setDirForm({ name: '', director_id: '', secondary_director_id: '' }); setIsDirModalOpen(true); }} className="flex items-center gap-2">
+          <Button onClick={() => { setEditingDir(null); setDirForm({ name: '', director_id: '', secondary_director_id: '' }); setNewDeptNames([]); setNewDeptInput(''); setIsDirModalOpen(true); }} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             <span>إضافة إدارة</span>
           </Button>
@@ -596,44 +611,86 @@ export const Directorates: React.FC = () => {
               ))}
             </select>
           </div>
-          {/* Departments section (only when editing existing directorate) */}
-          {editingDir && (() => {
-            const dirDepts = getDeptsByDirectorate(editingDir.id);
-            return (
-              <div className="border border-teal-200 rounded-lg p-3 bg-teal-50/50">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-teal-800 flex items-center gap-1.5">
-                    <Building2 className="h-4 w-4" />
-                    أقسام الإدارة ({dirDepts.length})
-                  </p>
-                  <button type="button" onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: editingDir.id }); setIsDeptModalOpen(true); }}
-                    className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-100 transition-colors">
-                    <Plus className="h-3.5 w-3.5" />إضافة قسم
-                  </button>
-                </div>
-                {dirDepts.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {dirDepts.map(dept => (
-                      <div key={dept.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-100">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-3.5 w-3.5 text-teal-500" />
-                          <span className="text-sm font-medium text-gray-800">{dept.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button type="button" onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
-                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
-                          <button type="button" onClick={() => setDeleteDept(dept)}
-                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </div>
+          {/* Departments section */}
+          <div className="border border-teal-200 rounded-lg p-3 bg-teal-50/50">
+            <p className="text-sm font-medium text-teal-800 flex items-center gap-1.5 mb-2">
+              <Building2 className="h-4 w-4" />
+              أقسام الإدارة {editingDir ? `(${getDeptsByDirectorate(editingDir.id).length})` : newDeptNames.length > 0 ? `(${newDeptNames.length})` : ''}
+            </p>
+
+            {/* Existing departments (edit mode) */}
+            {editingDir && (() => {
+              const dirDepts = getDeptsByDirectorate(editingDir.id);
+              return dirDepts.length > 0 ? (
+                <div className="space-y-1.5 mb-2">
+                  {dirDepts.map(dept => (
+                    <div key={dept.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-100">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-teal-500" />
+                        <span className="text-sm font-medium text-gray-800">{dept.name}</span>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => setDeleteDept(dept)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+
+            {/* New departments list (add mode) */}
+            {!editingDir && newDeptNames.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {newDeptNames.map((name, i) => (
+                  <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-100">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-3.5 w-3.5 text-teal-500" />
+                      <span className="text-sm font-medium text-gray-800">{name}</span>
+                    </div>
+                    <button type="button" onClick={() => setNewDeptNames(prev => prev.filter((_, idx) => idx !== i))}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
-                ) : (
-                  <p className="text-xs text-teal-600/70 text-center py-1">لا يوجد أقسام — أضف قسماً جديداً</p>
-                )}
+                ))}
               </div>
-            );
-          })()}
+            )}
+
+            {/* Add department input */}
+            {editingDir ? (
+              <button type="button" onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: editingDir.id }); setIsDeptModalOpen(true); }}
+                className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-100 transition-colors">
+                <Plus className="h-3.5 w-3.5" />إضافة قسم
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newDeptInput}
+                  onChange={(e) => setNewDeptInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newDeptInput.trim()) {
+                      e.preventDefault();
+                      setNewDeptNames(prev => [...prev, newDeptInput.trim()]);
+                      setNewDeptInput('');
+                    }
+                  }}
+                  placeholder="اسم القسم..."
+                  className="flex-1 px-3 py-1.5 text-sm border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-white"
+                />
+                <button type="button" onClick={() => {
+                  if (newDeptInput.trim()) {
+                    setNewDeptNames(prev => [...prev, newDeptInput.trim()]);
+                    setNewDeptInput('');
+                  }
+                }}
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors flex items-center gap-1">
+                  <Plus className="h-3.5 w-3.5" />إضافة
+                </button>
+              </div>
+            )}
+          </div>
 
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setIsDirModalOpen(false)}>إلغاء</Button>
