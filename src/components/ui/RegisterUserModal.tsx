@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Modal, ModalFooter } from './Modal';
-import { Input, Select } from './Input';
+import { Input } from './Input';
 import { Button } from './Button';
-import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertCircle, Plus, X } from 'lucide-react';
 
 interface DirectorateOption {
   id: string;
@@ -14,6 +14,12 @@ interface DepartmentOption {
   id: string;
   name: string;
   directorate_id: string;
+}
+
+interface DirAssignment {
+  directorate_id: string;
+  department_id: string;
+  is_primary: boolean;
 }
 
 interface RegisterUserModalProps {
@@ -33,16 +39,19 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
     email: '',
     full_name: '',
     job_title: '',
-    directorate_id: '',
-    department_id: '',
     phone: '',
     employee_number: '',
   });
 
+  const [dirAssignments, setDirAssignments] = useState<DirAssignment[]>([
+    { directorate_id: '', department_id: '', is_primary: true }
+  ]);
+
   useEffect(() => {
     if (isOpen) {
       setFeedback(null);
-      setForm({ email: '', full_name: '', job_title: '', directorate_id: '', department_id: '', phone: '', employee_number: '' });
+      setForm({ email: '', full_name: '', job_title: '', phone: '', employee_number: '' });
+      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
       if (role === 'employee') {
         fetchDirectorates();
       }
@@ -58,15 +67,41 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
     if (deptRes.data) setDepartments(deptRes.data);
   };
 
-  const filteredDepartments = departments.filter(d => d.directorate_id === form.directorate_id);
+  const getFilteredDepts = (directorateId: string) => {
+    return departments.filter(d => d.directorate_id === directorateId);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'directorate_id') {
-      setForm(prev => ({ ...prev, directorate_id: value, department_id: '' }));
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }));
-    }
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addDirAssignment = () => {
+    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false }]);
+  };
+
+  const removeDirAssignment = (index: number) => {
+    setDirAssignments(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length > 0 && !next.some(a => a.is_primary)) {
+        next[0].is_primary = true;
+      }
+      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true }];
+    });
+  };
+
+  const updateDirAssignment = (index: number, field: string, value: string | boolean) => {
+    setDirAssignments(prev => {
+      const next = [...prev];
+      if (field === 'is_primary' && value === true) {
+        next.forEach((a, i) => { a.is_primary = i === index; });
+      } else if (field === 'directorate_id') {
+        next[index] = { ...next[index], directorate_id: value as string, department_id: '' };
+      } else {
+        next[index] = { ...next[index], [field]: value };
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,6 +115,9 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
         setFeedback({ type: 'error', message: 'الجلسة منتهية، يرجى تسجيل الدخول مجددًا' });
         return;
       }
+
+      const primary = dirAssignments.find(a => a.is_primary) || dirAssignments[0];
+      const validAssignments = dirAssignments.filter(a => a.directorate_id);
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=create-user`;
 
@@ -95,10 +133,11 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
           full_name: form.full_name,
           role,
           job_title: form.job_title || undefined,
-          directorate_id: form.directorate_id || undefined,
-          department_id: form.department_id || undefined,
+          directorate_id: primary?.directorate_id || undefined,
+          department_id: primary?.department_id || undefined,
           phone: form.phone || undefined,
           employee_number: form.employee_number || undefined,
+          dir_assignments: validAssignments.length > 0 ? validAssignments : undefined,
         }),
       });
 
@@ -178,7 +217,6 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
 
           {role === 'employee' && (
             <>
-
               <Input
                 label="رقم الجوال"
                 name="phone"
@@ -187,33 +225,95 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                 onChange={handleChange}
                 placeholder="+966501234567"
               />
-
-              <Select
-                label="الإدارة"
-                name="directorate_id"
-                value={form.directorate_id}
-                onChange={handleChange}
-                options={[
-                  { value: '', label: '-- اختر الإدارة --' },
-                  ...directorates.map(d => ({ value: d.id, label: d.name })),
-                ]}
-              />
-
-              {filteredDepartments.length > 0 && (
-                <Select
-                  label="القسم"
-                  name="department_id"
-                  value={form.department_id}
-                  onChange={handleChange}
-                  options={[
-                    { value: '', label: '-- اختر القسم (اختياري) --' },
-                    ...filteredDepartments.map(d => ({ value: d.id, label: d.name })),
-                  ]}
-                />
-              )}
             </>
           )}
         </div>
+
+        {/* Multi-directorate assignments */}
+        {role === 'employee' && (
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-800">الإدارات والأقسام</h3>
+              <button
+                type="button"
+                onClick={addDirAssignment}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                إضافة إدارة أخرى
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {dirAssignments.map((assignment, index) => {
+                const filteredDepts = getFilteredDepts(assignment.directorate_id);
+                return (
+                  <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-purple-200 bg-purple-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="primary_dir_register"
+                          checked={assignment.is_primary}
+                          onChange={() => updateDirAssignment(index, 'is_primary', true)}
+                          className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-xs text-gray-600">
+                          {assignment.is_primary ? (
+                            <span className="text-purple-700 font-medium">الإدارة الرئيسية</span>
+                          ) : 'تعيين كرئيسية'}
+                        </span>
+                      </label>
+                      {dirAssignments.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeDirAssignment(index)}
+                          className="text-red-400 hover:text-red-600 p-0.5"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">الإدارة</label>
+                        <select
+                          value={assignment.directorate_id}
+                          onChange={(e) => updateDirAssignment(index, 'directorate_id', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">اختر الإدارة</option>
+                          {directorates.map((dir) => (
+                            <option key={dir.id} value={dir.id}>
+                              {dir.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {filteredDepts.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">القسم</label>
+                          <select
+                            value={assignment.department_id}
+                            onChange={(e) => updateDirAssignment(index, 'department_id', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">-- اختر القسم (اختياري) --</option>
+                            {filteredDepts.map((dept) => (
+                              <option key={dept.id} value={dept.id}>
+                                {dept.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <ModalFooter>
           <Button type="button" variant="secondary" onClick={onClose}>

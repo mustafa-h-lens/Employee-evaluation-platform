@@ -1,20 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import ReactFlow, {
-  Node,
-  Edge,
-  Position,
-  useNodesState,
-  useEdgesState,
-  Controls,
-  MiniMap,
-  Background,
-  BackgroundVariant,
-  ReactFlowProvider,
-  useReactFlow,
-  Handle,
-} from 'reactflow';
-import dagre from 'dagre';
-import 'reactflow/dist/style.css';
+// ReactFlow and dagre removed — replaced with pure HTML/CSS org tree
 
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,9 +20,6 @@ import {
   Network,
   Building2,
   ChevronDown,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
   Maximize2,
   Minimize2,
   Target,
@@ -108,350 +90,6 @@ const initials = (n: string) => {
   const p = n.trim().split(/\s+/);
   return p.length >= 2 ? p[0][0] + p[p.length - 1][0] : p[0][0];
 };
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Layout Constants (declared early so node components can reference them)
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const NODE_WIDTH_CEO = 200;
-const NODE_HEIGHT_CEO = 180;
-const NODE_WIDTH_DIR = 260;
-const NODE_HEIGHT_DIR = 90;
-const NODE_WIDTH_EMP = 180;
-const NODE_HEIGHT_EMP = 160;
-const NODE_WIDTH_DEPT = 220;
-const NODE_HEIGHT_DEPT = 70;
-const NODE_WIDTH_GROUP = 220;
-const NODE_HEIGHT_GROUP = 50;
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Custom React Flow Node Components
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const PersonNode = ({ data, id }: { data: any; id: string }) => {
-  const c = getColor(data.role);
-  const isHovered = data._hoveredNodeId === id;
-  const isConnected = data._connectedNodeIds?.has(id);
-  const isDimmed = data._hoveredNodeId && data._hoveredNodeId !== id && !isConnected;
-  const w = data.role === 'ceo' ? NODE_WIDTH_CEO : NODE_WIDTH_EMP;
-
-  return (
-    <div style={{ width: w, position: 'relative' }}>
-      <Handle type="target" position={Position.Top} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-      <div
-        onClick={data.onClick}
-        onMouseEnter={() => data._onNodeHover?.(id)}
-        onMouseLeave={() => data._onNodeHover?.(null)}
-        className="cursor-pointer"
-        style={{
-          width: '100%',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: isHovered ? 'translateY(-4px) scale(1.03)' : 'translateY(0) scale(1)',
-          opacity: isDimmed ? 0.35 : 1,
-          filter: isHovered ? `drop-shadow(0 8px 24px ${c.glow})` : 'none',
-        }}
-      >
-        <div
-          className="bg-white rounded-2xl overflow-hidden"
-          style={{
-            border: `2px solid ${isHovered ? c.edge : c.border}`,
-            boxShadow: isHovered
-              ? `0 12px 32px -4px ${c.glow}, 0 4px 12px -2px rgba(0,0,0,0.08)`
-              : '0 2px 8px -1px rgba(0,0,0,0.08), 0 1px 3px -1px rgba(0,0,0,0.06)',
-          }}
-        >
-          <div className={`h-1.5 bg-gradient-to-l ${c.gradient}`} style={{ transition: 'height 0.2s', height: isHovered ? 3 : 6 }} />
-          <div className="px-3 pt-3 pb-2.5 flex flex-col items-center text-center">
-            <div className="relative mb-2">
-              <div
-                className={`rounded-full bg-gradient-to-br ${c.gradient} flex items-center justify-center ring-2 ring-white`}
-                style={{
-                  width: data.role === 'ceo' ? 48 : 40,
-                  height: data.role === 'ceo' ? 48 : 40,
-                  boxShadow: isHovered ? `0 0 20px ${c.glow}` : '0 4px 12px rgba(0,0,0,0.15)',
-                  transition: 'box-shadow 0.3s',
-                }}
-              >
-                <span className="text-white font-bold" style={{ fontSize: data.role === 'ceo' ? 16 : 13 }}>{initials(data.name)}</span>
-              </div>
-              {data.isSupervisor && (
-                <div className="absolute -bottom-1 -left-1 w-5 h-5 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center ring-2 ring-white shadow">
-                  <Shield className="h-2.5 w-2.5 text-white" />
-                </div>
-              )}
-            </div>
-            <p className="text-[12px] font-bold text-gray-900 leading-tight truncate w-full">{data.name}</p>
-            <p className="text-[10px] text-gray-500 truncate w-full mt-0.5">{data.jobTitle || roleLabel(data.role)}</p>
-            <div className="flex items-center gap-1 mt-1.5 flex-wrap justify-center">
-              <span className={`inline-flex items-center gap-0.5 text-[8px] font-bold text-white ${c.badge} px-1.5 py-0.5 rounded-full`}>
-                <RoleIcon role={data.role} className="h-2.5 w-2.5" />
-                {roleLabel(data.role)}
-              </span>
-              {data.isSupervisor && (
-                <span className="inline-flex items-center gap-0.5 text-[8px] font-bold text-white bg-orange-500 px-1.5 py-0.5 rounded-full">
-                  <Shield className="h-2.5 w-2.5" />مشرف
-                </span>
-              )}
-            </div>
-            {data.teamSize > 0 && (
-              <div className="mt-1 flex items-center gap-1 text-[9px] text-gray-400">
-                <Users className="h-3 w-3" /><span>{data.teamSize} موظف</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-    </div>
-  );
-};
-
-const DirectorateNodeComponent = ({ data, id }: { data: any; id: string }) => {
-  const isHovered = data._hoveredNodeId === id;
-  const isConnected = data._connectedNodeIds?.has(id);
-  const isDimmed = data._hoveredNodeId && data._hoveredNodeId !== id && !isConnected;
-
-  return (
-    <div style={{ width: NODE_WIDTH_DIR, position: 'relative' }}>
-      <Handle type="target" position={Position.Top} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-      <div
-        onClick={data.onShowDetails}
-        onMouseEnter={() => data._onNodeHover?.(id)}
-        onMouseLeave={() => data._onNodeHover?.(null)}
-        className="cursor-pointer"
-        style={{
-          width: '100%',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: isHovered ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
-          opacity: isDimmed ? 0.35 : 1,
-          filter: isHovered ? 'drop-shadow(0 8px 20px rgba(139,92,246,0.3))' : 'none',
-        }}
-      >
-        <div
-          className="flex flex-col px-4 py-3 rounded-xl bg-purple-50 text-right"
-          style={{
-            border: `2px solid ${isHovered ? '#8b5cf6' : '#a78bfa'}`,
-            boxShadow: isHovered
-              ? '0 10px 28px -4px rgba(139,92,246,0.35), 0 4px 12px -2px rgba(0,0,0,0.06)'
-              : '0 2px 8px -1px rgba(0,0,0,0.08)',
-          }}
-        >
-          <div className="flex items-center justify-between w-full gap-1">
-            <span
-              onClick={(e) => { e.stopPropagation(); data.onToggle?.(); }}
-              className="cursor-pointer hover:bg-purple-200 rounded-md p-0.5 transition-colors flex-shrink-0"
-              style={{ transition: 'transform 0.2s', transform: data.expanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-            >
-              <ChevronDown className="h-4 w-4 text-purple-400" />
-            </span>
-            <span className="text-[10px] text-white bg-purple-500 min-w-[22px] h-[22px] rounded-full flex items-center justify-center font-bold flex-shrink-0">{data.empCount}</span>
-            <span className="font-bold text-sm text-purple-800 flex-1 text-center" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{data.name}</span>
-            <Landmark className="h-5 w-5 text-purple-600 flex-shrink-0" />
-          </div>
-          <div className="w-full border-t border-purple-200 my-1.5" />
-          <div className="flex flex-col items-center w-full">
-            {data.directorName ? (
-              <>
-                <span className="text-[11px] text-purple-600 font-semibold">{data.directorName}</span>
-                {data.directorIsCeo && (
-                  <span className="inline-flex items-center gap-0.5 text-[8px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full mt-1">
-                    <Crown className="h-2.5 w-2.5" />
-                    الإدارة العليا
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-[11px] text-red-400 italic">لا يوجد مدير</span>
-            )}
-          </div>
-        </div>
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-    </div>
-  );
-};
-
-const DepartmentNodeComponent = ({ data, id }: { data: any; id: string }) => {
-  const isHovered = data._hoveredNodeId === id;
-  const isConnected = data._connectedNodeIds?.has(id);
-  const isDimmed = data._hoveredNodeId && data._hoveredNodeId !== id && !isConnected;
-
-  return (
-    <div style={{ width: NODE_WIDTH_DEPT, position: 'relative' }}>
-      <Handle type="target" position={Position.Top} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-      <div
-        onClick={data.onToggle}
-        onMouseEnter={() => data._onNodeHover?.(id)}
-        onMouseLeave={() => data._onNodeHover?.(null)}
-        className="cursor-pointer"
-        style={{
-          width: '100%',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: isHovered ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
-          opacity: isDimmed ? 0.35 : 1,
-          filter: isHovered ? 'drop-shadow(0 8px 20px rgba(20,184,166,0.3))' : 'none',
-        }}
-      >
-        <div
-          className="flex flex-col px-4 py-2.5 rounded-xl bg-teal-50 text-right"
-          style={{
-            border: `2px solid ${isHovered ? '#14b8a6' : '#5eead4'}`,
-            boxShadow: isHovered
-              ? '0 10px 28px -4px rgba(20,184,166,0.35), 0 4px 12px -2px rgba(0,0,0,0.06)'
-              : '0 2px 8px -1px rgba(0,0,0,0.08)',
-          }}
-        >
-          <div className="flex items-center justify-between w-full gap-1">
-            <span
-              onClick={(e) => { e.stopPropagation(); data.onToggle?.(); }}
-              className="cursor-pointer hover:bg-teal-200 rounded-md p-0.5 transition-colors flex-shrink-0"
-              style={{ transition: 'transform 0.2s', transform: data.expanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-            >
-              <ChevronDown className="h-3.5 w-3.5 text-teal-400" />
-            </span>
-            <span className="text-[10px] text-white bg-teal-500 min-w-[20px] h-[20px] rounded-full flex items-center justify-center font-bold flex-shrink-0">{data.empCount}</span>
-            <span className="font-bold text-xs text-teal-800 flex-1 text-center" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{data.name}</span>
-            <Building2 className="h-4 w-4 text-teal-600 flex-shrink-0" />
-          </div>
-        </div>
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-    </div>
-  );
-};
-
-const GroupNodeComponent = ({ data, id }: { data: any; id: string }) => {
-  const isHovered = data._hoveredNodeId === id;
-  const isConnected = data._connectedNodeIds?.has(id);
-  const isDimmed = data._hoveredNodeId && data._hoveredNodeId !== id && !isConnected;
-  const isTopLabel = data.isTopLabel;
-
-  return (
-    <div style={{ width: NODE_WIDTH_GROUP, position: 'relative' }}>
-      <Handle type="target" position={Position.Top} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-      <div
-        onMouseEnter={() => data._onNodeHover?.(id)}
-        onMouseLeave={() => data._onNodeHover?.(null)}
-        className="flex items-center justify-center gap-2.5"
-        style={{
-          width: '100%',
-          padding: isTopLabel ? '12px 20px' : '10px 16px',
-          borderRadius: isTopLabel ? 16 : 12,
-          background: isTopLabel ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : '#f3f4f6',
-          border: isTopLabel ? 'none' : '2px solid #d1d5db',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          opacity: isDimmed ? 0.35 : 1,
-          boxShadow: isTopLabel
-            ? '0 8px 24px -4px rgba(245,158,11,0.4), 0 2px 8px -2px rgba(0,0,0,0.1)'
-            : isHovered ? '0 8px 20px -4px rgba(0,0,0,0.12)' : '0 2px 8px -1px rgba(0,0,0,0.06)',
-        }}
-      >
-        {isTopLabel ? <Crown className="h-5 w-5 text-white" /> : <Users className="h-4 w-4 text-gray-500" />}
-        <span style={{
-          fontSize: isTopLabel ? 14 : 12,
-          fontWeight: 700,
-          color: isTopLabel ? '#fff' : '#4b5563',
-        }}>
-          {data.label}
-        </span>
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
-    </div>
-  );
-};
-
-const nodeTypes = {
-  person: PersonNode,
-  directorate: DirectorateNodeComponent,
-  department: DepartmentNodeComponent,
-  group: GroupNodeComponent,
-};
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Dagre Layout Engine
-   ═══════════════════════════════════════════════════════════════════════ */
-
-function getLayoutedElements(nodes: Node[], edges: Edge[]) {
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'TB', ranksep: 70, nodesep: 50, edgesep: 25, marginx: 50, marginy: 50 });
-
-  nodes.forEach((node) => {
-    let w = NODE_WIDTH_EMP;
-    let h = NODE_HEIGHT_EMP;
-    if (node.type === 'person' && node.data?.role === 'ceo') { w = NODE_WIDTH_CEO; h = NODE_HEIGHT_CEO; }
-    else if (node.type === 'directorate') { w = NODE_WIDTH_DIR; h = NODE_HEIGHT_DIR; }
-    else if (node.type === 'department') { w = NODE_WIDTH_DEPT; h = NODE_HEIGHT_DEPT; }
-    else if (node.type === 'group') { w = NODE_WIDTH_GROUP; h = NODE_HEIGHT_GROUP; }
-    g.setNode(node.id, { width: w, height: h });
-  });
-
-  edges.forEach((edge) => {
-    g.setEdge(edge.source, edge.target);
-  });
-
-  dagre.layout(g);
-
-  const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = g.node(node.id);
-    let w = NODE_WIDTH_EMP;
-    if (node.type === 'person' && node.data?.role === 'ceo') w = NODE_WIDTH_CEO;
-    else if (node.type === 'directorate') w = NODE_WIDTH_DIR;
-    else if (node.type === 'department') w = NODE_WIDTH_DEPT;
-    else if (node.type === 'group') w = NODE_WIDTH_GROUP;
-
-    let h = NODE_HEIGHT_EMP;
-    if (node.type === 'person' && node.data?.role === 'ceo') h = NODE_HEIGHT_CEO;
-    else if (node.type === 'directorate') h = NODE_HEIGHT_DIR;
-    else if (node.type === 'department') h = NODE_HEIGHT_DEPT;
-    else if (node.type === 'group') h = NODE_HEIGHT_GROUP;
-
-    return {
-      ...node,
-      position: {
-        x: nodeWithPosition.x - w / 2,
-        y: nodeWithPosition.y - h / 2,
-      },
-      targetPosition: Position.Top,
-      sourcePosition: Position.Bottom,
-    };
-  });
-
-  return { nodes: layoutedNodes, edges };
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Connectivity helpers
-   ═══════════════════════════════════════════════════════════════════════ */
-
-function getConnectedNodeIds(nodeId: string, edges: Edge[]): Set<string> {
-  const connected = new Set<string>();
-  connected.add(nodeId);
-  // Walk up and down the tree
-  const queue = [nodeId];
-  const visited = new Set<string>();
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    if (visited.has(current)) continue;
-    visited.add(current);
-    connected.add(current);
-    edges.forEach(e => {
-      if (e.source === current && !visited.has(e.target)) { queue.push(e.target); }
-      if (e.target === current && !visited.has(e.source)) { queue.push(e.source); }
-    });
-  }
-  return connected;
-}
-
-function getDirectConnectedNodeIds(nodeId: string, edges: Edge[]): Set<string> {
-  const connected = new Set<string>();
-  connected.add(nodeId);
-  edges.forEach(e => {
-    if (e.source === nodeId) connected.add(e.target);
-    if (e.target === nodeId) connected.add(e.source);
-  });
-  return connected;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    Detail Modal
@@ -527,14 +165,21 @@ const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string;
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Flow Chart Inner Component (needs ReactFlowProvider parent)
+   OrgTree — Pure HTML/CSS Dark-Themed Org Chart
    ═══════════════════════════════════════════════════════════════════════ */
 
-interface FlowChartProps {
+interface EmpDirAssignment {
+  employee_id: string;
+  directorate_id: string;
+  department_id: string | null;
+}
+
+interface OrgTreeProps {
   ceoUsers: OrgUser[];
   directorates: Directorate[];
   departments: Department[];
   employees: Employee[];
+  empDirAssignments: EmpDirAssignment[];
   supervisorMap: Record<string, SupervisorAssignment[]>;
   supervisedEmpsMap: Record<string, SupervisedEmployee[]>;
   expandedDirs: Set<string>;
@@ -548,406 +193,477 @@ interface FlowChartProps {
   stats: { directors: number; employees: number; supervisors: number };
 }
 
-const FlowChart: React.FC<FlowChartProps> = ({
-  ceoUsers, directorates, departments, employees, supervisorMap, supervisedEmpsMap,
+const OrgTree: React.FC<OrgTreeProps> = ({
+  ceoUsers, directorates, departments, employees, empDirAssignments, supervisorMap, supervisedEmpsMap,
   expandedDirs, expandedDepts, expandedSupervisors, searchQuery,
   onClickPerson, onToggleDir, onToggleDept, onToggleSupervisor, stats,
 }) => {
-  const { fitView } = useReactFlow();
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const hoveredRef = useRef<string | null>(null);
-
-  const handleNodeHover = useCallback((nodeId: string | null) => {
-    hoveredRef.current = nodeId;
-    setHoveredNodeId(nodeId);
-  }, []);
-
   const isSup = (uid: string) => !!supervisorMap[uid];
-  const supInfo = (uid: string) => supervisorMap[uid] || [];
-  const supMembers = (uid: string) => supInfo(uid).reduce((s, a) => s + a.member_count, 0) || undefined;
-  const empsByDir = (dId: string) => employees.filter(e => e.directorate_id === dId);
+
+  // Build lookup maps from junction table
+  const empIdsByDir = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    empDirAssignments.forEach(a => {
+      if (!map.has(a.directorate_id)) map.set(a.directorate_id, new Set());
+      map.get(a.directorate_id)!.add(a.employee_id);
+    });
+    employees.forEach(e => {
+      if (e.directorate_id) {
+        if (!map.has(e.directorate_id)) map.set(e.directorate_id, new Set());
+        map.get(e.directorate_id)!.add(e.id);
+      }
+    });
+    return map;
+  }, [empDirAssignments, employees]);
+
+  const empIdsByDept = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    empDirAssignments.forEach(a => {
+      if (a.department_id) {
+        if (!map.has(a.department_id)) map.set(a.department_id, new Set());
+        map.get(a.department_id)!.add(a.employee_id);
+      }
+    });
+    employees.forEach(e => {
+      if (e.department_id) {
+        if (!map.has(e.department_id)) map.set(e.department_id, new Set());
+        map.get(e.department_id)!.add(e.id);
+      }
+    });
+    return map;
+  }, [empDirAssignments, employees]);
+
+  const empLookup = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
+
+  const empsByDir = (dId: string) => {
+    const ids = empIdsByDir.get(dId);
+    if (!ids) return [];
+    return [...ids].map(id => empLookup.get(id)).filter(Boolean) as Employee[];
+  };
   const deptsByDir = (dId: string) => departments.filter(d => d.directorate_id === dId);
-  const empsByDept = (deptId: string) => employees.filter(e => e.department_id === deptId);
-  const empsNoDept = (dId: string) => employees.filter(e => e.directorate_id === dId && !e.department_id);
-  const unassignedEmps = employees.filter(e => !e.directorate_id);
-  const supervisedEmps = (uid: string) => supervisedEmpsMap[uid] || [];
-
-  // Build nodes and edges from data
-  const { initialNodes, initialEdges } = useMemo(() => {
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
-
-    const makeEdge = (source: string, target: string, color: string): Edge => ({
-      id: `e-${source}-${target}`,
-      source,
-      target,
-      type: 'smoothstep',
-      style: { stroke: color, strokeWidth: 2 },
-      animated: false,
+  const empsByDept = (deptId: string) => {
+    const ids = empIdsByDept.get(deptId);
+    if (!ids) return [];
+    return [...ids].map(id => empLookup.get(id)).filter(Boolean) as Employee[];
+  };
+  const empsNoDept = (dId: string) => {
+    const dirEmps = empsByDir(dId);
+    const dirDepts = deptsByDir(dId);
+    const deptEmpIds = new Set<string>();
+    dirDepts.forEach(dept => {
+      const ids = empIdsByDept.get(dept.id);
+      if (ids) ids.forEach(id => deptEmpIds.add(id));
     });
-
-    // ── Level 1: CEO nodes at the top ──
-    // Create all CEO person nodes
-    ceoUsers.forEach(ceo => {
-      nodes.push({
-        id: `ceo-${ceo.id}`,
-        type: 'person',
-        position: { x: 0, y: 0 },
-        data: {
-          name: ceo.full_name, role: 'ceo', jobTitle: ceo.job_title,
-          isSupervisor: isSup(ceo.id), teamSize: stats.directors + stats.employees,
-          onClick: () => onClickPerson({
-            name: ceo.full_name, email: ceo.email, role: 'ceo',
-            jobTitle: ceo.job_title, phone: ceo.phone, userId: ceo.id,
-            teamSize: stats.directors + stats.employees,
-          }),
-        },
-      });
+    dirEmps.forEach(e => { if (e.department_id) deptEmpIds.add(e.id); });
+    empDirAssignments.forEach(a => {
+      if (a.directorate_id === dId && a.department_id) deptEmpIds.add(a.employee_id);
     });
+    return dirEmps.filter(e => !deptEmpIds.has(e.id));
+  };
+  const allAssignedIds = useMemo(() => {
+    const set = new Set<string>();
+    empDirAssignments.forEach(a => set.add(a.employee_id));
+    employees.forEach(e => { if (e.directorate_id) set.add(e.id); });
+    return set;
+  }, [empDirAssignments, employees]);
+  const unassignedEmps = employees.filter(e => !allAssignedIds.has(e.id));
 
-    // If multiple CEOs, add a label node ABOVE them
-    let lastCeoNodeId: string | null = null;
-    if (ceoUsers.length > 1) {
-      const topId = 'ceo-top';
-      nodes.push({
-        id: topId,
-        type: 'group',
-        position: { x: 0, y: 0 },
-        data: { label: 'الإدارة العليا', isTopLabel: true },
-      });
-      // Top label → each CEO
-      ceoUsers.forEach(ceo => {
-        edges.push(makeEdge(topId, `ceo-${ceo.id}`, '#f59e0b'));
-      });
-      // Use first CEO as parent for directorates (dagre will keep them below CEO rank)
-      lastCeoNodeId = `ceo-${ceoUsers[0].id}`;
-    }
+  // Search filter
+  const matchesSearch = (name: string, email?: string) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return name.toLowerCase().includes(q) || (email && email.toLowerCase().includes(q));
+  };
 
-    // The node that connects down to directorates — use first CEO (all CEOs are same rank)
-    const parentForDirs = ceoUsers.length === 1 ? `ceo-${ceoUsers[0].id}` : lastCeoNodeId;
-
-    // Connect ALL CEOs to ALL directorates so dagre keeps directorates one rank below
-    const ceoNodeIds = ceoUsers.map(c => `ceo-${c.id}`);
-
-    // ── Level 2: Directorate nodes ──
-    directorates.forEach(dir => {
-      const nodeId = `dir-${dir.id}`;
-      const dirEmps = empsByDir(dir.id);
-      const expanded = expandedDirs.has(dir.id);
-
-      nodes.push({
-        id: nodeId,
-        type: 'directorate',
-        position: { x: 0, y: 0 },
-        data: {
-          name: dir.name,
-          directorName: [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') || null,
-          directorIsCeo: dir.director?.role === 'ceo' || dir.secondary_director?.role === 'ceo',
-          empCount: dirEmps.length,
-          expanded,
-          onToggle: () => onToggleDir(dir.id),
-          onShowDetails: (dir.director || dir.secondary_director) ? () => {
-            const directors = [dir.director, dir.secondary_director].filter(Boolean) as OrgUser[];
-            if (directors.length === 1) {
-              const d = directors[0];
-              onClickPerson({
-                name: d.full_name, email: d.email, role: d.role || 'director',
-                jobTitle: d.job_title, phone: d.phone,
-                directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
-                userId: d.id, teamSize: dirEmps.length,
-              });
-            } else {
-              onClickPerson({
-                name: directors.map(d => d.full_name).join(' و '),
-                email: directors.map(d => d.email).filter(Boolean).join(' | '),
-                role: directors.some(d => d.role === 'ceo') ? 'ceo' : 'director',
-                jobTitle: directors.map(d => d.job_title).filter(Boolean).join(' | ') || undefined,
-                phone: directors.map(d => d.phone).filter(Boolean).join(' | ') || undefined,
-                directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
-                userId: directors[0].id, teamSize: dirEmps.length,
-              });
-            }
-          } : undefined,
-        },
-      });
-
-      // Connect ALL CEOs to each directorate
-      if (ceoNodeIds.length > 0) {
-        ceoNodeIds.forEach(ceoNid => {
-          edges.push(makeEdge(ceoNid, nodeId, '#8b5cf6'));
-        });
-      }
-
-      // Departments and employees under directorate
-      if (expanded) {
-        const dirDepts = deptsByDir(dir.id);
-        const dirEmpsNoDept = empsNoDept(dir.id);
-
-        // Helper to add employee node and its supervised employees
-        const addEmpNode = (emp: Employee, parentNodeId: string, deptName?: string) => {
-          const empNodeId = `emp-${emp.id}`;
-          nodes.push({
-            id: empNodeId,
-            type: 'person',
-            position: { x: 0, y: 0 },
-            data: {
-              name: emp.full_name, role: 'employee', jobTitle: emp.job_title,
-              isSupervisor: emp.user_id ? isSup(emp.user_id) : false,
-              supCount: emp.user_id ? supMembers(emp.user_id) : undefined,
-              onClick: () => onClickPerson({
-                name: emp.full_name, email: emp.email, role: 'employee',
-                jobTitle: emp.job_title, phone: emp.phone,
-                directorate: dir.name, department: deptName,
-                employeeNumber: emp.employee_number,
-                reportsTo: [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') || undefined, userId: emp.user_id,
-              }),
-            },
-          });
-          edges.push(makeEdge(parentNodeId, empNodeId, '#10b981'));
-
-          // Supervised employees
-          if (emp.user_id && isSup(emp.user_id) && expandedSupervisors.has(emp.user_id)) {
-            const supEmps = supervisedEmps(emp.user_id);
-            supEmps.forEach(se => {
-              const seNodeId = `sup-${se.employee_id}`;
-              if (!nodes.find(n => n.id === seNodeId)) {
-                nodes.push({
-                  id: seNodeId,
-                  type: 'person',
-                  position: { x: 0, y: 0 },
-                  data: {
-                    name: se.full_name, role: 'employee', jobTitle: se.job_title,
-                    isSupervisor: se.user_id ? isSup(se.user_id) : false,
-                    onClick: () => onClickPerson({
-                      name: se.full_name, email: se.email, role: 'employee',
-                      jobTitle: se.job_title, phone: se.phone,
-                      directorate: dir.name, department: deptName,
-                      employeeNumber: se.employee_number,
-                      userId: se.user_id,
-                    }),
-                  },
-                });
-              }
-              edges.push(makeEdge(empNodeId, seNodeId, '#f97316'));
-            });
-          }
-        };
-
-        // Add department nodes
-        dirDepts.forEach(dept => {
-          const deptNodeId = `dept-${dept.id}`;
-          const deptEmpsList = empsByDept(dept.id);
-          const deptExpanded = expandedDepts.has(dept.id);
-
-          nodes.push({
-            id: deptNodeId,
-            type: 'department',
-            position: { x: 0, y: 0 },
-            data: {
-              name: dept.name,
-              empCount: deptEmpsList.length,
-              expanded: deptExpanded,
-              onToggle: () => onToggleDept(dept.id),
-            },
-          });
-          edges.push(makeEdge(nodeId, deptNodeId, '#14b8a6'));
-
-          // Employees under this department
-          if (deptExpanded) {
-            deptEmpsList.forEach(emp => addEmpNode(emp, deptNodeId, dept.name));
-          }
-        });
-
-        // Employees directly under directorate (no department)
-        dirEmpsNoDept.forEach(emp => addEmpNode(emp, nodeId));
-
-        // Director's supervised employees
-        if (dir.director && isSup(dir.director.id) && expandedSupervisors.has(dir.director.id)) {
-          const supEmps = supervisedEmps(dir.director.id);
-          supEmps.forEach(se => {
-            const seNodeId = `sup-dir-${se.employee_id}`;
-            if (!nodes.find(n => n.id === seNodeId)) {
-              nodes.push({
-                id: seNodeId,
-                type: 'person',
-                position: { x: 0, y: 0 },
-                data: {
-                  name: se.full_name, role: 'employee', jobTitle: se.job_title,
-                  isSupervisor: se.user_id ? isSup(se.user_id) : false,
-                  onClick: () => onClickPerson({
-                    name: se.full_name, email: se.email, role: 'employee',
-                    jobTitle: se.job_title, phone: se.phone,
-                    directorate: dir.name, employeeNumber: se.employee_number,
-                    userId: se.user_id,
-                  }),
-                },
-              });
-            }
-            edges.push(makeEdge(nodeId, seNodeId, '#f97316'));
-          });
-        }
-      }
+  // Employee click handler
+  const handleEmpClick = (emp: Employee, dirName?: string, deptName?: string) => {
+    const dir = directorates.find(d => {
+      const dirEmpIds = empIdsByDir.get(d.id);
+      return dirEmpIds?.has(emp.id);
     });
+    onClickPerson({
+      name: emp.full_name, email: emp.email, role: 'employee',
+      jobTitle: emp.job_title, phone: emp.phone,
+      directorate: dirName || dir?.name,
+      department: deptName,
+      employeeNumber: emp.employee_number,
+      reportsTo: dir ? [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') : undefined,
+      userId: emp.user_id,
+    });
+  };
 
-    // Unassigned employees
-    if (unassignedEmps.length > 0 && parentForDirs) {
-      const groupId = 'unassigned-group';
-      nodes.push({
-        id: groupId,
-        type: 'group',
-        position: { x: 0, y: 0 },
-        data: { label: `موظفون بدون إدارة (${unassignedEmps.length})` },
+  // Director click handler
+  const handleDirClick = (dir: Directorate) => {
+    const directors = [dir.director, dir.secondary_director].filter(Boolean) as OrgUser[];
+    if (directors.length === 0) return;
+    const dirEmps = empsByDir(dir.id);
+    if (directors.length === 1) {
+      const d = directors[0];
+      onClickPerson({
+        name: d.full_name, email: d.email, role: d.role || 'director',
+        jobTitle: d.job_title, phone: d.phone,
+        directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
+        userId: d.id, teamSize: dirEmps.length,
       });
-      edges.push(makeEdge(parentForDirs, groupId, '#9ca3af'));
-
-      unassignedEmps.forEach(emp => {
-        const empNodeId = `unemp-${emp.id}`;
-        nodes.push({
-          id: empNodeId,
-          type: 'person',
-          position: { x: 0, y: 0 },
-          data: {
-            name: emp.full_name, role: 'employee', jobTitle: emp.job_title,
-            isSupervisor: emp.user_id ? isSup(emp.user_id) : false,
-            onClick: () => onClickPerson({
-              name: emp.full_name, email: emp.email, role: 'employee',
-              jobTitle: emp.job_title, phone: emp.phone,
-              employeeNumber: emp.employee_number, userId: emp.user_id,
-            }),
-          },
-        });
-        edges.push(makeEdge(groupId, empNodeId, '#9ca3af'));
+    } else {
+      onClickPerson({
+        name: directors.map(d => d.full_name).join(' و '),
+        email: directors.map(d => d.email).filter(Boolean).join(' | '),
+        role: directors.some(d => d.role === 'ceo') ? 'ceo' : 'director',
+        jobTitle: directors.map(d => d.job_title).filter(Boolean).join(' | ') || undefined,
+        phone: directors.map(d => d.phone).filter(Boolean).join(' | ') || undefined,
+        directorate: dir.name, reportsTo: ceoUsers.map(c => c.full_name).join(' و '),
+        userId: directors[0].id, teamSize: dirEmps.length,
       });
     }
+  };
 
-    return { initialNodes: nodes, initialEdges: edges };
-  }, [ceoUsers, directorates, departments, employees, supervisorMap, supervisedEmpsMap, expandedDirs, expandedDepts, expandedSupervisors, stats]);
+  // Get supervised employees for a user
+  const supervisedEmps = (uid: string): SupervisedEmployee[] => supervisedEmpsMap[uid] || [];
 
-  // Apply dagre layout
-  const { layoutNodes, layoutEdges } = useMemo(() => {
-    if (initialNodes.length === 0) return { layoutNodes: [], layoutEdges: [] };
-    const { nodes: ln, edges: le } = getLayoutedElements(initialNodes, initialEdges);
-    return { layoutNodes: ln, layoutEdges: le };
-  }, [initialNodes, initialEdges]);
+  // Render an employee item (with supervisor expand support)
+  const renderEmp = (emp: Employee, dirName?: string, deptName?: string) => {
+    if (!matchesSearch(emp.full_name, emp.email)) return null;
+    const isSuper = emp.user_id ? isSup(emp.user_id) : false;
+    const supExpanded = emp.user_id ? expandedSupervisors.has(emp.user_id) : false;
+    const teamMembers = emp.user_id ? supervisedEmps(emp.user_id) : [];
+    const hasTeam = isSuper && teamMembers.length > 0;
 
-  // Compute connected set for hover highlighting
-  const connectedNodeIds = useMemo(() => {
-    if (!hoveredNodeId) return new Set<string>();
-    return getDirectConnectedNodeIds(hoveredNodeId, layoutEdges);
-  }, [hoveredNodeId, layoutEdges]);
-
-  // Inject hover state into node data
-  const nodesWithHover = useMemo(() => {
-    return layoutNodes.map(node => ({
-      ...node,
-      data: {
-        ...node.data,
-        _hoveredNodeId: hoveredNodeId,
-        _connectedNodeIds: connectedNodeIds,
-        _onNodeHover: handleNodeHover,
-      },
-    }));
-  }, [layoutNodes, hoveredNodeId, connectedNodeIds, handleNodeHover]);
-
-  // Highlight edges on hover
-  const edgesWithHover = useMemo(() => {
-    if (!hoveredNodeId) return layoutEdges;
-    return layoutEdges.map(edge => {
-      const isConnected = edge.source === hoveredNodeId || edge.target === hoveredNodeId;
-      return {
-        ...edge,
-        animated: isConnected,
-        style: {
-          ...edge.style,
-          strokeWidth: isConnected ? 3 : 1.5,
-          opacity: isConnected ? 1 : 0.2,
-          stroke: isConnected ? edge.style?.stroke : '#d1d5db',
-        },
-      };
-    });
-  }, [layoutEdges, hoveredNodeId]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(nodesWithHover);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(edgesWithHover);
-
-  // Update when layout or hover changes
-  useEffect(() => {
-    setNodes(nodesWithHover);
-    setEdges(edgesWithHover);
-  }, [nodesWithHover, edgesWithHover, setNodes, setEdges]);
-
-  // Fit view after layout changes (not hover)
-  const prevLayoutRef = useRef<string>('');
-  useEffect(() => {
-    const key = layoutNodes.map(n => n.id).join(',');
-    if (key !== prevLayoutRef.current) {
-      prevLayoutRef.current = key;
-      setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 80);
-    }
-  }, [layoutNodes, fitView]);
-
-  // MiniMap node color
-  const miniMapNodeColor = useCallback((node: Node) => {
-    if (node.type === 'directorate') return '#8b5cf6';
-    if (node.type === 'department') return '#14b8a6';
-    if (node.type === 'group') return '#9ca3af';
-    const role = node.data?.role || 'employee';
-    return ROLE_COLORS[role]?.minimap || '#10b981';
-  }, []);
-
-  if (initialNodes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <div className="w-24 h-24 rounded-3xl bg-gray-100 flex items-center justify-center mx-auto mb-6">
-          <Network className="h-12 w-12 text-gray-300" />
+      <div key={emp.id}>
+        <div
+          className="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/5"
+          onClick={() => handleEmpClick(emp, dirName, deptName)}
+        >
+          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#2dd4bf' }} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-white font-medium text-sm truncate">{emp.full_name}</p>
+              {isSuper && (
+                <span className="inline-flex items-center gap-0.5 text-[8px] font-bold text-white bg-orange-500 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                  <Shield className="h-2 w-2" />{teamMembers.length} مشرف
+                </span>
+              )}
+            </div>
+            <p className="text-xs truncate" style={{ color: '#64748b' }}>{emp.job_title}</p>
+          </div>
+          {/* Expand/collapse arrow for supervisors */}
+          {hasTeam && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleSupervisor(emp.user_id); }}
+              className="flex-shrink-0 p-1 rounded-md transition-colors hover:bg-white/10"
+            >
+              <ChevronDown
+                className="h-3.5 w-3.5 transition-transform"
+                style={{ color: '#f97316', transform: supExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+              />
+            </button>
+          )}
         </div>
-        <p className="text-gray-600 text-lg font-bold">لا توجد بيانات للهيكل التنظيمي</p>
-        <p className="text-gray-400 text-sm mt-2">قم بإضافة الإدارات والموظفين</p>
+
+        {/* Supervised team members */}
+        {hasTeam && supExpanded && (
+          <div className="mr-5 pr-3 mt-1 mb-2" style={{ borderRight: '2px solid rgba(249,115,22,0.3)' }}>
+            {teamMembers.map(se => (
+              <div
+                key={se.employee_id}
+                className="flex items-center gap-3 py-1.5 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/5"
+                onClick={() => onClickPerson({
+                  name: se.full_name, email: se.email, role: 'employee',
+                  jobTitle: se.job_title, phone: se.phone,
+                  directorate: dirName, department: deptName,
+                  employeeNumber: se.employee_number, userId: se.user_id,
+                })}
+              >
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#f97316' }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-medium text-xs truncate">{se.full_name}</p>
+                  <p className="text-[10px] truncate" style={{ color: '#64748b' }}>{se.job_title}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Check if the tree has any data
+  if (ceoUsers.length === 0 && directorates.length === 0 && employees.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full" style={{ background: 'linear-gradient(to bottom, #0f172a, #1e293b)' }}>
+        <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6" style={{ background: '#1e293b' }}>
+          <Network className="h-12 w-12" style={{ color: '#334155' }} />
+        </div>
+        <p className="text-lg font-bold" style={{ color: '#94a3b8' }}>لا توجد بيانات للهيكل التنظيمي</p>
+        <p className="text-sm mt-2" style={{ color: '#475569' }}>قم بإضافة الإدارات والموظفين</p>
       </div>
     );
   }
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      nodeTypes={nodeTypes}
-      fitView
-      fitViewOptions={{ padding: 0.2 }}
-      minZoom={0.1}
-      maxZoom={2.5}
-      nodesDraggable={true}
-      nodesConnectable={false}
-      elementsSelectable={true}
-      panOnDrag={true}
-      zoomOnScroll={true}
-      zoomOnPinch={true}
-      panOnScroll={false}
-      selectNodesOnDrag={false}
-      proOptions={{ hideAttribution: true }}
-      defaultEdgeOptions={{
-        type: 'smoothstep',
-        style: { strokeWidth: 2 },
-      }}
+    <div
+      className="org-tree-dark rounded-2xl overflow-x-auto overflow-y-auto p-8"
+      style={{ background: 'linear-gradient(to bottom, #0f172a, #1e293b)', minHeight: '100%' }}
     >
-      <Controls
-        showInteractive={false}
-        position="bottom-left"
-        className="!bg-white !border !border-gray-200 !rounded-xl !shadow-lg"
-      />
-      <MiniMap
-        nodeColor={miniMapNodeColor}
-        nodeStrokeWidth={2}
-        maskColor="rgba(0, 0, 0, 0.08)"
-        className="!bg-white/90 !border !border-gray-200 !rounded-xl !shadow-lg"
-        position="bottom-right"
-        pannable
-        zoomable
-      />
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
-    </ReactFlow>
+      <div style={{ minWidth: 'fit-content' }}>
+      {/* Single unified column so CEO + directorates share the same center */}
+      <div className="flex flex-col items-center">
+      {/* CEO Section — الإدارة العليا box then individual CEO boxes below */}
+      {ceoUsers.length > 0 && (
+        <>
+          {/* الإدارة العليا label box */}
+          <div
+            className="rounded-full px-10 py-3 text-center"
+            style={{ background: 'rgba(45,212,191,0.08)', border: '1.5px solid #2dd4bf' }}
+          >
+            <p className="text-white font-bold text-lg">الإدارة العُليا</p>
+          </div>
+
+          {/* Vertical line down from label */}
+          <div className="w-0.5 h-6" style={{ background: '#2dd4bf' }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: '#2dd4bf' }} />
+
+          {/* CEO person boxes with integrated horizontal bar */}
+          <div className="relative flex items-start justify-center" style={{ gap: 48 }}>
+            {/* Horizontal bar — spans from center of first CEO to center of last CEO */}
+            {ceoUsers.length > 1 && (
+              <div className="absolute h-0.5" style={{
+                background: '#2dd4bf',
+                top: 0,
+                left: '50%',
+                right: '50%',
+                /* will be overridden by first/last child positions — use a simpler approach */
+              }} />
+            )}
+            {ceoUsers.map((ceo, idx) => (
+              <div key={ceo.id} className="flex flex-col items-center" style={{ minWidth: 180 }}>
+                {/* Horizontal line segment above this CEO box */}
+                {ceoUsers.length > 1 && (
+                  <div className="flex h-0.5 self-stretch" style={{ marginLeft: -24, marginRight: -24 }}>
+                    <div className="flex-1" style={{ background: idx === 0 ? 'transparent' : '#2dd4bf' }} />
+                    <div className="flex-1" style={{ background: idx === ceoUsers.length - 1 ? 'transparent' : '#2dd4bf' }} />
+                  </div>
+                )}
+                {/* Vertical line from horizontal bar */}
+                {ceoUsers.length > 1 && <div className="w-0.5 h-5" style={{ background: '#2dd4bf' }} />}
+                <div
+                  className="rounded-full px-8 py-3 text-center cursor-pointer transition-all hover:shadow-lg hover:shadow-teal-500/10"
+                  style={{ background: 'rgba(45,212,191,0.08)', border: '1.5px solid #2dd4bf', minWidth: 180 }}
+                  onClick={() => onClickPerson({
+                    name: ceo.full_name, email: ceo.email, role: 'ceo',
+                    jobTitle: ceo.job_title, phone: ceo.phone, userId: ceo.id,
+                    teamSize: stats.directors + stats.employees,
+                  })}
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Crown className="h-4 w-4 flex-shrink-0" style={{ color: '#fbbf24' }} />
+                    <p className="text-white font-bold text-base">{ceo.full_name}</p>
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>{ceo.job_title || 'الرئيس التنفيذي'}</p>
+                </div>
+                {/* Vertical line down from each CEO box */}
+                {ceoUsers.length > 1 && <div className="w-0.5 h-5" style={{ background: '#2dd4bf' }} />}
+                {/* Bottom horizontal segment merging into center */}
+                {ceoUsers.length > 1 && (
+                  <div className="flex h-0.5 self-stretch" style={{ marginLeft: -24, marginRight: -24 }}>
+                    <div className="flex-1" style={{ background: idx === 0 ? 'transparent' : '#2dd4bf' }} />
+                    <div className="flex-1" style={{ background: idx === ceoUsers.length - 1 ? 'transparent' : '#2dd4bf' }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Vertical line down to directorates — no gap */}
+          <div className="w-0.5 h-8" style={{ background: '#2dd4bf' }} />
+        </>
+      )}
+
+      {/* Directorates */}
+      {directorates.length > 0 && (
+        <>
+          {/* Directorates row — each column has a horizontal line segment + vertical drop */}
+          <div className="flex items-start flex-nowrap" style={{ gap: 48, marginTop: -1 }}>
+            {directorates.map((dir, idx) => {
+              const dirEmps = empsByDir(dir.id);
+              const dirDepts = deptsByDir(dir.id);
+              const dirEmpsNoDept = empsNoDept(dir.id).sort((a, b) => {
+                const aS = a.user_id ? (supervisorMap[a.user_id] ? 1 : 0) : 0;
+                const bS = b.user_id ? (supervisorMap[b.user_id] ? 1 : 0) : 0;
+                return bS - aS;
+              });
+              const expanded = expandedDirs.has(dir.id);
+              const directorName = [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ');
+              const isFirst = idx === 0;
+              const isLast = idx === directorates.length - 1;
+              const multiDirs = directorates.length > 1;
+              // Calculate min-width: if expanded and has departments, account for them
+              const visibleDeptCount = expanded ? dirDepts.length + (dirEmpsNoDept.length > 0 && dirDepts.length > 0 ? 1 : 0) : 0;
+              const colMinWidth = expanded && visibleDeptCount > 1 ? visibleDeptCount * 190 : 220;
+
+              // If searching, check if any employee under this directorate matches
+              const hasMatchingContent = !searchQuery || directorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                dir.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                dirEmps.some(e => matchesSearch(e.full_name, e.email));
+
+              if (searchQuery && !hasMatchingContent) return null;
+
+              return (
+                <div key={dir.id} className="flex flex-col items-center flex-shrink-0" style={{ minWidth: colMinWidth }}>
+                  {/* Horizontal line segment for this column — extends into the 48px gap */}
+                  {multiDirs && (
+                    <div className="flex h-0.5" style={{ width: 'calc(100% + 48px)', marginLeft: -24, marginRight: -24 }}>
+                      <div className="flex-1" style={{ background: isFirst ? 'transparent' : '#2dd4bf' }} />
+                      <div className="flex-1" style={{ background: isLast ? 'transparent' : '#2dd4bf' }} />
+                    </div>
+                  )}
+                  {/* Vertical line from horizontal bar */}
+                  <div className="w-0.5 h-6" style={{ background: '#2dd4bf' }} />
+
+                  {/* Directorate box — click box for details, click chevron to expand */}
+                  <div
+                    className="rounded-xl px-5 py-3 cursor-pointer transition-all hover:shadow-lg hover:shadow-teal-500/10"
+                    style={{ border: '1.5px solid #2dd4bf', background: 'rgba(45,212,191,0.05)', minWidth: 200 }}
+                    onClick={() => handleDirClick(dir)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Landmark className="h-4 w-4 flex-shrink-0" style={{ color: '#2dd4bf' }} />
+                      <p className="text-white font-bold text-sm">{dir.name}</p>
+                      <div className="flex-1" />
+                      <button
+                        className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-lg transition-colors hover:bg-white/10"
+                        onClick={(e) => { e.stopPropagation(); onToggleDir(dir.id); }}
+                      >
+                        <span className="text-[10px] text-white font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center" style={{ background: '#2dd4bf' }}>
+                          {dirEmps.length}
+                        </span>
+                        <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ color: '#2dd4bf', transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+                      </button>
+                    </div>
+                    {/* Director name inside the box */}
+                    <div className="mt-1.5 text-center">
+                      <p className="text-[10px]" style={{ color: '#94a3b8' }}>مدير الإدارة</p>
+                      {directorName ? (
+                        <p className="text-white font-semibold text-xs">{directorName}</p>
+                      ) : (
+                        <p className="text-xs italic" style={{ color: '#ef4444' }}>لا يوجد مدير</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expanded content */}
+                  {expanded && (
+                    <>
+                      {/* Vertical line to content */}
+                      <div className="w-0.5 h-4 mt-2" style={{ background: '#2dd4bf' }} />
+
+                      {/* Departments side by side + employees without dept */}
+                      {(dirDepts.length > 0 || dirEmpsNoDept.length > 0) && (
+                        <div className="flex gap-4 items-start justify-center mt-1">
+                          {/* Department columns */}
+                          {dirDepts.map(dept => {
+                            const deptEmps = empsByDept(dept.id).sort((a, b) => {
+                              const aS = a.user_id ? (supervisorMap[a.user_id] ? 1 : 0) : 0;
+                              const bS = b.user_id ? (supervisorMap[b.user_id] ? 1 : 0) : 0;
+                              return bS - aS; // supervisors first
+                            });
+
+                            // Search filter for department
+                            const deptHasMatch = !searchQuery ||
+                              dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              deptEmps.some(e => matchesSearch(e.full_name, e.email));
+                            if (searchQuery && !deptHasMatch) return null;
+
+                            return (
+                              <div key={dept.id} className="flex flex-col items-center flex-shrink-0" style={{ minWidth: 170 }}>
+                                {/* Department box */}
+                                <div
+                                  className="rounded-lg px-4 py-2 text-center w-full"
+                                  style={{ border: '1px solid rgba(45,212,191,0.4)', background: 'rgba(45,212,191,0.05)' }}
+                                >
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Building2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#5eead4' }} />
+                                    <p className="font-medium text-xs" style={{ color: '#5eead4' }}>{dept.name}</p>
+                                  </div>
+                                </div>
+                                {/* Employees listed vertically under this department */}
+                                {deptEmps.length > 0 && (
+                                  <div className="mt-2 w-full">
+                                    {deptEmps.map(emp => renderEmp(emp, dir.name, dept.name))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Employees without department as a column */}
+                          {dirEmpsNoDept.length > 0 && (
+                            <div className="flex flex-col items-center flex-shrink-0" style={{ minWidth: 170 }}>
+                              {dirDepts.length > 0 && (
+                                <div
+                                  className="rounded-lg px-4 py-2 text-center w-full"
+                                  style={{ border: '1px dashed rgba(100,116,139,0.4)' }}
+                                >
+                                  <p className="font-medium text-xs" style={{ color: '#94a3b8' }}>بدون قسم</p>
+                                </div>
+                              )}
+                              <div className={`${dirDepts.length > 0 ? 'mt-2' : ''} w-full`}>
+                                {dirEmpsNoDept.map(emp => renderEmp(emp, dir.name))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Unassigned employees */}
+          {unassignedEmps.length > 0 && (
+            <div className="flex flex-col items-center mt-8">
+              <div className="w-0.5 h-6" style={{ background: '#64748b' }} />
+              <div
+                className="rounded-xl px-6 py-3 text-center"
+                style={{ border: '1.5px solid #64748b', background: 'rgba(100,116,139,0.05)', minWidth: 200 }}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Users className="h-4 w-4" style={{ color: '#94a3b8' }} />
+                  <p className="font-bold text-sm" style={{ color: '#94a3b8' }}>موظفون بدون إدارة ({unassignedEmps.length})</p>
+                </div>
+              </div>
+              <div className="mt-2 w-full max-w-xs">
+                {unassignedEmps.map(emp => {
+                  if (!matchesSearch(emp.full_name, emp.email)) return null;
+                  return (
+                    <div
+                      key={emp.id}
+                      className="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/5"
+                      onClick={() => onClickPerson({
+                        name: emp.full_name, email: emp.email, role: 'employee',
+                        jobTitle: emp.job_title, phone: emp.phone,
+                        employeeNumber: emp.employee_number, userId: emp.user_id,
+                      })}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#94a3b8' }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-white font-medium text-sm truncate">{emp.full_name}</p>
+                        <p className="text-xs truncate" style={{ color: '#64748b' }}>{emp.job_title}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      </div>{/* close unified flex-col items-center */}
+      </div>{/* close min-width fit-content wrapper */}
+    </div>
   );
 };
 
@@ -1109,6 +825,7 @@ export const OrgStructure: React.FC = () => {
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [empDirAssignments, setEmpDirAssignments] = useState<EmpDirAssignment[]>([]);
   const [supervisorMap, setSupervisorMap] = useState<Record<string, SupervisorAssignment[]>>({});
   const [supervisedEmpsMap, setSupervisedEmpsMap] = useState<Record<string, SupervisedEmployee[]>>({});
   const [selectedPerson, setSelectedPerson] = useState<SelectedPerson | null>(null);
@@ -1141,11 +858,12 @@ export const OrgStructure: React.FC = () => {
     if (isRefresh) setRefreshing(true);
     try {
       // Use exact same FK join pattern as admin/Directorates.tsx (only full_name — proven to work)
-      const [directoratesRes, departmentsRes, employeesRes, supervisorRes] = await Promise.all([
+      const [directoratesRes, departmentsRes, employeesRes, supervisorRes, empDirRes] = await Promise.all([
         supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)'),
         supabase.from('departments').select('id, name, manager_id, directorate_id').eq('status', 'active'),
         supabase.from('employees').select('id, user_id, full_name, email, job_title, phone, employee_number, department_id, directorate_id, manager_id').eq('status', 'active'),
         supabase.from('supervisor_assignments').select('id, user_id, title, status, start_date, end_date').eq('status', 'active'),
+        supabase.from('employee_directorates').select('employee_id, directorate_id, department_id'),
       ]);
 
       const depts = (departmentsRes.data || []) as Department[];
@@ -1200,6 +918,7 @@ export const OrgStructure: React.FC = () => {
 
       setDirectorates(dirs);
       setEmployees(emps);
+      setEmpDirAssignments((empDirRes.data || []) as EmpDirAssignment[]);
       setExpandedDirs(new Set(dirs.map(d => d.id)));
       setExpandedDepts(new Set(depts.map(d => d.id)));
 
@@ -1301,41 +1020,6 @@ export const OrgStructure: React.FC = () => {
         @keyframes avatarPop {
           from { opacity: 0; transform: scale(0.5); }
           to { opacity: 1; transform: scale(1); }
-        }
-        .react-flow__controls button {
-          border-radius: 8px !important;
-          border: 1px solid #e5e7eb !important;
-          background: white !important;
-          width: 32px !important;
-          height: 32px !important;
-        }
-        .react-flow__controls button:hover {
-          background: #f3f4f6 !important;
-        }
-        .react-flow__controls {
-          gap: 4px !important;
-        }
-        .react-flow__minimap {
-          border-radius: 12px !important;
-          overflow: hidden !important;
-        }
-        .react-flow__edge path {
-          transition: stroke-width 0.25s ease, opacity 0.25s ease, stroke 0.25s ease;
-        }
-        .react-flow__node {
-          transition: none !important;
-          background: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-          padding: 0 !important;
-        }
-        /* Animated edge dash effect */
-        .react-flow__edge.animated path {
-          stroke-dasharray: 8;
-          animation: edgeDash 0.6s linear infinite;
-        }
-        @keyframes edgeDash {
-          to { stroke-dashoffset: -16; }
         }
         .title-row:hover {
           background: var(--hover-bg);
@@ -1450,37 +1134,34 @@ export const OrgStructure: React.FC = () => {
 
       {/* Interactive help hint */}
       <div className="flex items-center gap-4 text-[11px] text-gray-400 px-1 flex-wrap">
-        <span className="flex items-center gap-1">🖱️ اسحب للتنقل</span>
-        <span className="flex items-center gap-1">🔍 مرر للتكبير/التصغير</span>
-        <span className="flex items-center gap-1">👆 اضغط على الإدارة للتوسيع/الطي</span>
-        <span className="flex items-center gap-1">📋 اضغط على أي شخص لعرض التفاصيل</span>
+        <span className="flex items-center gap-1">اضغط على الإدارة للتوسيع/الطي</span>
+        <span className="flex items-center gap-1">اضغط على أي شخص لعرض التفاصيل</span>
       </div>
 
-      {/* SVG Tree Chart */}
+      {/* Dark-themed Org Tree */}
       <div
         ref={chartContainerRef}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-        style={{ height: isFullscreen ? '100vh' : 'calc(100vh - 380px)', minHeight: 450 }}
+        className="rounded-2xl shadow-sm overflow-hidden"
+        style={{ minHeight: 450, height: isFullscreen ? '100vh' : 'auto' }}
       >
-        <ReactFlowProvider>
-          <FlowChart
-            ceoUsers={ceoUsers}
-            directorates={directorates}
-            departments={departments}
-            employees={employees}
-            supervisorMap={supervisorMap}
-            supervisedEmpsMap={supervisedEmpsMap}
-            expandedDirs={expandedDirs}
-            expandedDepts={expandedDepts}
-            expandedSupervisors={expandedSupervisors}
-            searchQuery={searchQuery}
-            onClickPerson={handleClick}
-            onToggleDir={toggleDir}
-            onToggleDept={toggleDept}
-            onToggleSupervisor={toggleSupervisor}
-            stats={stats}
-          />
-        </ReactFlowProvider>
+        <OrgTree
+          ceoUsers={ceoUsers}
+          directorates={directorates}
+          departments={departments}
+          employees={employees}
+          empDirAssignments={empDirAssignments}
+          supervisorMap={supervisorMap}
+          supervisedEmpsMap={supervisedEmpsMap}
+          expandedDirs={expandedDirs}
+          expandedDepts={expandedDepts}
+          expandedSupervisors={expandedSupervisors}
+          searchQuery={searchQuery}
+          onClickPerson={handleClick}
+          onToggleDir={toggleDir}
+          onToggleDept={toggleDept}
+          onToggleSupervisor={toggleSupervisor}
+          stats={stats}
+        />
       </div>
 
       {/* Modal */}

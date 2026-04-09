@@ -92,12 +92,13 @@ export const Directorates: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [dirResult, directorsResult, ceoResult, empsResult, deptsResult] = await Promise.all([
+      const [dirResult, directorsResult, ceoResult, empsResult, deptsResult, empDirResult] = await Promise.all([
         supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)').order('name'),
         supabase.from('users').select('id, full_name, email, job_title').eq('role', 'director').order('full_name'),
         supabase.from('users').select('id, full_name, email, job_title').eq('role', 'ceo').order('full_name'),
         supabase.from('employees').select('id, full_name, job_title, directorate_id, department_id').order('full_name'),
         supabase.from('departments').select('id, name, directorate_id, manager_id, status').eq('status', 'active').order('name'),
+        supabase.from('employee_directorates').select('employee_id, directorate_id'),
       ]);
       setAllDepartments((deptsResult.data || []) as Department[]);
 
@@ -105,12 +106,31 @@ export const Directorates: React.FC = () => {
       const combined = [...(ceoResult.data || []), ...(directorsResult.data || [])];
       setAllDirectors(combined);
       const emps = (empsResult.data || []) as any[];
+      const empDirData = (empDirResult.data || []) as any[];
+
+      // Build directorate → employee IDs map from junction table
+      const dirEmpMap = new Map<string, Set<string>>();
+      empDirData.forEach((a: any) => {
+        if (!dirEmpMap.has(a.directorate_id)) dirEmpMap.set(a.directorate_id, new Set());
+        dirEmpMap.get(a.directorate_id)!.add(a.employee_id);
+      });
+      // Also include legacy directorate_id
+      emps.forEach((e: any) => {
+        if (e.directorate_id) {
+          if (!dirEmpMap.has(e.directorate_id)) dirEmpMap.set(e.directorate_id, new Set());
+          dirEmpMap.get(e.directorate_id)!.add(e.id);
+        }
+      });
+      const empLookup = new Map(emps.map((e: any) => [e.id, e]));
 
       if (dirResult.data) {
-        setDirectorates(dirResult.data.map((dir: any) => ({
-          ...dir,
-          employees: emps.filter((e: any) => e.directorate_id === dir.id),
-        })));
+        setDirectorates(dirResult.data.map((dir: any) => {
+          const empIds = dirEmpMap.get(dir.id) || new Set();
+          return {
+            ...dir,
+            employees: [...empIds].map(id => empLookup.get(id)).filter(Boolean),
+          };
+        }));
       }
     } catch (error) {
       console.error('Error fetching:', error);
@@ -160,6 +180,8 @@ export const Directorates: React.FC = () => {
     if (!deleteDir) return;
     setDeleting(true);
     try {
+      // Remove junction table entries for this directorate
+      await supabase.from('employee_directorates').delete().eq('directorate_id', deleteDir.id);
       await supabase.from('employees').update({ directorate_id: null }).eq('directorate_id', deleteDir.id);
       await supabase.from('directorates').delete().eq('id', deleteDir.id);
       if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'حذف إدارة', entity_type: 'directorates', entity_id: deleteDir.id, details: { name: deleteDir.name } });
@@ -432,52 +454,30 @@ export const Directorates: React.FC = () => {
 
                             return (
                               <div className="space-y-4">
-                                {/* Add department button */}
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-semibold text-gray-700">
-                                    الموظفون والأقسام ({dir.employees?.length || 0} موظف{hasDepts ? ` · ${dirDepts.length} قسم` : ''})
-                                  </p>
-                                  <button
-                                    onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
-                                    className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-teal-50 border border-teal-200 transition-colors"
-                                  >
-                                    <Plus className="h-3.5 w-3.5" />
-                                    إضافة قسم
-                                  </button>
-                                </div>
-
-                                {/* Departments with their employees */}
-                                {dirDepts.map((dept) => {
-                                  const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
-                                  return (
-                                    <div key={dept.id} className="bg-white rounded-xl border border-teal-200 overflow-hidden">
-                                      {/* Department header */}
-                                      <div className="flex items-center justify-between px-4 py-2.5 bg-teal-50 border-b border-teal-100">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center">
+                                {/* Departments side by side — each column has dept name + its employees */}
+                                <div className="flex gap-4 flex-wrap items-start">
+                                  {dirDepts.map((dept) => {
+                                    const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
+                                    return (
+                                      <div key={dept.id} className="min-w-[220px] flex-1 max-w-sm bg-white border border-teal-200 rounded-xl overflow-hidden">
+                                        {/* Department header */}
+                                        <div className="bg-teal-50 px-3 py-2 flex items-center justify-between border-b border-teal-200">
+                                          <div className="flex items-center gap-1.5">
                                             <Building2 className="h-3.5 w-3.5 text-teal-600" />
+                                            <span className="text-sm font-semibold text-teal-800">{dept.name}</span>
+                                            <span className="text-xs text-teal-500">({deptEmps.length})</span>
                                           </div>
-                                          <div>
-                                            <span className="text-sm font-bold text-teal-800">{dept.name}</span>
-                                            <span className="text-xs text-teal-600 mr-2">({deptEmps.length} موظف)</span>
+                                          <div className="flex items-center gap-1">
+                                            <button onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
+                                              className="text-teal-400 hover:text-blue-600 transition-colors p-0.5"><Edit className="h-3 w-3" /></button>
+                                            <button onClick={() => setDeleteDept(dept)}
+                                              className="text-teal-400 hover:text-red-600 transition-colors p-0.5"><Trash2 className="h-3 w-3" /></button>
                                           </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                          <button onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
-                                            className="p-1.5 text-teal-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="تعديل القسم">
-                                            <Edit className="h-3.5 w-3.5" />
-                                          </button>
-                                          <button onClick={() => setDeleteDept(dept)}
-                                            className="p-1.5 text-teal-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="حذف القسم">
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                          </button>
-                                        </div>
-                                      </div>
-                                      {/* Department employees */}
-                                      {deptEmps.length > 0 ? (
-                                        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                          {deptEmps.map((emp) => (
-                                            <div key={emp.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                                        {/* Employees list */}
+                                        <div className="p-2 space-y-1.5">
+                                          {deptEmps.length > 0 ? deptEmps.map((emp) => (
+                                            <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
                                               <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-xs font-bold text-teal-700">{emp.full_name.charAt(0)}</span>
                                               </div>
@@ -486,28 +486,36 @@ export const Directorates: React.FC = () => {
                                                 <span className="text-xs text-gray-500 block">{emp.job_title}</span>
                                               </div>
                                             </div>
-                                          ))}
+                                          )) : (
+                                            <p className="text-xs text-gray-400 text-center py-2">لا يوجد موظفون</p>
+                                          )}
                                         </div>
-                                      ) : (
-                                        <p className="text-xs text-gray-400 text-center py-3">لا يوجد موظفون في هذا القسم</p>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+                                      </div>
+                                    );
+                                  })}
+
+                                  {/* Add department card */}
+                                  <button
+                                    onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
+                                    className="min-w-[160px] flex-shrink-0 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-teal-300 hover:border-teal-400 rounded-xl px-4 py-6 text-teal-600 hover:text-teal-800 hover:bg-teal-50/50 transition-colors"
+                                  >
+                                    <Plus className="h-5 w-5" />
+                                    <span className="text-xs font-medium">إضافة قسم</span>
+                                  </button>
+                                </div>
 
                                 {/* Employees without a department */}
                                 {empsNoDept.length > 0 && (
-                                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                    <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-                                      <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
-                                        <Users className="h-3.5 w-3.5 text-gray-500" />
-                                      </div>
-                                      <span className="text-sm font-bold text-gray-600">{hasDepts ? 'بدون قسم' : 'الموظفون'}</span>
-                                      <span className="text-xs text-gray-400">({empsNoDept.length})</span>
+                                  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                                    <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                                      <p className="text-sm font-semibold text-gray-600 flex items-center gap-1.5">
+                                        <Users className="h-3.5 w-3.5" />
+                                        {hasDepts ? 'بدون قسم' : 'الموظفون'} ({empsNoDept.length})
+                                      </p>
                                     </div>
-                                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                    <div className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                                       {empsNoDept.map((emp) => (
-                                        <div key={emp.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                                        <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
                                           <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                                             <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
                                           </div>
@@ -521,9 +529,8 @@ export const Directorates: React.FC = () => {
                                   </div>
                                 )}
 
-                                {/* Empty state */}
-                                {(dir.employees?.length || 0) === 0 && dirDepts.length === 0 && (
-                                  <p className="text-sm text-gray-400 text-center py-2">لا يوجد موظفون أو أقسام تابعة لهذه الإدارة</p>
+                                {(dir.employees?.length || 0) === 0 && !hasDepts && (
+                                  <p className="text-sm text-gray-400">لا يوجد موظفون تابعون لهذه الإدارة</p>
                                 )}
                               </div>
                             );

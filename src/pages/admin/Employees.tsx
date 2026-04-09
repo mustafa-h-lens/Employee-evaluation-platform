@@ -5,9 +5,23 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { CreditCard as Edit, Trash2, Users, AlertTriangle, UserPlus } from 'lucide-react';
+import { CreditCard as Edit, Trash2, Users, AlertTriangle, UserPlus, Plus, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { RegisterUserModal } from '../../components/ui/RegisterUserModal';
+
+interface DirAssignment {
+  directorate_id: string;
+  department_id: string;
+  is_primary: boolean;
+}
+
+interface EmployeeDirInfo {
+  directorate_id: string;
+  department_id: string | null;
+  is_primary: boolean;
+  directorate?: { name: string };
+  department?: { name: string };
+}
 
 interface Employee {
   id: string;
@@ -20,6 +34,7 @@ interface Employee {
   directorate_id: string | null;
   directorate?: { name: string };
   department?: { name: string };
+  dir_assignments?: EmployeeDirInfo[];
 }
 
 export const Employees: React.FC = () => {
@@ -42,9 +57,10 @@ export const Employees: React.FC = () => {
     email: '',
     phone: '',
     job_title: '',
-    directorate_id: '',
-    department_id: ''
   });
+  const [dirAssignments, setDirAssignments] = useState<DirAssignment[]>([
+    { directorate_id: '', department_id: '', is_primary: true }
+  ]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -69,6 +85,33 @@ export const Employees: React.FC = () => {
       const filtered = (data || []).filter(
         (e: any) => !e.linked_user || e.linked_user.role === 'employee'
       );
+
+      // Fetch all dir assignments for these employees
+      const empIds = filtered.map((e: any) => e.id);
+      if (empIds.length > 0) {
+        const { data: assignments } = await supabase
+          .from('employee_directorates')
+          .select('employee_id, directorate_id, department_id, is_primary, directorate:directorates(name), department:departments(name)')
+          .in('employee_id', empIds);
+
+        const assignMap = new Map<string, EmployeeDirInfo[]>();
+        (assignments || []).forEach((a: any) => {
+          const list = assignMap.get(a.employee_id) || [];
+          list.push({
+            directorate_id: a.directorate_id,
+            department_id: a.department_id,
+            is_primary: a.is_primary,
+            directorate: a.directorate,
+            department: a.department,
+          });
+          assignMap.set(a.employee_id, list);
+        });
+
+        filtered.forEach((emp: any) => {
+          emp.dir_assignments = assignMap.get(emp.id) || [];
+        });
+      }
+
       setEmployees(filtered);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -87,10 +130,16 @@ export const Employees: React.FC = () => {
     setDepartmentsList(data || []);
   };
 
-  const filteredDepartments = departmentsList.filter(d => d.directorate_id === formData.directorate_id);
+  const getFilteredDepts = (directorateId: string) => {
+    return departmentsList.filter(d => d.directorate_id === directorateId);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Get primary assignment for backward compat
+    const primary = dirAssignments.find(a => a.is_primary) || dirAssignments[0];
+    const validAssignments = dirAssignments.filter(a => a.directorate_id);
 
     try {
       if (editingEmployee) {
@@ -101,10 +150,29 @@ export const Employees: React.FC = () => {
             email: formData.email,
             phone: formData.phone,
             job_title: formData.job_title,
-            directorate_id: formData.directorate_id || null,
-            department_id: formData.department_id || null
+            directorate_id: primary?.directorate_id || null,
+            department_id: primary?.department_id || null
           })
           .eq('id', editingEmployee.id);
+
+        // Update dir assignments: delete old, insert new
+        await supabase
+          .from('employee_directorates')
+          .delete()
+          .eq('employee_id', editingEmployee.id);
+
+        if (validAssignments.length > 0) {
+          await supabase
+            .from('employee_directorates')
+            .insert(
+              validAssignments.map(a => ({
+                employee_id: editingEmployee.id,
+                directorate_id: a.directorate_id,
+                department_id: a.department_id || null,
+                is_primary: a.is_primary,
+              }))
+            );
+        }
 
         if (user) {
           await supabase.from('audit_logs').insert({
@@ -124,8 +192,8 @@ export const Employees: React.FC = () => {
             email: formData.email,
             phone: formData.phone,
             job_title: formData.job_title,
-            directorate_id: formData.directorate_id || null,
-            department_id: formData.department_id || null
+            directorate_id: primary?.directorate_id || null,
+            department_id: primary?.department_id || null
           })
           .select()
           .single();
@@ -146,6 +214,20 @@ export const Employees: React.FC = () => {
             .from('employees')
             .update({ user_id: newUser.id })
             .eq('id', newEmployee.id);
+
+          // Insert dir assignments
+          if (validAssignments.length > 0) {
+            await supabase
+              .from('employee_directorates')
+              .insert(
+                validAssignments.map(a => ({
+                  employee_id: newEmployee.id,
+                  directorate_id: a.directorate_id,
+                  department_id: a.department_id || null,
+                  is_primary: a.is_primary,
+                }))
+              );
+          }
 
           if (user) {
             await supabase.from('audit_logs').insert({
@@ -175,12 +257,11 @@ export const Employees: React.FC = () => {
       email: '',
       phone: '',
       job_title: '',
-      directorate_id: '',
-      department_id: ''
     });
+    setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
   };
 
-  const openEditModal = (employee: Employee) => {
+  const openEditModal = async (employee: Employee) => {
     setEditingEmployee(employee);
     setFormData({
       employee_number: employee.employee_number,
@@ -188,16 +269,62 @@ export const Employees: React.FC = () => {
       email: employee.email,
       phone: employee.phone || '',
       job_title: employee.job_title,
-      directorate_id: employee.directorate_id || '',
-      department_id: employee.department_id || ''
     });
+
+    // Load existing dir assignments
+    const { data: assignments } = await supabase
+      .from('employee_directorates')
+      .select('directorate_id, department_id, is_primary')
+      .eq('employee_id', employee.id);
+
+    if (assignments && assignments.length > 0) {
+      setDirAssignments(assignments.map(a => ({
+        directorate_id: a.directorate_id,
+        department_id: a.department_id || '',
+        is_primary: a.is_primary,
+      })));
+    } else if (employee.directorate_id) {
+      // Fallback to legacy fields
+      setDirAssignments([{
+        directorate_id: employee.directorate_id,
+        department_id: employee.department_id || '',
+        is_primary: true,
+      }]);
+    } else {
+      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
+    }
+
     setIsModalOpen(true);
   };
 
-  const openAddModal = () => {
-    setEditingEmployee(null);
-    resetForm();
-    setIsModalOpen(true);
+  const addDirAssignment = () => {
+    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false }]);
+  };
+
+  const removeDirAssignment = (index: number) => {
+    setDirAssignments(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      // If we removed the primary, make the first one primary
+      if (next.length > 0 && !next.some(a => a.is_primary)) {
+        next[0].is_primary = true;
+      }
+      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true }];
+    });
+  };
+
+  const updateDirAssignment = (index: number, field: string, value: string | boolean) => {
+    setDirAssignments(prev => {
+      const next = [...prev];
+      if (field === 'is_primary' && value === true) {
+        // Only one primary
+        next.forEach((a, i) => { a.is_primary = i === index; });
+      } else if (field === 'directorate_id') {
+        next[index] = { ...next[index], directorate_id: value as string, department_id: '' };
+      } else {
+        next[index] = { ...next[index], [field]: value };
+      }
+      return next;
+    });
   };
 
   const confirmDelete = (emp: Employee) => {
@@ -219,6 +346,7 @@ export const Employees: React.FC = () => {
         .eq('email', deleteTarget.email)
         .maybeSingle();
 
+      // employee_directorates will cascade-delete
       await supabase
         .from('employees')
         .delete()
@@ -329,6 +457,32 @@ export const Employees: React.FC = () => {
     .filter(e => selectedIds.has(e.id))
     .map(e => e.full_name);
 
+  const renderDirAssignmentLabels = (emp: Employee) => {
+    const assignments = emp.dir_assignments;
+    if (!assignments || assignments.length === 0) {
+      // Fallback to legacy
+      return {
+        directorates: emp.directorate?.name || null,
+        departments: emp.department?.name || null,
+      };
+    }
+
+    const dirNames = assignments
+      .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+      .map(a => a.directorate?.name)
+      .filter(Boolean);
+
+    const deptNames = assignments
+      .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+      .map(a => a.department?.name)
+      .filter(Boolean);
+
+    return {
+      directorates: dirNames.length > 0 ? dirNames : null,
+      departments: deptNames.length > 0 ? deptNames : null,
+    };
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
   }
@@ -390,8 +544,8 @@ export const Employees: React.FC = () => {
                 <TableRow>
                   <TableHead>اسم الموظف</TableHead>
                   <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>الإدارة</TableHead>
-                  <TableHead>القسم</TableHead>
+                  <TableHead>الإدارات</TableHead>
+                  <TableHead>الأقسام</TableHead>
                   <TableHead>المسمى الوظيفي</TableHead>
                   <TableHead>رقم الموظف</TableHead>
                   <TableHead>الإجراءات</TableHead>
@@ -406,54 +560,87 @@ export const Employees: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.map((emp) => (
-                  <TableRow key={emp.id} className={selectedIds.has(emp.id) ? 'bg-red-50/50' : ''}>
-                    <TableCell>
-                      <span className="font-medium">{emp.full_name}</span>
-                    </TableCell>
-                    <TableCell className="text-sm">{emp.email}</TableCell>
-                    <TableCell>
-                      {emp.directorate?.name || <span className="text-gray-400">غير محدد</span>}
-                    </TableCell>
-                    <TableCell>
-                      {emp.department?.name || <span className="text-gray-400">—</span>}
-                    </TableCell>
-                    <TableCell>{emp.job_title}</TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm">{emp.employee_number}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEditModal(emp)}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span>تعديل</span>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => confirmDelete(emp)}
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span>حذف</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(emp.id)}
-                        onChange={() => toggleSelect(emp.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {employees.map((emp) => {
+                  const labels = renderDirAssignmentLabels(emp);
+                  return (
+                    <TableRow key={emp.id} className={selectedIds.has(emp.id) ? 'bg-red-50/50' : ''}>
+                      <TableCell>
+                        <span className="font-medium">{emp.full_name}</span>
+                      </TableCell>
+                      <TableCell className="text-sm">{emp.email}</TableCell>
+                      <TableCell>
+                        {labels.directorates ? (
+                          Array.isArray(labels.directorates) ? (
+                            <div className="flex flex-col gap-1">
+                              {labels.directorates.map((name, i) => (
+                                <span key={i} className={`inline-block text-xs px-2 py-0.5 rounded-full ${
+                                  i === 0 ? 'bg-purple-100 text-purple-700 font-medium' : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm">{labels.directorates}</span>
+                          )
+                        ) : (
+                          <span className="text-gray-400">غير محدد</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {labels.departments ? (
+                          Array.isArray(labels.departments) ? (
+                            <div className="flex flex-col gap-1">
+                              {labels.departments.map((name, i) => (
+                                <span key={i} className="inline-block text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700">
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm">{labels.departments}</span>
+                          )
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{emp.job_title}</TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">{emp.employee_number}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditModal(emp)}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span>تعديل</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => confirmDelete(emp)}
+                            className="flex items-center gap-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>حذف</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(emp.id)}
+                          onChange={() => toggleSelect(emp.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -506,38 +693,92 @@ export const Employees: React.FC = () => {
               required
               placeholder="مطور برمجيات"
             />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">الإدارة</label>
-              <select
-                value={formData.directorate_id}
-                onChange={(e) => setFormData({ ...formData, directorate_id: e.target.value, department_id: '' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          </div>
+
+          {/* Multi-directorate assignments */}
+          <div className="mt-6 border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-800">الإدارات والأقسام</h3>
+              <button
+                type="button"
+                onClick={addDirAssignment}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
               >
-                <option value="">اختر الإدارة</option>
-                {directoratesList.map((dir) => (
-                  <option key={dir.id} value={dir.id}>
-                    {dir.name}
-                  </option>
-                ))}
-              </select>
+                <Plus className="h-3.5 w-3.5" />
+                إضافة إدارة أخرى
+              </button>
             </div>
-            {filteredDepartments.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">القسم</label>
-                <select
-                  value={formData.department_id}
-                  onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">-- اختر القسم (اختياري) --</option>
-                  {filteredDepartments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+
+            <div className="space-y-3">
+              {dirAssignments.map((assignment, index) => {
+                const filteredDepts = getFilteredDepts(assignment.directorate_id);
+                return (
+                  <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-purple-200 bg-purple-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="primary_dir"
+                            checked={assignment.is_primary}
+                            onChange={() => updateDirAssignment(index, 'is_primary', true)}
+                            className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-xs text-gray-600">
+                            {assignment.is_primary ? (
+                              <span className="text-purple-700 font-medium">الإدارة الرئيسية</span>
+                            ) : 'تعيين كرئيسية'}
+                          </span>
+                        </label>
+                      </div>
+                      {dirAssignments.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeDirAssignment(index)}
+                          className="text-red-400 hover:text-red-600 p-0.5"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">الإدارة</label>
+                        <select
+                          value={assignment.directorate_id}
+                          onChange={(e) => updateDirAssignment(index, 'directorate_id', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">اختر الإدارة</option>
+                          {directoratesList.map((dir) => (
+                            <option key={dir.id} value={dir.id}>
+                              {dir.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {filteredDepts.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">القسم</label>
+                          <select
+                            value={assignment.department_id}
+                            onChange={(e) => updateDirAssignment(index, 'department_id', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">-- اختر القسم (اختياري) --</option>
+                            {filteredDepts.map((dept) => (
+                              <option key={dept.id} value={dept.id}>
+                                {dept.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <ModalFooter>

@@ -130,6 +130,7 @@ Deno.serve(async (req: Request) => {
         manager_id,
         phone,
         employee_number,
+        dir_assignments,
       } = body;
 
       if (!email || !password || !full_name || !role) {
@@ -190,9 +191,11 @@ Deno.serve(async (req: Request) => {
         };
 
         if (role === "employee") {
-          const { error: empError } = await supabaseAdmin
+          const { data: empRecord, error: empError } = await supabaseAdmin
             .from("employees")
-            .insert(empData);
+            .insert(empData)
+            .select("id")
+            .single();
           if (empError) {
             return new Response(
               JSON.stringify({
@@ -207,6 +210,33 @@ Deno.serve(async (req: Request) => {
                 },
               }
             );
+          }
+
+          // Insert multi-directorate assignments if provided
+          if (empRecord && dir_assignments && Array.isArray(dir_assignments) && dir_assignments.length > 0) {
+            const rows = dir_assignments
+              .filter((a: any) => a.directorate_id)
+              .map((a: any) => ({
+                employee_id: empRecord.id,
+                directorate_id: a.directorate_id,
+                department_id: a.department_id || null,
+                is_primary: !!a.is_primary,
+              }));
+            if (rows.length > 0) {
+              await supabaseAdmin
+                .from("employee_directorates")
+                .insert(rows);
+            }
+          } else if (empRecord && directorate_id) {
+            // Fallback: single assignment from legacy fields
+            await supabaseAdmin
+              .from("employee_directorates")
+              .insert({
+                employee_id: empRecord.id,
+                directorate_id,
+                department_id: department_id || null,
+                is_primary: true,
+              });
           }
         }
       }

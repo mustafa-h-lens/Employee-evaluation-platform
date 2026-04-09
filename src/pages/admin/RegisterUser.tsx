@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertCircle, Plus, X } from 'lucide-react';
 
 interface DirectorateOption {
   id: string;
@@ -14,6 +14,12 @@ interface DepartmentOption {
   id: string;
   name: string;
   directorate_id: string;
+}
+
+interface DirAssignment {
+  directorate_id: string;
+  department_id: string;
+  is_primary: boolean;
 }
 
 export const RegisterUser: React.FC = () => {
@@ -27,11 +33,13 @@ export const RegisterUser: React.FC = () => {
     full_name: '',
     role: 'employee',
     job_title: '',
-    directorate_id: '',
-    department_id: '',
     phone: '',
     employee_number: '',
   });
+
+  const [dirAssignments, setDirAssignments] = useState<DirAssignment[]>([
+    { directorate_id: '', department_id: '', is_primary: true }
+  ]);
 
   useEffect(() => {
     fetchDirectorates();
@@ -46,15 +54,41 @@ export const RegisterUser: React.FC = () => {
     if (deptRes.data) setDepartments(deptRes.data);
   };
 
-  const filteredDepartments = departments.filter(d => d.directorate_id === form.directorate_id);
+  const getFilteredDepts = (directorateId: string) => {
+    return departments.filter(d => d.directorate_id === directorateId);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'directorate_id') {
-      setForm(prev => ({ ...prev, directorate_id: value, department_id: '' }));
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }));
-    }
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addDirAssignment = () => {
+    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false }]);
+  };
+
+  const removeDirAssignment = (index: number) => {
+    setDirAssignments(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length > 0 && !next.some(a => a.is_primary)) {
+        next[0].is_primary = true;
+      }
+      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true }];
+    });
+  };
+
+  const updateDirAssignment = (index: number, field: string, value: string | boolean) => {
+    setDirAssignments(prev => {
+      const next = [...prev];
+      if (field === 'is_primary' && value === true) {
+        next.forEach((a, i) => { a.is_primary = i === index; });
+      } else if (field === 'directorate_id') {
+        next[index] = { ...next[index], directorate_id: value as string, department_id: '' };
+      } else {
+        next[index] = { ...next[index], [field]: value };
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +102,9 @@ export const RegisterUser: React.FC = () => {
         setFeedback({ type: 'error', message: 'الجلسة منتهية، يرجى تسجيل الدخول مجددًا' });
         return;
       }
+
+      const primary = dirAssignments.find(a => a.is_primary) || dirAssignments[0];
+      const validAssignments = dirAssignments.filter(a => a.directorate_id);
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=create-user`;
 
@@ -83,10 +120,11 @@ export const RegisterUser: React.FC = () => {
           full_name: form.full_name,
           role: form.role,
           job_title: form.job_title || undefined,
-          directorate_id: form.directorate_id || undefined,
-          department_id: form.department_id || undefined,
+          directorate_id: primary?.directorate_id || undefined,
+          department_id: primary?.department_id || undefined,
           phone: form.phone || undefined,
           employee_number: form.employee_number || undefined,
+          dir_assignments: validAssignments.length > 0 ? validAssignments : undefined,
         }),
       });
 
@@ -102,11 +140,10 @@ export const RegisterUser: React.FC = () => {
         full_name: '',
         role: 'employee',
         job_title: '',
-        directorate_id: '',
-        department_id: '',
         phone: '',
         employee_number: '',
       });
+      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -201,29 +238,80 @@ export const RegisterUser: React.FC = () => {
                     placeholder="مثال: EMP017"
                   />
 
-                  <Select
-                    label="الإدارة"
-                    name="directorate_id"
-                    value={form.directorate_id}
-                    onChange={handleChange}
-                    options={[
-                      { value: '', label: '-- اختر الإدارة --' },
-                      ...directorates.map(d => ({ value: d.id, label: d.name })),
-                    ]}
-                  />
+                  {/* Multi-directorate assignments */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-800">الإدارات والأقسام</h3>
+                      <button
+                        type="button"
+                        onClick={addDirAssignment}
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        إضافة إدارة أخرى
+                      </button>
+                    </div>
 
-                  {filteredDepartments.length > 0 && (
-                    <Select
-                      label="القسم"
-                      name="department_id"
-                      value={form.department_id}
-                      onChange={handleChange}
-                      options={[
-                        { value: '', label: '-- اختر القسم (اختياري) --' },
-                        ...filteredDepartments.map(d => ({ value: d.id, label: d.name })),
-                      ]}
-                    />
-                  )}
+                    <div className="space-y-3">
+                      {dirAssignments.map((assignment, index) => {
+                        const filteredDepts = getFilteredDepts(assignment.directorate_id);
+                        return (
+                          <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-purple-200 bg-purple-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="primary_dir_reg"
+                                  checked={assignment.is_primary}
+                                  onChange={() => updateDirAssignment(index, 'is_primary', true)}
+                                  className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500"
+                                />
+                                <span className="text-xs text-gray-600">
+                                  {assignment.is_primary ? (
+                                    <span className="text-purple-700 font-medium">الإدارة الرئيسية</span>
+                                  ) : 'تعيين كرئيسية'}
+                                </span>
+                              </label>
+                              {dirAssignments.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeDirAssignment(index)}
+                                  className="text-red-400 hover:text-red-600 p-0.5"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <Select
+                                label="الإدارة"
+                                name={`directorate_${index}`}
+                                value={assignment.directorate_id}
+                                onChange={(e) => updateDirAssignment(index, 'directorate_id', e.target.value)}
+                                options={[
+                                  { value: '', label: '-- اختر الإدارة --' },
+                                  ...directorates.map(d => ({ value: d.id, label: d.name })),
+                                ]}
+                              />
+
+                              {filteredDepts.length > 0 && (
+                                <Select
+                                  label="القسم"
+                                  name={`department_${index}`}
+                                  value={assignment.department_id}
+                                  onChange={(e) => updateDirAssignment(index, 'department_id', e.target.value)}
+                                  options={[
+                                    { value: '', label: '-- اختر القسم (اختياري) --' },
+                                    ...filteredDepts.map(d => ({ value: d.id, label: d.name })),
+                                  ]}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <Input
                     label="رقم الجوال"

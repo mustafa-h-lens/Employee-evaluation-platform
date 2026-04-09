@@ -126,11 +126,32 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
         return;
       }
 
-      // Find employees directly under this directorate
+      // Find employees assigned to this directorate (via junction table)
+      const { data: assignmentData } = await supabase
+        .from('employee_directorates')
+        .select('employee_id')
+        .eq('directorate_id', directorate.id);
+
+      const assignedEmpIds = (assignmentData || []).map(a => a.employee_id);
+
+      // Also get employees with legacy directorate_id (backward compat)
+      const { data: legacyEmps } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('directorate_id', directorate.id);
+
+      const allEmpIds = [...new Set([...assignedEmpIds, ...(legacyEmps || []).map(e => e.id)])];
+
+      if (allEmpIds.length === 0) {
+        setEmployees([]);
+        setLoading(false);
+        return;
+      }
+
       const { data: empData } = await supabase
         .from('employees')
         .select('id, user_id, full_name, email, job_title, employee_number, directorate_id')
-        .eq('directorate_id', directorate.id)
+        .in('id', allEmpIds)
         .order('full_name');
 
       if (!empData || empData.length === 0) {

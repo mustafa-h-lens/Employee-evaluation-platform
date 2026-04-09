@@ -59,23 +59,23 @@ export const DirectorDashboard: React.FC = () => {
       let evaluated = 0;
 
       if (directorate) {
-        // Get department IDs under this directorate
-        const { data: departments } = await supabase
-          .from('departments')
+        // Count employees assigned to this directorate (junction table + legacy)
+        const { data: assignmentData } = await supabase
+          .from('employee_directorates')
+          .select('employee_id')
+          .eq('directorate_id', directorate.id);
+
+        const { data: legacyEmps } = await supabase
+          .from('employees')
           .select('id')
           .eq('directorate_id', directorate.id);
 
-        const deptIds = (departments || []).map(d => d.id).filter(Boolean);
+        const allEmpIds = [...new Set([
+          ...(assignmentData || []).map((a: any) => a.employee_id),
+          ...(legacyEmps || []).map((e: any) => e.id),
+        ])];
 
-        // Count employees in those departments
-        if (deptIds.length > 0) {
-          const { count: empCount } = await supabase
-            .from('employees')
-            .select('*', { count: 'exact', head: true })
-            .in('department_id', deptIds);
-
-          totalEmployees = empCount || 0;
-        }
+        totalEmployees = allEmpIds.length;
 
         // Get active period
         const { data: period } = await supabase

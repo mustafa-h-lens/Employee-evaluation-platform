@@ -150,10 +150,30 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         return;
       }
 
+      // Find employees assigned to this directorate (via junction table + legacy)
+      const { data: assignmentData } = await supabase
+        .from('employee_directorates')
+        .select('employee_id')
+        .eq('directorate_id', directorate.id);
+
+      const assignedEmpIds = (assignmentData || []).map((a: any) => a.employee_id);
+
+      const { data: legacyEmps } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('directorate_id', directorate.id);
+
+      const allEmpIds = [...new Set([...assignedEmpIds, ...(legacyEmps || []).map((e: any) => e.id)])];
+
+      if (allEmpIds.length === 0) {
+        setEmployeesLoading(false);
+        return;
+      }
+
       const { data: employees } = await supabase
         .from('employees')
-        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id')
-        .eq('directorate_id', directorate.id)
+        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id, department_id')
+        .in('id', allEmpIds)
         .order('full_name');
 
       if (!employees || employees.length === 0) {
