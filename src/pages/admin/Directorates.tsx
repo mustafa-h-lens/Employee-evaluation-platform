@@ -424,94 +424,110 @@ export const Directorates: React.FC = () => {
                     </TableRow>
                     {expandedId === dir.id && (
                       <TableRow>
-                        <TableCell colSpan={4} className="bg-gray-50 px-8 py-3">
-                          {/* Departments Section */}
+                        <TableCell colSpan={4} className="bg-gray-50 px-8 py-4">
                           {(() => {
                             const dirDepts = getDeptsByDirectorate(dir.id);
-                            return dirDepts.length > 0 ? (
-                              <div className="mb-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <p className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
-                                    <Building2 className="h-4 w-4 text-teal-600" />
-                                    الأقسام ({dirDepts.length})
+                            const empsNoDept = (dir.employees || []).filter(e => !e.department_id);
+                            const hasDepts = dirDepts.length > 0;
+
+                            return (
+                              <div className="space-y-4">
+                                {/* Add department button */}
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-semibold text-gray-700">
+                                    الموظفون والأقسام ({dir.employees?.length || 0} موظف{hasDepts ? ` · ${dirDepts.length} قسم` : ''})
                                   </p>
                                   <button
                                     onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
-                                    className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors"
+                                    className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-teal-50 border border-teal-200 transition-colors"
                                   >
                                     <Plus className="h-3.5 w-3.5" />
                                     إضافة قسم
                                   </button>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
-                                  {dirDepts.map((dept) => {
-                                    const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
-                                    return (
-                                      <div key={dept.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-200">
+
+                                {/* Departments with their employees */}
+                                {dirDepts.map((dept) => {
+                                  const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
+                                  return (
+                                    <div key={dept.id} className="bg-white rounded-xl border border-teal-200 overflow-hidden">
+                                      {/* Department header */}
+                                      <div className="flex items-center justify-between px-4 py-2.5 bg-teal-50 border-b border-teal-100">
                                         <div className="flex items-center gap-2">
-                                          <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
+                                          <div className="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center">
                                             <Building2 className="h-3.5 w-3.5 text-teal-600" />
                                           </div>
                                           <div>
-                                            <span className="text-sm font-medium text-gray-800">{dept.name}</span>
-                                            <span className="text-xs text-gray-500 block">{deptEmps.length} موظف</span>
+                                            <span className="text-sm font-bold text-teal-800">{dept.name}</span>
+                                            <span className="text-xs text-teal-600 mr-2">({deptEmps.length} موظف)</span>
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <button onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
-                                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                            className="p-1.5 text-teal-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="تعديل القسم">
                                             <Edit className="h-3.5 w-3.5" />
                                           </button>
                                           <button onClick={() => setDeleteDept(dept)}
-                                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                            className="p-1.5 text-teal-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="حذف القسم">
                                             <Trash2 className="h-3.5 w-3.5" />
                                           </button>
                                         </div>
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="mb-3">
-                                <button
-                                  onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
-                                  className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors"
-                                >
-                                  <Plus className="h-3.5 w-3.5" />
-                                  إضافة قسم لهذه الإدارة
-                                </button>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Employees Section */}
-                          {(dir.employees?.length || 0) > 0 ? (
-                            <>
-                              <p className="text-sm font-medium text-gray-500 mb-2">الموظفون ({dir.employees!.length}):</p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                {dir.employees!.map((emp) => {
-                                  const empDept = emp.department_id ? allDepartments.find(d => d.id === emp.department_id) : null;
-                                  return (
-                                    <div key={emp.id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
-                                      <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
-                                        <span className="text-xs text-gray-500 block">
-                                          {emp.job_title}
-                                          {empDept && <span className="text-teal-600"> — {empDept.name}</span>}
-                                        </span>
-                                      </div>
+                                      {/* Department employees */}
+                                      {deptEmps.length > 0 ? (
+                                        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                          {deptEmps.map((emp) => (
+                                            <div key={emp.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                                              <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-xs font-bold text-teal-700">{emp.full_name.charAt(0)}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
+                                                <span className="text-xs text-gray-500 block">{emp.job_title}</span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-gray-400 text-center py-3">لا يوجد موظفون في هذا القسم</p>
+                                      )}
                                     </div>
                                   );
                                 })}
+
+                                {/* Employees without a department */}
+                                {empsNoDept.length > 0 && (
+                                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                    <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+                                      <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
+                                        <Users className="h-3.5 w-3.5 text-gray-500" />
+                                      </div>
+                                      <span className="text-sm font-bold text-gray-600">{hasDepts ? 'بدون قسم' : 'الموظفون'}</span>
+                                      <span className="text-xs text-gray-400">({empsNoDept.length})</span>
+                                    </div>
+                                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                      {empsNoDept.map((emp) => (
+                                        <div key={emp.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                                          <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                            <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
+                                            <span className="text-xs text-gray-500 block">{emp.job_title}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Empty state */}
+                                {(dir.employees?.length || 0) === 0 && dirDepts.length === 0 && (
+                                  <p className="text-sm text-gray-400 text-center py-2">لا يوجد موظفون أو أقسام تابعة لهذه الإدارة</p>
+                                )}
                               </div>
-                            </>
-                          ) : (
-                            <p className="text-sm text-gray-400">لا يوجد موظفون تابعون لهذه الإدارة</p>
-                          )}
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     )}
