@@ -19,11 +19,13 @@ interface Employee {
   department_id: string | null;
   directorate_id: string | null;
   directorate?: { name: string };
+  department?: { name: string };
 }
 
 export const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [directoratesList, setDirectoratesList] = useState<any[]>([]);
+  const [departmentsList, setDepartmentsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -40,13 +42,15 @@ export const Employees: React.FC = () => {
     email: '',
     phone: '',
     job_title: '',
-    directorate_id: ''
+    directorate_id: '',
+    department_id: ''
   });
   const { user } = useAuth();
 
   useEffect(() => {
     fetchEmployees();
     fetchDirectorates();
+    fetchDepartments();
   }, []);
 
   const fetchEmployees = async () => {
@@ -56,6 +60,7 @@ export const Employees: React.FC = () => {
         .select(`
           *,
           directorate:directorates(name),
+          department:departments(name),
           linked_user:users!employees_user_id_fkey(role)
         `)
         .order('full_name');
@@ -77,6 +82,13 @@ export const Employees: React.FC = () => {
     setDirectoratesList(data || []);
   };
 
+  const fetchDepartments = async () => {
+    const { data } = await supabase.from('departments').select('id, name, directorate_id').eq('status', 'active').order('name');
+    setDepartmentsList(data || []);
+  };
+
+  const filteredDepartments = departmentsList.filter(d => d.directorate_id === formData.directorate_id);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -89,7 +101,8 @@ export const Employees: React.FC = () => {
             email: formData.email,
             phone: formData.phone,
             job_title: formData.job_title,
-            directorate_id: formData.directorate_id || null
+            directorate_id: formData.directorate_id || null,
+            department_id: formData.department_id || null
           })
           .eq('id', editingEmployee.id);
 
@@ -111,7 +124,8 @@ export const Employees: React.FC = () => {
             email: formData.email,
             phone: formData.phone,
             job_title: formData.job_title,
-            directorate_id: formData.directorate_id || null
+            directorate_id: formData.directorate_id || null,
+            department_id: formData.department_id || null
           })
           .select()
           .single();
@@ -161,7 +175,8 @@ export const Employees: React.FC = () => {
       email: '',
       phone: '',
       job_title: '',
-      directorate_id: ''
+      directorate_id: '',
+      department_id: ''
     });
   };
 
@@ -173,7 +188,8 @@ export const Employees: React.FC = () => {
       email: employee.email,
       phone: employee.phone || '',
       job_title: employee.job_title,
-      directorate_id: employee.directorate_id || ''
+      directorate_id: employee.directorate_id || '',
+      department_id: employee.department_id || ''
     });
     setIsModalOpen(true);
   };
@@ -375,6 +391,7 @@ export const Employees: React.FC = () => {
                   <TableHead>اسم الموظف</TableHead>
                   <TableHead>البريد الإلكتروني</TableHead>
                   <TableHead>الإدارة</TableHead>
+                  <TableHead>القسم</TableHead>
                   <TableHead>المسمى الوظيفي</TableHead>
                   <TableHead>رقم الموظف</TableHead>
                   <TableHead>الإجراءات</TableHead>
@@ -397,6 +414,9 @@ export const Employees: React.FC = () => {
                     <TableCell className="text-sm">{emp.email}</TableCell>
                     <TableCell>
                       {emp.directorate?.name || <span className="text-gray-400">غير محدد</span>}
+                    </TableCell>
+                    <TableCell>
+                      {emp.department?.name || <span className="text-gray-400">—</span>}
                     </TableCell>
                     <TableCell>{emp.job_title}</TableCell>
                     <TableCell>
@@ -490,7 +510,7 @@ export const Employees: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">الإدارة</label>
               <select
                 value={formData.directorate_id}
-                onChange={(e) => setFormData({ ...formData, directorate_id: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, directorate_id: e.target.value, department_id: '' })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="">اختر الإدارة</option>
@@ -501,6 +521,23 @@ export const Employees: React.FC = () => {
                 ))}
               </select>
             </div>
+            {filteredDepartments.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">القسم</label>
+                <select
+                  value={formData.department_id}
+                  onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">-- اختر القسم (اختياري) --</option>
+                  {filteredDepartments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <ModalFooter>

@@ -85,7 +85,8 @@ export const Login: React.FC = () => {
                 fullWidth
                 size="lg"
                 loading={loading}
-                className="flex items-center justify-center gap-2"
+                className="flex items-center justify-center gap-2 hover:!bg-[#003366] transition-colors"
+                style={{ backgroundColor: '#001f3d' }}
               >
                 <span>تسجيل الدخول</span>
                 <LogIn className="h-5 w-5" />
@@ -105,7 +106,7 @@ export const Login: React.FC = () => {
         </div>
       </div>
 
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 p-12 items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 p-12 items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #002d5e 0%, #001f3d 50%, #00152a 100%)' }}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 right-20 w-64 h-64 border-4 border-white rounded-full"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 border-4 border-white rounded-full"></div>

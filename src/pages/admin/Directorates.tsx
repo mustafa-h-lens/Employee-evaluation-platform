@@ -8,7 +8,7 @@ import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import {
   Plus, CreditCard as Edit, Trash2, Landmark, AlertTriangle,
-  ChevronDown, ChevronUp, UserPlus, Crown, Users, ArrowLeftRight
+  ChevronDown, ChevronUp, UserPlus, Crown, Users, ArrowLeftRight, Building2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -23,6 +23,15 @@ interface EmployeeBasic {
   id: string;
   full_name: string;
   job_title: string;
+  department_id?: string | null;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  directorate_id: string;
+  manager_id: string | null;
+  status: string;
 }
 
 interface Directorate {
@@ -65,6 +74,13 @@ export const Directorates: React.FC = () => {
   const [deleteDirector, setDeleteDirector] = useState<DirectorUser | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Departments
+  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
+  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
+  const [editingDept, setEditingDept] = useState<Department | null>(null);
+  const [deptForm, setDeptForm] = useState({ name: '', directorate_id: '' });
+  const [deleteDept, setDeleteDept] = useState<Department | null>(null);
+
   // Switch director modal
   const [switchTarget, setSwitchTarget] = useState<Directorate | null>(null);
   const [switchDirectorId, setSwitchDirectorId] = useState('');
@@ -74,12 +90,14 @@ export const Directorates: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [dirResult, directorsResult, ceoResult, empsResult] = await Promise.all([
+      const [dirResult, directorsResult, ceoResult, empsResult, deptsResult] = await Promise.all([
         supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)').order('name'),
         supabase.from('users').select('id, full_name, email, job_title').eq('role', 'director').order('full_name'),
         supabase.from('users').select('id, full_name, email, job_title').eq('role', 'ceo').order('full_name'),
-        supabase.from('employees').select('id, full_name, job_title, directorate_id').order('full_name'),
+        supabase.from('employees').select('id, full_name, job_title, directorate_id, department_id').order('full_name'),
+        supabase.from('departments').select('id, name, directorate_id, manager_id, status').eq('status', 'active').order('name'),
       ]);
+      setAllDepartments((deptsResult.data || []) as Department[]);
 
       // Combine directors and CEOs, CEOs first
       const combined = [...(ceoResult.data || []), ...(directorsResult.data || [])];
@@ -138,6 +156,46 @@ export const Directorates: React.FC = () => {
       setDeleting(false);
     }
   };
+
+  // ─── Department CRUD ────────────────────────────────
+
+  const handleDeptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = { name: deptForm.name, directorate_id: deptForm.directorate_id, status: 'active' };
+      if (editingDept) {
+        await supabase.from('departments').update({ name: deptForm.name }).eq('id', editingDept.id);
+        if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'تحديث قسم', entity_type: 'departments', entity_id: editingDept.id, details: payload });
+      } else {
+        const { data } = await supabase.from('departments').insert(payload).select().single();
+        if (user && data) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'إضافة قسم', entity_type: 'departments', entity_id: data.id, details: payload });
+      }
+      setIsDeptModalOpen(false);
+      setEditingDept(null);
+      setDeptForm({ name: '', directorate_id: '' });
+      fetchData();
+    } catch (error: any) {
+      alert('حدث خطأ: ' + (error?.message || ''));
+    }
+  };
+
+  const handleDeleteDept = async () => {
+    if (!deleteDept) return;
+    setDeleting(true);
+    try {
+      await supabase.from('employees').update({ department_id: null }).eq('department_id', deleteDept.id);
+      await supabase.from('departments').delete().eq('id', deleteDept.id);
+      if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'حذف قسم', entity_type: 'departments', entity_id: deleteDept.id, details: { name: deleteDept.name } });
+      setDeleteDept(null);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const getDeptsByDirectorate = (dirId: string) => allDepartments.filter(d => d.directorate_id === dirId);
 
   // ─── Switch Director ───────────────────────────────
 
@@ -249,7 +307,7 @@ export const Directorates: React.FC = () => {
           <p className="text-gray-600 mt-2">إدارة الإدارات والمديرين وتعيين الموظفين</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => { setIsRegisterOpen(true); setRegisterFeedback(null); setShowPassword(false); }} variant="outline" className="flex items-center gap-2">
+          <Button onClick={() => { setIsRegisterOpen(true); setRegisterFeedback(null); }} variant="outline" className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
             <span>تسجيل مدير جديد</span>
           </Button>
@@ -352,21 +410,88 @@ export const Directorates: React.FC = () => {
                     {expandedId === dir.id && (
                       <TableRow>
                         <TableCell colSpan={4} className="bg-gray-50 px-8 py-3">
+                          {/* Departments Section */}
+                          {(() => {
+                            const dirDepts = getDeptsByDirectorate(dir.id);
+                            return dirDepts.length > 0 ? (
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+                                    <Building2 className="h-4 w-4 text-teal-600" />
+                                    الأقسام ({dirDepts.length})
+                                  </p>
+                                  <button
+                                    onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
+                                    className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors"
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    إضافة قسم
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
+                                  {dirDepts.map((dept) => {
+                                    const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
+                                    return (
+                                      <div key={dept.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-200">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
+                                            <Building2 className="h-3.5 w-3.5 text-teal-600" />
+                                          </div>
+                                          <div>
+                                            <span className="text-sm font-medium text-gray-800">{dept.name}</span>
+                                            <span className="text-xs text-gray-500 block">{deptEmps.length} موظف</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <button onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
+                                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                            <Edit className="h-3.5 w-3.5" />
+                                          </button>
+                                          <button onClick={() => setDeleteDept(dept)}
+                                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mb-3">
+                                <button
+                                  onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
+                                  className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  إضافة قسم لهذه الإدارة
+                                </button>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Employees Section */}
                           {(dir.employees?.length || 0) > 0 ? (
                             <>
                               <p className="text-sm font-medium text-gray-500 mb-2">الموظفون ({dir.employees!.length}):</p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                {dir.employees!.map((emp) => (
-                                  <div key={emp.id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
-                                    <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                      <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
+                                {dir.employees!.map((emp) => {
+                                  const empDept = emp.department_id ? allDepartments.find(d => d.id === emp.department_id) : null;
+                                  return (
+                                    <div key={emp.id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
+                                      <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
+                                        <span className="text-xs text-gray-500 block">
+                                          {emp.job_title}
+                                          {empDept && <span className="text-teal-600"> — {empDept.name}</span>}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
-                                      <span className="text-xs text-gray-500 block">{emp.job_title}</span>
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </>
                           ) : (
@@ -571,6 +696,30 @@ export const Directorates: React.FC = () => {
         <ModalFooter className="justify-center">
           <Button variant="secondary" onClick={() => setDeleteDirector(null)}>إلغاء</Button>
           <Button variant="danger" onClick={handleDeleteDirector} loading={deleting}><span className="flex items-center gap-1"><Trash2 className="h-4 w-4" /><span>حذف نهائي</span></span></Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* ─── Add/Edit Department Modal ─────────── */}
+      <Modal isOpen={isDeptModalOpen} onClose={() => setIsDeptModalOpen(false)} title={editingDept ? 'تعديل القسم' : 'إضافة قسم جديد'}>
+        <form onSubmit={handleDeptSubmit} className="space-y-4">
+          <Input label="اسم القسم" value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} required placeholder="مثال: قسم التصميم" />
+          <ModalFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsDeptModalOpen(false)}>إلغاء</Button>
+            <Button type="submit">{editingDept ? 'تحديث' : 'إضافة'}</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* ─── Delete Department Modal ──────────── */}
+      <Modal isOpen={!!deleteDept} onClose={() => setDeleteDept(null)} title="تأكيد حذف القسم">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
+          <p className="text-gray-900 font-medium mb-2">هل أنت متأكد من حذف قسم <span className="font-bold">{deleteDept?.name}</span>؟</p>
+          <p className="text-sm text-amber-600">سيتم فك ربط الموظفين المرتبطين بهذا القسم</p>
+        </div>
+        <ModalFooter className="justify-center">
+          <Button variant="secondary" onClick={() => setDeleteDept(null)}>إلغاء</Button>
+          <Button variant="danger" onClick={handleDeleteDept} loading={deleting}><span className="flex items-center gap-1"><Trash2 className="h-4 w-4" /><span>حذف</span></span></Button>
         </ModalFooter>
       </Modal>
     </div>

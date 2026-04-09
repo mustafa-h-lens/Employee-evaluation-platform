@@ -60,6 +60,9 @@ interface Employee {
   job_title: string; phone?: string; employee_number: string;
   department_id: string | null; directorate_id: string | null; manager_id: string | null;
 }
+interface Department {
+  id: string; name: string; directorate_id: string; manager_id: string | null;
+}
 interface SupervisorAssignment {
   id: string; user_id: string; title: string; status: string;
   start_date: string; end_date: string; member_count: number;
@@ -88,6 +91,7 @@ const ROLE_COLORS: Record<string, { bg: string; border: string; gradient: string
   director:   { bg: '#faf5ff', border: '#a78bfa', gradient: 'from-purple-500 to-violet-600', text: '#5b21b6', badge: 'bg-purple-500', edge: '#8b5cf6', glow: 'rgba(139,92,246,0.4)', minimap: '#8b5cf6' },
   employee:   { bg: '#ecfdf5', border: '#34d399', gradient: 'from-emerald-500 to-teal-600', text: '#065f46', badge: 'bg-emerald-500', edge: '#10b981', glow: 'rgba(16,185,129,0.4)', minimap: '#10b981' },
   directorate:{ bg: '#faf5ff', border: '#a78bfa', gradient: 'from-purple-500 to-violet-600', text: '#5b21b6', badge: 'bg-purple-500', edge: '#8b5cf6', glow: 'rgba(139,92,246,0.4)', minimap: '#8b5cf6' },
+  department: { bg: '#f0fdfa', border: '#5eead4', gradient: 'from-teal-500 to-cyan-600', text: '#134e4a', badge: 'bg-teal-500', edge: '#14b8a6', glow: 'rgba(20,184,166,0.4)', minimap: '#14b8a6' },
   unassigned: { bg: '#f9fafb', border: '#d1d5db', gradient: 'from-gray-400 to-gray-500', text: '#374151', badge: 'bg-gray-500', edge: '#9ca3af', glow: 'rgba(156,163,175,0.3)', minimap: '#9ca3af' },
 };
 const getColor = (role: string) => ROLE_COLORS[role] || ROLE_COLORS.employee;
@@ -115,6 +119,8 @@ const NODE_WIDTH_DIR = 260;
 const NODE_HEIGHT_DIR = 90;
 const NODE_WIDTH_EMP = 180;
 const NODE_HEIGHT_EMP = 160;
+const NODE_WIDTH_DEPT = 220;
+const NODE_HEIGHT_DEPT = 70;
 const NODE_WIDTH_GROUP = 220;
 const NODE_HEIGHT_GROUP = 50;
 
@@ -265,6 +271,55 @@ const DirectorateNodeComponent = ({ data, id }: { data: any; id: string }) => {
   );
 };
 
+const DepartmentNodeComponent = ({ data, id }: { data: any; id: string }) => {
+  const isHovered = data._hoveredNodeId === id;
+  const isConnected = data._connectedNodeIds?.has(id);
+  const isDimmed = data._hoveredNodeId && data._hoveredNodeId !== id && !isConnected;
+
+  return (
+    <div style={{ width: NODE_WIDTH_DEPT, position: 'relative' }}>
+      <Handle type="target" position={Position.Top} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
+      <div
+        onClick={data.onToggle}
+        onMouseEnter={() => data._onNodeHover?.(id)}
+        onMouseLeave={() => data._onNodeHover?.(null)}
+        className="cursor-pointer"
+        style={{
+          width: '100%',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: isHovered ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
+          opacity: isDimmed ? 0.35 : 1,
+          filter: isHovered ? 'drop-shadow(0 8px 20px rgba(20,184,166,0.3))' : 'none',
+        }}
+      >
+        <div
+          className="flex flex-col px-4 py-2.5 rounded-xl bg-teal-50 text-right"
+          style={{
+            border: `2px solid ${isHovered ? '#14b8a6' : '#5eead4'}`,
+            boxShadow: isHovered
+              ? '0 10px 28px -4px rgba(20,184,166,0.35), 0 4px 12px -2px rgba(0,0,0,0.06)'
+              : '0 2px 8px -1px rgba(0,0,0,0.08)',
+          }}
+        >
+          <div className="flex items-center justify-between w-full gap-1">
+            <span
+              onClick={(e) => { e.stopPropagation(); data.onToggle?.(); }}
+              className="cursor-pointer hover:bg-teal-200 rounded-md p-0.5 transition-colors flex-shrink-0"
+              style={{ transition: 'transform 0.2s', transform: data.expanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+            >
+              <ChevronDown className="h-3.5 w-3.5 text-teal-400" />
+            </span>
+            <span className="text-[10px] text-white bg-teal-500 min-w-[20px] h-[20px] rounded-full flex items-center justify-center font-bold flex-shrink-0">{data.empCount}</span>
+            <span className="font-bold text-xs text-teal-800 flex-1 text-center" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{data.name}</span>
+            <Building2 className="h-4 w-4 text-teal-600 flex-shrink-0" />
+          </div>
+        </div>
+      </div>
+      <Handle type="source" position={Position.Bottom} style={{ left: '50%', background: 'transparent', border: 'none', width: 0, height: 0 }} />
+    </div>
+  );
+};
+
 const GroupNodeComponent = ({ data, id }: { data: any; id: string }) => {
   const isHovered = data._hoveredNodeId === id;
   const isConnected = data._connectedNodeIds?.has(id);
@@ -308,6 +363,7 @@ const GroupNodeComponent = ({ data, id }: { data: any; id: string }) => {
 const nodeTypes = {
   person: PersonNode,
   directorate: DirectorateNodeComponent,
+  department: DepartmentNodeComponent,
   group: GroupNodeComponent,
 };
 
@@ -325,6 +381,7 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
     let h = NODE_HEIGHT_EMP;
     if (node.type === 'person' && node.data?.role === 'ceo') { w = NODE_WIDTH_CEO; h = NODE_HEIGHT_CEO; }
     else if (node.type === 'directorate') { w = NODE_WIDTH_DIR; h = NODE_HEIGHT_DIR; }
+    else if (node.type === 'department') { w = NODE_WIDTH_DEPT; h = NODE_HEIGHT_DEPT; }
     else if (node.type === 'group') { w = NODE_WIDTH_GROUP; h = NODE_HEIGHT_GROUP; }
     g.setNode(node.id, { width: w, height: h });
   });
@@ -340,11 +397,13 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
     let w = NODE_WIDTH_EMP;
     if (node.type === 'person' && node.data?.role === 'ceo') w = NODE_WIDTH_CEO;
     else if (node.type === 'directorate') w = NODE_WIDTH_DIR;
+    else if (node.type === 'department') w = NODE_WIDTH_DEPT;
     else if (node.type === 'group') w = NODE_WIDTH_GROUP;
 
     let h = NODE_HEIGHT_EMP;
     if (node.type === 'person' && node.data?.role === 'ceo') h = NODE_HEIGHT_CEO;
     else if (node.type === 'directorate') h = NODE_HEIGHT_DIR;
+    else if (node.type === 'department') h = NODE_HEIGHT_DEPT;
     else if (node.type === 'group') h = NODE_HEIGHT_GROUP;
 
     return {
@@ -474,22 +533,25 @@ const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string;
 interface FlowChartProps {
   ceoUsers: OrgUser[];
   directorates: Directorate[];
+  departments: Department[];
   employees: Employee[];
   supervisorMap: Record<string, SupervisorAssignment[]>;
   supervisedEmpsMap: Record<string, SupervisedEmployee[]>;
   expandedDirs: Set<string>;
+  expandedDepts: Set<string>;
   expandedSupervisors: Set<string>;
   searchQuery: string;
   onClickPerson: (p: any) => void;
   onToggleDir: (id: string) => void;
+  onToggleDept: (id: string) => void;
   onToggleSupervisor: (uid: string) => void;
   stats: { directors: number; employees: number; supervisors: number };
 }
 
 const FlowChart: React.FC<FlowChartProps> = ({
-  ceoUsers, directorates, employees, supervisorMap, supervisedEmpsMap,
-  expandedDirs, expandedSupervisors, searchQuery,
-  onClickPerson, onToggleDir, onToggleSupervisor, stats,
+  ceoUsers, directorates, departments, employees, supervisorMap, supervisedEmpsMap,
+  expandedDirs, expandedDepts, expandedSupervisors, searchQuery,
+  onClickPerson, onToggleDir, onToggleDept, onToggleSupervisor, stats,
 }) => {
   const { fitView } = useReactFlow();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -504,6 +566,9 @@ const FlowChart: React.FC<FlowChartProps> = ({
   const supInfo = (uid: string) => supervisorMap[uid] || [];
   const supMembers = (uid: string) => supInfo(uid).reduce((s, a) => s + a.member_count, 0) || undefined;
   const empsByDir = (dId: string) => employees.filter(e => e.directorate_id === dId);
+  const deptsByDir = (dId: string) => departments.filter(d => d.directorate_id === dId);
+  const empsByDept = (deptId: string) => employees.filter(e => e.department_id === deptId);
+  const empsNoDept = (dId: string) => employees.filter(e => e.directorate_id === dId && !e.department_id);
   const unassignedEmps = employees.filter(e => !e.directorate_id);
   const supervisedEmps = (uid: string) => supervisedEmpsMap[uid] || [];
 
@@ -613,9 +678,13 @@ const FlowChart: React.FC<FlowChartProps> = ({
         });
       }
 
-      // Employees under directorate
+      // Departments and employees under directorate
       if (expanded) {
-        dirEmps.forEach(emp => {
+        const dirDepts = deptsByDir(dir.id);
+        const dirEmpsNoDept = empsNoDept(dir.id);
+
+        // Helper to add employee node and its supervised employees
+        const addEmpNode = (emp: Employee, parentNodeId: string, deptName?: string) => {
           const empNodeId = `emp-${emp.id}`;
           nodes.push({
             id: empNodeId,
@@ -628,12 +697,13 @@ const FlowChart: React.FC<FlowChartProps> = ({
               onClick: () => onClickPerson({
                 name: emp.full_name, email: emp.email, role: 'employee',
                 jobTitle: emp.job_title, phone: emp.phone,
-                directorate: dir.name, employeeNumber: emp.employee_number,
+                directorate: dir.name, department: deptName,
+                employeeNumber: emp.employee_number,
                 reportsTo: [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') || undefined, userId: emp.user_id,
               }),
             },
           });
-          edges.push(makeEdge(nodeId, empNodeId, '#10b981'));
+          edges.push(makeEdge(parentNodeId, empNodeId, '#10b981'));
 
           // Supervised employees
           if (emp.user_id && isSup(emp.user_id) && expandedSupervisors.has(emp.user_id)) {
@@ -651,7 +721,8 @@ const FlowChart: React.FC<FlowChartProps> = ({
                     onClick: () => onClickPerson({
                       name: se.full_name, email: se.email, role: 'employee',
                       jobTitle: se.job_title, phone: se.phone,
-                      directorate: dir.name, employeeNumber: se.employee_number,
+                      directorate: dir.name, department: deptName,
+                      employeeNumber: se.employee_number,
                       userId: se.user_id,
                     }),
                   },
@@ -660,7 +731,35 @@ const FlowChart: React.FC<FlowChartProps> = ({
               edges.push(makeEdge(empNodeId, seNodeId, '#f97316'));
             });
           }
+        };
+
+        // Add department nodes
+        dirDepts.forEach(dept => {
+          const deptNodeId = `dept-${dept.id}`;
+          const deptEmpsList = empsByDept(dept.id);
+          const deptExpanded = expandedDepts.has(dept.id);
+
+          nodes.push({
+            id: deptNodeId,
+            type: 'department',
+            position: { x: 0, y: 0 },
+            data: {
+              name: dept.name,
+              empCount: deptEmpsList.length,
+              expanded: deptExpanded,
+              onToggle: () => onToggleDept(dept.id),
+            },
+          });
+          edges.push(makeEdge(nodeId, deptNodeId, '#14b8a6'));
+
+          // Employees under this department
+          if (deptExpanded) {
+            deptEmpsList.forEach(emp => addEmpNode(emp, deptNodeId, dept.name));
+          }
         });
+
+        // Employees directly under directorate (no department)
+        dirEmpsNoDept.forEach(emp => addEmpNode(emp, nodeId));
 
         // Director's supervised employees
         if (dir.director && isSup(dir.director.id) && expandedSupervisors.has(dir.director.id)) {
@@ -722,7 +821,7 @@ const FlowChart: React.FC<FlowChartProps> = ({
     }
 
     return { initialNodes: nodes, initialEdges: edges };
-  }, [ceoUsers, directorates, employees, supervisorMap, supervisedEmpsMap, expandedDirs, expandedSupervisors, stats]);
+  }, [ceoUsers, directorates, departments, employees, supervisorMap, supervisedEmpsMap, expandedDirs, expandedDepts, expandedSupervisors, stats]);
 
   // Apply dagre layout
   const { layoutNodes, layoutEdges } = useMemo(() => {
@@ -790,6 +889,7 @@ const FlowChart: React.FC<FlowChartProps> = ({
   // MiniMap node color
   const miniMapNodeColor = useCallback((node: Node) => {
     if (node.type === 'directorate') return '#8b5cf6';
+    if (node.type === 'department') return '#14b8a6';
     if (node.type === 'group') return '#9ca3af';
     const role = node.data?.role || 'employee';
     return ROLE_COLORS[role]?.minimap || '#10b981';
@@ -1007,6 +1107,7 @@ export const OrgStructure: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [ceoUsers, setCeoUsers] = useState<OrgUser[]>([]);
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [supervisorMap, setSupervisorMap] = useState<Record<string, SupervisorAssignment[]>>({});
   const [supervisedEmpsMap, setSupervisedEmpsMap] = useState<Record<string, SupervisedEmployee[]>>({});
@@ -1014,6 +1115,7 @@ export const OrgStructure: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'org' | 'titles'>('org');
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set());
   const [expandedSupervisors, setExpandedSupervisors] = useState<Set<string>>(new Set());
   const [stats, setStats] = useState({ directors: 0, employees: 0, supervisors: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1039,12 +1141,15 @@ export const OrgStructure: React.FC = () => {
     if (isRefresh) setRefreshing(true);
     try {
       // Use exact same FK join pattern as admin/Directorates.tsx (only full_name — proven to work)
-      const [directoratesRes, , employeesRes, supervisorRes] = await Promise.all([
+      const [directoratesRes, departmentsRes, employeesRes, supervisorRes] = await Promise.all([
         supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)'),
         supabase.from('departments').select('id, name, manager_id, directorate_id').eq('status', 'active'),
         supabase.from('employees').select('id, user_id, full_name, email, job_title, phone, employee_number, department_id, directorate_id, manager_id').eq('status', 'active'),
         supabase.from('supervisor_assignments').select('id, user_id, title, status, start_date, end_date').eq('status', 'active'),
       ]);
+
+      const depts = (departmentsRes.data || []) as Department[];
+      setDepartments(depts);
 
       const dirData = (directoratesRes.data || []) as any[];
       const emps = (employeesRes.data || []) as Employee[];
@@ -1096,6 +1201,7 @@ export const OrgStructure: React.FC = () => {
       setDirectorates(dirs);
       setEmployees(emps);
       setExpandedDirs(new Set(dirs.map(d => d.id)));
+      setExpandedDepts(new Set(depts.map(d => d.id)));
 
       const sMap: Record<string, SupervisorAssignment[]> = {};
       const today = new Date().toISOString().split('T')[0];
@@ -1175,10 +1281,11 @@ export const OrgStructure: React.FC = () => {
   };
 
   const toggleDir = (id: string) => setExpandedDirs(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleDept = (id: string) => setExpandedDepts(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleSupervisor = (uid: string) => setExpandedSupervisors(p => { const n = new Set(p); n.has(uid) ? n.delete(uid) : n.add(uid); return n; });
 
-  const expandAll = () => { setExpandedDirs(new Set(directorates.map(d => d.id))); setExpandedSupervisors(new Set(Object.keys(supervisedEmpsMap))); };
-  const collapseAll = () => { setExpandedDirs(new Set()); setExpandedSupervisors(new Set()); };
+  const expandAll = () => { setExpandedDirs(new Set(directorates.map(d => d.id))); setExpandedDepts(new Set(departments.map(d => d.id))); setExpandedSupervisors(new Set(Object.keys(supervisedEmpsMap))); };
+  const collapseAll = () => { setExpandedDirs(new Set()); setExpandedDepts(new Set()); setExpandedSupervisors(new Set()); };
 
   return (
     <div className="space-y-5">
@@ -1331,6 +1438,7 @@ export const OrgStructure: React.FC = () => {
         <div className="flex items-center gap-3 text-[10px] text-gray-500 mr-auto flex-wrap">
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" />إدارة عليا</span>
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" />مديري إدارات</span>
+          <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-teal-500" />أقسام</span>
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" />موظفون</span>
           <span className="flex items-center gap-1">
             <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
@@ -1358,14 +1466,17 @@ export const OrgStructure: React.FC = () => {
           <FlowChart
             ceoUsers={ceoUsers}
             directorates={directorates}
+            departments={departments}
             employees={employees}
             supervisorMap={supervisorMap}
             supervisedEmpsMap={supervisedEmpsMap}
             expandedDirs={expandedDirs}
+            expandedDepts={expandedDepts}
             expandedSupervisors={expandedSupervisors}
             searchQuery={searchQuery}
             onClickPerson={handleClick}
             onToggleDir={toggleDir}
+            onToggleDept={toggleDept}
             onToggleSupervisor={toggleSupervisor}
             stats={stats}
           />

@@ -10,6 +10,12 @@ interface DirectorateOption {
   name: string;
 }
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+  directorate_id: string;
+}
+
 interface RegisterUserModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,6 +25,7 @@ interface RegisterUserModalProps {
 
 export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, onClose, role, onSuccess }) => {
   const [directorates, setDirectorates] = useState<DirectorateOption[]>([]);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -27,6 +34,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
     full_name: '',
     job_title: '',
     directorate_id: '',
+    department_id: '',
     phone: '',
     employee_number: '',
   });
@@ -34,7 +42,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
   useEffect(() => {
     if (isOpen) {
       setFeedback(null);
-      setForm({ email: '', full_name: '', job_title: '', directorate_id: '', phone: '', employee_number: '' });
+      setForm({ email: '', full_name: '', job_title: '', directorate_id: '', department_id: '', phone: '', employee_number: '' });
       if (role === 'employee') {
         fetchDirectorates();
       }
@@ -42,13 +50,23 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
   }, [isOpen, role]);
 
   const fetchDirectorates = async () => {
-    const { data } = await supabase.from('directorates').select('id, name').order('name');
-    if (data) setDirectorates(data);
+    const [dirRes, deptRes] = await Promise.all([
+      supabase.from('directorates').select('id, name').order('name'),
+      supabase.from('departments').select('id, name, directorate_id').eq('status', 'active').order('name'),
+    ]);
+    if (dirRes.data) setDirectorates(dirRes.data);
+    if (deptRes.data) setDepartments(deptRes.data);
   };
+
+  const filteredDepartments = departments.filter(d => d.directorate_id === form.directorate_id);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    if (name === 'directorate_id') {
+      setForm(prev => ({ ...prev, directorate_id: value, department_id: '' }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +96,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
           role,
           job_title: form.job_title || undefined,
           directorate_id: form.directorate_id || undefined,
-
+          department_id: form.department_id || undefined,
           phone: form.phone || undefined,
           employee_number: form.employee_number || undefined,
         }),
@@ -181,6 +199,18 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                 ]}
               />
 
+              {filteredDepartments.length > 0 && (
+                <Select
+                  label="القسم"
+                  name="department_id"
+                  value={form.department_id}
+                  onChange={handleChange}
+                  options={[
+                    { value: '', label: '-- اختر القسم (اختياري) --' },
+                    ...filteredDepartments.map(d => ({ value: d.id, label: d.name })),
+                  ]}
+                />
+              )}
             </>
           )}
         </div>
