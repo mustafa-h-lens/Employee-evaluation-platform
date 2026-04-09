@@ -11,15 +11,23 @@ import { useAuth } from '../../contexts/AuthContext';
 interface Department {
   id: string;
   name: string;
+  directorate_id: string | null;
+  directorate?: { name: string };
   employee_count?: number;
+}
+
+interface DirectorateOption {
+  id: string;
+  name: string;
 }
 
 export const Departments: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [directorates, setDirectorates] = useState<DirectorateOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
-  const [formData, setFormData] = useState({ name: '' });
+  const [formData, setFormData] = useState({ name: '', directorate_id: '' });
   const [deleteTarget, setDeleteTarget] = useState<Department | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -27,13 +35,15 @@ export const Departments: React.FC = () => {
 
   useEffect(() => {
     fetchDepartments();
+    fetchDirectorates();
   }, []);
 
   const fetchDepartments = async () => {
     try {
       const deptResult = await supabase
         .from('departments')
-        .select('id, name')
+        .select('id, name, directorate_id, directorate:directorates(name)')
+        .eq('status', 'active')
         .order('name');
 
       if (!deptResult.error && deptResult.data) {
@@ -59,6 +69,11 @@ export const Departments: React.FC = () => {
     }
   };
 
+  const fetchDirectorates = async () => {
+    const { data } = await supabase.from('directorates').select('id, name').order('name');
+    setDirectorates(data || []);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -66,7 +81,7 @@ export const Departments: React.FC = () => {
       if (editingDepartment) {
         await supabase
           .from('departments')
-          .update({ name: formData.name })
+          .update({ name: formData.name, directorate_id: formData.directorate_id || null })
           .eq('id', editingDepartment.id);
 
         if (user) {
@@ -81,7 +96,7 @@ export const Departments: React.FC = () => {
       } else {
         const { data } = await supabase
           .from('departments')
-          .insert({ name: formData.name })
+          .insert({ name: formData.name, directorate_id: formData.directorate_id || null, status: 'active' })
           .select()
           .single();
 
@@ -98,7 +113,7 @@ export const Departments: React.FC = () => {
 
       setIsModalOpen(false);
       setEditingDepartment(null);
-      setFormData({ name: '' });
+      setFormData({ name: '', directorate_id: '' });
       fetchDepartments();
     } catch (error) {
       console.error('Error saving department:', error);
@@ -107,13 +122,13 @@ export const Departments: React.FC = () => {
 
   const openEditModal = (department: Department) => {
     setEditingDepartment(department);
-    setFormData({ name: department.name });
+    setFormData({ name: department.name, directorate_id: department.directorate_id || '' });
     setIsModalOpen(true);
   };
 
   const openAddModal = () => {
     setEditingDepartment(null);
-    setFormData({ name: '' });
+    setFormData({ name: '', directorate_id: '' });
     setIsModalOpen(true);
   };
 
@@ -127,10 +142,8 @@ export const Departments: React.FC = () => {
     setDeleting(true);
 
     try {
-      await supabase
-        .from('departments')
-        .delete()
-        .eq('id', deleteTarget.id);
+      await supabase.from('employees').update({ department_id: null }).eq('department_id', deleteTarget.id);
+      await supabase.from('departments').delete().eq('id', deleteTarget.id);
 
       if (user) {
         await supabase.from('audit_logs').insert({
@@ -181,6 +194,7 @@ export const Departments: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>اسم القسم</TableHead>
+                  <TableHead>الإدارة</TableHead>
                   <TableHead>عدد الموظفين</TableHead>
                   <TableHead>الإجراءات</TableHead>
                 </TableRow>
@@ -190,6 +204,9 @@ export const Departments: React.FC = () => {
                   <TableRow key={dept.id}>
                     <TableCell>
                       <span className="font-medium">{dept.name}</span>
+                    </TableCell>
+                    <TableCell>
+                      {dept.directorate?.name || <span className="text-gray-400">غير محدد</span>}
                     </TableCell>
                     <TableCell>
                       <span className="font-medium">{dept.employee_count}</span>
@@ -238,6 +255,19 @@ export const Departments: React.FC = () => {
               required
               placeholder="مثال: تقنية المعلومات"
             />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">الإدارة التابع لها</label>
+              <select
+                value={formData.directorate_id}
+                onChange={(e) => setFormData({ ...formData, directorate_id: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">-- اختر الإدارة --</option>
+                {directorates.map((dir) => (
+                  <option key={dir.id} value={dir.id}>{dir.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <ModalFooter>

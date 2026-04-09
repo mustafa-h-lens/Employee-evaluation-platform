@@ -596,6 +596,45 @@ export const Directorates: React.FC = () => {
               ))}
             </select>
           </div>
+          {/* Departments section (only when editing existing directorate) */}
+          {editingDir && (() => {
+            const dirDepts = getDeptsByDirectorate(editingDir.id);
+            return (
+              <div className="border border-teal-200 rounded-lg p-3 bg-teal-50/50">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-teal-800 flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4" />
+                    أقسام الإدارة ({dirDepts.length})
+                  </p>
+                  <button type="button" onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: editingDir.id }); setIsDeptModalOpen(true); }}
+                    className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-100 transition-colors">
+                    <Plus className="h-3.5 w-3.5" />إضافة قسم
+                  </button>
+                </div>
+                {dirDepts.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {dirDepts.map(dept => (
+                      <div key={dept.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-100">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-teal-500" />
+                          <span className="text-sm font-medium text-gray-800">{dept.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
+                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
+                          <button type="button" onClick={() => setDeleteDept(dept)}
+                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-teal-600/70 text-center py-1">لا يوجد أقسام — أضف قسماً جديداً</p>
+                )}
+              </div>
+            );
+          })()}
+
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setIsDirModalOpen(false)}>إلغاء</Button>
             <Button type="submit">{editingDir ? 'تحديث' : 'إضافة'}</Button>

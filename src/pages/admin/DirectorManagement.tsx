@@ -277,7 +277,7 @@ export const DirectorManagement: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">مديري الإدارات</h1>
           <p className="text-gray-600 mt-2">إدارة وتسجيل مديري الإدارات في المنظمة</p>
         </div>
-        <Button onClick={() => { setIsRegisterModalOpen(true); setRegisterFeedback(null); setRegisterForm({ full_name: '', email: '', job_title: '' }); }} className="flex items-center gap-2">
+        <Button onClick={() => { setIsRegisterModalOpen(true); setRegisterFeedback(null); setRegisterForm({ full_name: '', email: '', job_title: '', employee_number: '' }); }} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
           <span>تسجيل مدير إدارة</span>
         </Button>
