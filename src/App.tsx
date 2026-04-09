@@ -134,8 +134,27 @@ function PasswordBanner({ onDismiss, onGoSettings }: { onDismiss: () => void; on
 
 function AppContent() {
   const { user, loading, isFirstLogin } = useAuth();
-  const [currentPath, setCurrentPath] = useState('/');
+  const [currentPath, setCurrentPath] = useState(() => {
+    const path = window.location.pathname;
+    return path || '/';
+  });
   const [showPasswordBanner, setShowPasswordBanner] = useState(false);
+
+  // Sync state → URL bar
+  useEffect(() => {
+    if (window.location.pathname !== currentPath) {
+      window.history.pushState(null, '', currentPath);
+    }
+  }, [currentPath]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const onPopState = () => {
+      setCurrentPath(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   useEffect(() => {
     if (isFirstLogin) setShowPasswordBanner(true);
