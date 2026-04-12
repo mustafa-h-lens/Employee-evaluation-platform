@@ -879,7 +879,7 @@ export const OrgStructure: React.FC = () => {
     try {
       // Use exact same FK join pattern as admin/Directorates.tsx (only full_name — proven to work)
       const [directoratesRes, departmentsRes, employeesRes, supervisorRes, empDirRes] = await Promise.all([
-        supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)'),
+        supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name, email, job_title, phone, role), secondary_director:users!directorates_secondary_director_id_fkey(full_name, email, job_title, phone, role)'),
         supabase.from('departments').select('id, name, manager_id, directorate_id').eq('status', 'active'),
         supabase.from('employees').select('id, user_id, full_name, email, job_title, phone, employee_number, department_id, directorate_id, manager_id').eq('status', 'active'),
         supabase.from('supervisor_assignments').select('id, user_id, title, status, start_date, end_date').eq('status', 'active'),
@@ -895,7 +895,7 @@ export const OrgStructure: React.FC = () => {
       // Fetch CEO users first so we can tag directors who are CEOs
       const { data: ceoData } = await supabase
         .from('users')
-        .select('id, full_name, email, role')
+        .select('id, full_name, email, role, job_title, phone')
         .eq('role', 'ceo');
       const ceoUsers_ = (ceoData || []) as OrgUser[];
       const ceoIdSet = new Set(ceoUsers_.map(c => c.id));
@@ -904,7 +904,14 @@ export const OrgStructure: React.FC = () => {
       // Build director OrgUser from FK join (full_name) + director_id
       const buildDirectorUser = (id: string | null, joinData: any): OrgUser | null => {
         if (!id || !joinData?.full_name) return null;
-        return { id, full_name: joinData.full_name, email: '', role: ceoIdSet.has(id) ? 'ceo' : 'director' };
+        return {
+          id,
+          full_name: joinData.full_name,
+          email: joinData.email || '',
+          role: ceoIdSet.has(id) ? 'ceo' : (joinData.role || 'director'),
+          job_title: joinData.job_title || undefined,
+          phone: joinData.phone || undefined,
+        };
       };
 
       const dirs = dirData.map((d: any) => ({
