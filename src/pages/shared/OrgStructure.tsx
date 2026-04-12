@@ -23,6 +23,9 @@ import {
   Maximize2,
   Minimize2,
   Target,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -192,12 +195,13 @@ interface OrgTreeProps {
   onToggleDept: (id: string) => void;
   onToggleSupervisor: (uid: string) => void;
   stats: { directors: number; employees: number; supervisors: number };
+  zoom: number;
 }
 
 const OrgTree: React.FC<OrgTreeProps> = ({
   ceoUsers, directorates, departments, employees, empDirAssignments, supervisorMap, supervisedEmpsMap,
   expandedDirs, expandedDepts, expandedSupervisors, searchQuery,
-  onClickPerson, onToggleDir, onToggleDept, onToggleSupervisor, stats,
+  onClickPerson, onToggleDir, onToggleDept, onToggleSupervisor, stats, zoom,
 }) => {
   const isSup = (uid: string) => !!supervisorMap[uid];
 
@@ -421,7 +425,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
       className="org-tree-dark rounded-2xl overflow-x-auto overflow-y-auto p-8"
       style={{ background: 'linear-gradient(to bottom, #0f172a, #1e293b)', minHeight: '100%' }}
     >
-      <div style={{ minWidth: 'fit-content' }}>
+      <div style={{ minWidth: 'fit-content', transform: `scale(${zoom})`, transformOrigin: 'top center', transition: 'transform 0.15s ease-out' }}>
       {/* Single unified column so CEO + directorates share the same center */}
       <div className="flex flex-col items-center">
       {/* CEO Section — الإدارة العليا box then individual CEO boxes below */}
@@ -851,6 +855,7 @@ export const OrgStructure: React.FC = () => {
   const [expandedSupervisors, setExpandedSupervisors] = useState<Set<string>>(new Set());
   const [stats, setStats] = useState({ directors: 0, employees: 0, supervisors: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const toggleFullscreen = useCallback(() => {
@@ -1134,6 +1139,21 @@ export const OrgStructure: React.FC = () => {
           {isFullscreen ? 'تصغير' : 'ملء الشاشة'}
         </button>
         <div className="h-7 w-px bg-gray-200" />
+        <div className="flex items-center gap-1">
+          <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
+            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors" title="تصغير">
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <button onClick={() => setZoom(1)}
+            className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1 hover:bg-gray-50 rounded-lg transition-colors min-w-[3rem] text-center" title="إعادة تعيين">
+            {Math.round(zoom * 100)}%
+          </button>
+          <button onClick={() => setZoom(z => Math.min(2, z + 0.1))}
+            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors" title="تكبير">
+            <ZoomIn className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="h-7 w-px bg-gray-200" />
         <div className="flex items-center gap-3 text-[10px] text-gray-500 mr-auto flex-wrap">
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" />إدارة عليا</span>
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" />مديري إدارات</span>
@@ -1151,13 +1171,20 @@ export const OrgStructure: React.FC = () => {
       <div className="flex items-center gap-4 text-[11px] text-gray-400 px-1 flex-wrap">
         <span className="flex items-center gap-1">اضغط على الإدارة للتوسيع/الطي</span>
         <span className="flex items-center gap-1">اضغط على أي شخص لعرض التفاصيل</span>
+        <span className="flex items-center gap-1">Ctrl + تمرير للتكبير/التصغير</span>
       </div>
 
       {/* Dark-themed Org Tree */}
       <div
         ref={chartContainerRef}
-        className="rounded-2xl shadow-sm overflow-hidden"
+        className="rounded-2xl shadow-sm overflow-auto"
         style={{ minHeight: 450, height: isFullscreen ? '100vh' : 'auto' }}
+        onWheel={(e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setZoom(z => Math.min(2, Math.max(0.3, z + (e.deltaY > 0 ? -0.05 : 0.05))));
+          }
+        }}
       >
         <OrgTree
           ceoUsers={ceoUsers}
@@ -1176,6 +1203,7 @@ export const OrgStructure: React.FC = () => {
           onToggleDept={toggleDept}
           onToggleSupervisor={toggleSupervisor}
           stats={stats}
+          zoom={zoom}
         />
       </div>
 
