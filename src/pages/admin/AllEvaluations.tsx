@@ -51,6 +51,7 @@ interface Period {
 interface Department {
   id: string;
   name: string;
+  directorate_id: string | null;
 }
 
 interface DirectorateFilter {
@@ -157,7 +158,7 @@ export const AllEvaluations: React.FC = () => {
   const fetchFilters = useCallback(async () => {
     const [{ data: periodsData }, { data: deptsData }, { data: dirsData }] = await Promise.all([
       supabase.from('evaluation_periods').select('id, year, month').order('year', { ascending: false }).order('month', { ascending: false }),
-      supabase.from('departments').select('id, name').order('name'),
+      supabase.from('departments').select('id, name, directorate_id').order('name'),
       supabase.from('directorates').select('id, name, director_id, secondary_director_id').order('name'),
     ]);
     setPeriods(periodsData || []);
@@ -211,13 +212,23 @@ export const AllEvaluations: React.FC = () => {
       .order('created_at', { ascending: false });
 
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
-    if (filterDepartment) query = query.eq('department_id', filterDepartment);
+    if (filterDirectorate) {
+      const deptIds = departments.filter(d => d.directorate_id === filterDirectorate).map(d => d.id);
+      if (deptIds.length > 0) {
+        query = query.in('department_id', deptIds);
+      } else {
+        // No departments under this directorate — return empty
+        setEmployeeEvals([]);
+        setLoading(false);
+        return;
+      }
+    }
 
     const { data } = await query;
 
     setEmployeeEvals((data as unknown as EvalItem[]) || []);
     setLoading(false);
-  }, [filterPeriod, filterDepartment]);
+  }, [filterPeriod, filterDirectorate, departments]);
 
   const fetchSupervisorEvals = useCallback(async () => {
     setLoading(true);
@@ -257,6 +268,7 @@ export const AllEvaluations: React.FC = () => {
   const resetFilters = () => {
     setFilterPeriod('');
     setFilterDepartment('');
+    setFilterDirectorate('');
   };
 
   const viewDirectorDetail = async (ev: DirectorEval) => {
