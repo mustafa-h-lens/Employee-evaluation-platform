@@ -32,6 +32,7 @@ interface Department {
 export const CriteriaOverview: React.FC = () => {
   const [generalCriteria, setGeneralCriteria] = useState<GeneralCriterion[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [directoratesCount, setDirectoratesCount] = useState(0);
   const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
   const [selectedDeptId, setSelectedDeptId] = useState<string>('all');
   const [generalWeight, setGeneralWeight] = useState(50);
@@ -40,11 +41,12 @@ export const CriteriaOverview: React.FC = () => {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [settingsRes, criteriaRes, deptsRes, deptCriteriaRes] = await Promise.all([
+      const [settingsRes, criteriaRes, deptsRes, deptCriteriaRes, dirCountRes] = await Promise.all([
         supabase.from('evaluation_settings').select('*').limit(1).single(),
         supabase.from('evaluation_criteria').select('*').order('order'),
         supabase.from('departments').select('id, name').eq('status', 'active').order('name'),
         supabase.from('department_criteria').select('*').order('order'),
+        supabase.from('directorates').select('*', { count: 'exact', head: true }),
       ]);
 
       if (settingsRes.data) {
@@ -54,6 +56,7 @@ export const CriteriaOverview: React.FC = () => {
 
       setGeneralCriteria(criteriaRes.data || []);
       setDepartments((deptsRes.data as unknown as Department[]) || []);
+      setDirectoratesCount(dirCountRes.count || 0);
 
       const map: Record<string, DeptCriterion[]> = {};
       (deptCriteriaRes.data || []).forEach((c: DeptCriterion) => {
@@ -118,7 +121,7 @@ export const CriteriaOverview: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">عدد الإدارات</p>
-                <p className="text-xl font-bold text-gray-900">{departments.length}</p>
+                <p className="text-xl font-bold text-gray-900">{directoratesCount}</p>
               </div>
               <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
                 <Building2 className="h-6 w-6" />

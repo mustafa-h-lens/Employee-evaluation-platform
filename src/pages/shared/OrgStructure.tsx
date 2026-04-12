@@ -479,7 +479,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                     <Crown className="h-4 w-4 flex-shrink-0" style={{ color: '#fbbf24' }} />
                     <p className="text-white font-bold text-base">{ceo.full_name}</p>
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>{ceo.job_title || 'الرئيس التنفيذي'}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>{ceo.job_title || 'الإدارة العليا'}</p>
                 </div>
                 {/* Vertical line down from each CEO box */}
                 {ceoUsers.length > 1 && <div className="w-0.5 h-5" style={{ background: '#2dd4bf' }} />}
