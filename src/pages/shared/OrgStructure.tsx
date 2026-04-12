@@ -172,6 +172,7 @@ interface EmpDirAssignment {
   employee_id: string;
   directorate_id: string;
   department_id: string | null;
+  job_title: string | null;
 }
 
 interface OrgTreeProps {
@@ -235,6 +236,15 @@ const OrgTree: React.FC<OrgTreeProps> = ({
 
   const empLookup = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
 
+  // Per-directorate job title lookup: "empId:dirId" → job_title
+  const empDirJobTitle = useMemo(() => {
+    const map = new Map<string, string>();
+    empDirAssignments.forEach(a => {
+      if (a.job_title) map.set(`${a.employee_id}:${a.directorate_id}`, a.job_title);
+    });
+    return map;
+  }, [empDirAssignments]);
+
   const empsByDir = (dId: string) => {
     const ids = empIdsByDir.get(dId);
     if (!ids) return [];
@@ -250,11 +260,13 @@ const OrgTree: React.FC<OrgTreeProps> = ({
     const dirEmps = empsByDir(dId);
     const dirDepts = deptsByDir(dId);
     const deptEmpIds = new Set<string>();
+    const dirDeptIds = new Set(dirDepts.map(d => d.id));
     dirDepts.forEach(dept => {
       const ids = empIdsByDept.get(dept.id);
       if (ids) ids.forEach(id => deptEmpIds.add(id));
     });
-    dirEmps.forEach(e => { if (e.department_id) deptEmpIds.add(e.id); });
+    // Only exclude by legacy department_id if that department belongs to THIS directorate
+    dirEmps.forEach(e => { if (e.department_id && dirDeptIds.has(e.department_id)) deptEmpIds.add(e.id); });
     empDirAssignments.forEach(a => {
       if (a.directorate_id === dId && a.department_id) deptEmpIds.add(a.employee_id);
     });
@@ -281,9 +293,10 @@ const OrgTree: React.FC<OrgTreeProps> = ({
       const dirEmpIds = empIdsByDir.get(d.id);
       return dirEmpIds?.has(emp.id);
     });
+    const dirSpecificTitle = dir ? empDirJobTitle.get(`${emp.id}:${dir.id}`) : undefined;
     onClickPerson({
       name: emp.full_name, email: emp.email, role: 'employee',
-      jobTitle: emp.job_title, phone: emp.phone,
+      jobTitle: dirSpecificTitle || emp.job_title, phone: emp.phone,
       directorate: dirName || dir?.name,
       department: deptName,
       employeeNumber: emp.employee_number,
@@ -322,12 +335,14 @@ const OrgTree: React.FC<OrgTreeProps> = ({
   const supervisedEmps = (uid: string): SupervisedEmployee[] => supervisedEmpsMap[uid] || [];
 
   // Render an employee item (with supervisor expand support)
-  const renderEmp = (emp: Employee, dirName?: string, deptName?: string) => {
+  const renderEmp = (emp: Employee, dirId?: string, dirName?: string, deptName?: string) => {
     if (!matchesSearch(emp.full_name, emp.email)) return null;
     const isSuper = emp.user_id ? isSup(emp.user_id) : false;
     const supExpanded = emp.user_id ? expandedSupervisors.has(emp.user_id) : false;
     const teamMembers = emp.user_id ? supervisedEmps(emp.user_id) : [];
     const hasTeam = isSuper && teamMembers.length > 0;
+    // Use per-directorate job title if available, otherwise fall back to global
+    const displayJobTitle = (dirId && empDirJobTitle.get(`${emp.id}:${dirId}`)) || emp.job_title;
 
     return (
       <div key={emp.id}>
@@ -345,7 +360,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                 </span>
               )}
             </div>
-            <p className="text-xs truncate" style={{ color: '#64748b' }}>{emp.job_title}</p>
+            <p className="text-xs truncate" style={{ color: '#64748b' }}>{displayJobTitle}</p>
           </div>
           {/* Expand/collapse arrow for supervisors */}
           {hasTeam && (
@@ -590,7 +605,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                                 {/* Employees listed vertically under this department */}
                                 {deptEmps.length > 0 && (
                                   <div className="mt-2 w-full">
-                                    {deptEmps.map(emp => renderEmp(emp, dir.name, dept.name))}
+                                    {deptEmps.map(emp => renderEmp(emp, dir.id, dir.name, dept.name))}
                                   </div>
                                 )}
                               </div>
@@ -609,7 +624,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                                 </div>
                               )}
                               <div className={`${dirDepts.length > 0 ? 'mt-2' : ''} w-full`}>
-                                {dirEmpsNoDept.map(emp => renderEmp(emp, dir.name))}
+                                {dirEmpsNoDept.map(emp => renderEmp(emp, dir.id, dir.name))}
                               </div>
                             </div>
                           )}
@@ -863,7 +878,7 @@ export const OrgStructure: React.FC = () => {
         supabase.from('departments').select('id, name, manager_id, directorate_id').eq('status', 'active'),
         supabase.from('employees').select('id, user_id, full_name, email, job_title, phone, employee_number, department_id, directorate_id, manager_id').eq('status', 'active'),
         supabase.from('supervisor_assignments').select('id, user_id, title, status, start_date, end_date').eq('status', 'active'),
-        supabase.from('employee_directorates').select('employee_id, directorate_id, department_id'),
+        supabase.from('employee_directorates').select('employee_id, directorate_id, department_id, job_title'),
       ]);
 
       const depts = (departmentsRes.data || []) as Department[];

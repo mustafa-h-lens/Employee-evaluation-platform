@@ -13,12 +13,14 @@ interface DirAssignment {
   directorate_id: string;
   department_id: string;
   is_primary: boolean;
+  job_title: string;
 }
 
 interface EmployeeDirInfo {
   directorate_id: string;
   department_id: string | null;
   is_primary: boolean;
+  job_title?: string | null;
   directorate?: { name: string };
   department?: { name: string };
 }
@@ -59,7 +61,7 @@ export const Employees: React.FC = () => {
     job_title: '',
   });
   const [dirAssignments, setDirAssignments] = useState<DirAssignment[]>([
-    { directorate_id: '', department_id: '', is_primary: true }
+    { directorate_id: '', department_id: '', is_primary: true, job_title: '' }
   ]);
   const { user } = useAuth();
 
@@ -91,7 +93,7 @@ export const Employees: React.FC = () => {
       if (empIds.length > 0) {
         const { data: assignments } = await supabase
           .from('employee_directorates')
-          .select('employee_id, directorate_id, department_id, is_primary, directorate:directorates(name), department:departments(name)')
+          .select('employee_id, directorate_id, department_id, is_primary, job_title, directorate:directorates(name), department:departments(name)')
           .in('employee_id', empIds);
 
         const assignMap = new Map<string, EmployeeDirInfo[]>();
@@ -101,6 +103,7 @@ export const Employees: React.FC = () => {
             directorate_id: a.directorate_id,
             department_id: a.department_id,
             is_primary: a.is_primary,
+            job_title: a.job_title,
             directorate: a.directorate,
             department: a.department,
           });
@@ -170,6 +173,7 @@ export const Employees: React.FC = () => {
                 directorate_id: a.directorate_id,
                 department_id: a.department_id || null,
                 is_primary: a.is_primary,
+                job_title: a.job_title || null,
               }))
             );
         }
@@ -225,6 +229,7 @@ export const Employees: React.FC = () => {
                   directorate_id: a.directorate_id,
                   department_id: a.department_id || null,
                   is_primary: a.is_primary,
+                  job_title: a.job_title || null,
                 }))
               );
           }
@@ -258,7 +263,7 @@ export const Employees: React.FC = () => {
       phone: '',
       job_title: '',
     });
-    setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
+    setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true, job_title: '' }]);
   };
 
   const openEditModal = async (employee: Employee) => {
@@ -274,7 +279,7 @@ export const Employees: React.FC = () => {
     // Load existing dir assignments
     const { data: assignments } = await supabase
       .from('employee_directorates')
-      .select('directorate_id, department_id, is_primary')
+      .select('directorate_id, department_id, is_primary, job_title')
       .eq('employee_id', employee.id);
 
     if (assignments && assignments.length > 0) {
@@ -282,6 +287,7 @@ export const Employees: React.FC = () => {
         directorate_id: a.directorate_id,
         department_id: a.department_id || '',
         is_primary: a.is_primary,
+        job_title: a.job_title || '',
       })));
     } else if (employee.directorate_id) {
       // Fallback to legacy fields
@@ -289,16 +295,17 @@ export const Employees: React.FC = () => {
         directorate_id: employee.directorate_id,
         department_id: employee.department_id || '',
         is_primary: true,
+        job_title: employee.job_title || '',
       }]);
     } else {
-      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
+      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true, job_title: '' }]);
     }
 
     setIsModalOpen(true);
   };
 
   const addDirAssignment = () => {
-    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false }]);
+    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false, job_title: '' }]);
   };
 
   const removeDirAssignment = (index: number) => {
@@ -308,7 +315,7 @@ export const Employees: React.FC = () => {
       if (next.length > 0 && !next.some(a => a.is_primary)) {
         next[0].is_primary = true;
       }
-      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true }];
+      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true, job_title: '' }];
     });
   };
 
@@ -464,22 +471,29 @@ export const Employees: React.FC = () => {
       return {
         directorates: emp.directorate?.name || null,
         departments: emp.department?.name || null,
+        jobTitles: null as { title: string; dirName: string }[] | null,
       };
     }
 
-    const dirNames = assignments
-      .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+    const sorted = [...assignments].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
+
+    const dirNames = sorted
       .map(a => a.directorate?.name)
       .filter(Boolean);
 
-    const deptNames = assignments
-      .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+    const deptNames = sorted
       .map(a => a.department?.name)
       .filter(Boolean);
+
+    const hasPerDirTitles = sorted.some(a => a.job_title);
+    const jobTitles = hasPerDirTitles
+      ? sorted.filter(a => a.job_title).map(a => ({ title: a.job_title!, dirName: a.directorate?.name || '' }))
+      : null;
 
     return {
       directorates: dirNames.length > 0 ? dirNames : null,
       departments: deptNames.length > 0 ? deptNames : null,
+      jobTitles,
     };
   };
 
@@ -604,7 +618,20 @@ export const Employees: React.FC = () => {
                           <span className="text-gray-400">—</span>
                         )}
                       </TableCell>
-                      <TableCell>{emp.job_title}</TableCell>
+                      <TableCell>
+                        {labels.jobTitles ? (
+                          <div className="flex flex-col gap-1">
+                            {labels.jobTitles.map((jt, i) => (
+                              <div key={i} className="text-sm">
+                                <span className="font-medium">{jt.title}</span>
+                                <span className="text-xs text-gray-400 mr-1">({jt.dirName})</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          emp.job_title
+                        )}
+                      </TableCell>
                       <TableCell>
                         <span className="font-mono text-sm">{emp.employee_number}</span>
                       </TableCell>
@@ -774,6 +801,16 @@ export const Employees: React.FC = () => {
                           </select>
                         </div>
                       )}
+                      <div className={filteredDepts.length > 0 ? 'col-span-2' : ''}>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">المسمى الوظيفي في هذه الإدارة</label>
+                        <input
+                          type="text"
+                          value={assignment.job_title}
+                          onChange={(e) => updateDirAssignment(index, 'job_title', e.target.value)}
+                          placeholder={formData.job_title || 'المسمى الوظيفي'}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 );

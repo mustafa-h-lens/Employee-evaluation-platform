@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Building2, Users, Calendar, FileCheck, FileClock } from 'lucide-react';
 
 interface Stats {
-  departmentsCount: number;
+  directoratesCount: number;
   employeesCount: number;
   activePeriod: string;
   completedEvaluations: number;
@@ -20,7 +20,7 @@ const monthLabels: Record<number, string> = {
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
-    departmentsCount: 0,
+    directoratesCount: 0,
     employeesCount: 0,
     activePeriod: '',
     completedEvaluations: 0,
@@ -35,13 +35,13 @@ export const AdminDashboard: React.FC = () => {
   const fetchStats = async () => {
     try {
       const [
-        { count: departmentsCount },
+        { count: directoratesCount },
         { count: employeesCount },
         { data: activePeriodData },
         { count: completedCount },
         { count: pendingCount }
       ] = await Promise.all([
-        supabase.from('departments').select('*', { count: 'exact', head: true }),
+        supabase.from('directorates').select('*', { count: 'exact', head: true }),
         supabase.from('employees').select('*', { count: 'exact', head: true }),
         supabase.from('evaluation_periods').select('*').eq('status', 'نشطة').maybeSingle(),
         supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']),
@@ -49,7 +49,7 @@ export const AdminDashboard: React.FC = () => {
       ]);
 
       setStats({
-        departmentsCount: departmentsCount || 0,
+        directoratesCount: directoratesCount || 0,
         employeesCount: employeesCount || 0,
         activePeriod: activePeriodData ? `${monthLabels[activePeriodData.month]} - ${activePeriodData.year}` : 'لا توجد فترة نشطة',
         completedEvaluations: completedCount || 0,
@@ -65,7 +65,7 @@ export const AdminDashboard: React.FC = () => {
   const statCards = [
     {
       title: 'عدد الإدارات',
-      value: stats.departmentsCount,
+      value: stats.directoratesCount,
       icon: <Building2 className="h-8 w-8" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'

@@ -20,6 +20,7 @@ interface DirAssignment {
   directorate_id: string;
   department_id: string;
   is_primary: boolean;
+  job_title: string;
 }
 
 interface RegisterUserModalProps {
@@ -44,14 +45,14 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
   });
 
   const [dirAssignments, setDirAssignments] = useState<DirAssignment[]>([
-    { directorate_id: '', department_id: '', is_primary: true }
+    { directorate_id: '', department_id: '', is_primary: true, job_title: '' }
   ]);
 
   useEffect(() => {
     if (isOpen) {
       setFeedback(null);
       setForm({ email: '', full_name: '', job_title: '', phone: '', employee_number: '' });
-      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true }]);
+      setDirAssignments([{ directorate_id: '', department_id: '', is_primary: true, job_title: '' }]);
       if (role === 'employee') {
         fetchDirectorates();
       }
@@ -77,7 +78,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
   };
 
   const addDirAssignment = () => {
-    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false }]);
+    setDirAssignments(prev => [...prev, { directorate_id: '', department_id: '', is_primary: false, job_title: '' }]);
   };
 
   const removeDirAssignment = (index: number) => {
@@ -86,7 +87,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
       if (next.length > 0 && !next.some(a => a.is_primary)) {
         next[0].is_primary = true;
       }
-      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true }];
+      return next.length > 0 ? next : [{ directorate_id: '', department_id: '', is_primary: true, job_title: '' }];
     });
   };
 
@@ -307,6 +308,16 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                           </select>
                         </div>
                       )}
+                      <div className={filteredDepts.length > 0 ? 'col-span-2' : ''}>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">المسمى الوظيفي في هذه الإدارة</label>
+                        <input
+                          type="text"
+                          value={assignment.job_title}
+                          onChange={(e) => updateDirAssignment(index, 'job_title', e.target.value)}
+                          placeholder={form.job_title || 'المسمى الوظيفي'}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 );

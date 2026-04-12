@@ -221,6 +221,7 @@ Deno.serve(async (req: Request) => {
                 directorate_id: a.directorate_id,
                 department_id: a.department_id || null,
                 is_primary: !!a.is_primary,
+                job_title: a.job_title || null,
               }));
             if (rows.length > 0) {
               await supabaseAdmin

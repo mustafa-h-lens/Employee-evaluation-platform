@@ -6,7 +6,7 @@ import { Building2, Users, UserCog, Calendar, FileCheck, FileClock, Crown, Clipb
 
 interface Stats {
   directorsCount: number;
-  departmentsCount: number;
+  directoratesCount: number;
   completedEvaluations: number;
   pendingEvaluations: number;
   pendingApprovals: number;
@@ -22,7 +22,7 @@ const monthLabels: Record<number, string> = {
 export const CeoDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
     directorsCount: 0,
-    departmentsCount: 0,
+    directoratesCount: 0,
     completedEvaluations: 0,
     pendingEvaluations: 0,
     pendingApprovals: 0,
@@ -38,14 +38,14 @@ export const CeoDashboard: React.FC = () => {
     try {
       const [
         { count: directorsCount },
-        { count: departmentsCount },
+        { count: directoratesCount },
         { data: activePeriodData },
         { count: completedCount },
         { count: pendingCount },
         { count: pendingApprovalCount }
       ] = await Promise.all([
         supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'director'),
-        supabase.from('departments').select('*', { count: 'exact', head: true }),
+        supabase.from('directorates').select('*', { count: 'exact', head: true }),
         supabase.from('evaluation_periods').select('*').eq('status', 'نشطة').maybeSingle(),
         supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).in('status', ['تم الإرسال', 'اطلع المدير', 'مغلق', 'موافقة']),
         supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).eq('status', 'مسودة'),
@@ -54,7 +54,7 @@ export const CeoDashboard: React.FC = () => {
 
       setStats({
         directorsCount: directorsCount || 0,
-        departmentsCount: departmentsCount || 0,
+        directoratesCount: directoratesCount || 0,
         activePeriod: activePeriodData ? `${monthLabels[activePeriodData.month]} - ${activePeriodData.year}` : 'لا توجد فترة نشطة',
         completedEvaluations: completedCount || 0,
         pendingEvaluations: pendingCount || 0,
@@ -77,7 +77,7 @@ export const CeoDashboard: React.FC = () => {
     },
     {
       title: 'عدد الإدارات',
-      value: stats.departmentsCount,
+      value: stats.directoratesCount,
       icon: <Building2 className="h-8 w-8" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
