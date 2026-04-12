@@ -146,7 +146,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
             {person.jobTitle && <DetailRow icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
             {person.directorate && <DetailRow icon={<Landmark />} label="الإدارة" value={person.directorate} />}
             {person.department && <DetailRow icon={<Building2 />} label="الوحدة" value={person.department} />}
-            {person.reportsTo && <DetailRow icon={<UserCog />} label="المسؤول المباشر" value={person.reportsTo} />}
+            {person.reportsTo && <DetailRow icon={<UserCog />} label="المدير المباشر" value={person.reportsTo} />}
             {person.supervisorTitle && <DetailRow icon={<Shield />} label="مهمة الإشراف" value={person.supervisorTitle} accent />}
           </div>
         </div>
@@ -291,6 +291,22 @@ const OrgTree: React.FC<OrgTreeProps> = ({
     return name.toLowerCase().includes(q) || (email && email.toLowerCase().includes(q));
   };
 
+  // Reverse lookup: employee_id → supervisor's full_name
+  const empSupervisorName = useMemo(() => {
+    const map = new Map<string, string>();
+    // supervisedEmpsMap: supervisorUserId → SupervisedEmployee[]
+    // We need to find the supervisor's name from the employees list
+    Object.entries(supervisedEmpsMap).forEach(([supervisorUserId, members]) => {
+      const supervisorEmp = employees.find(e => e.user_id === supervisorUserId);
+      if (supervisorEmp) {
+        members.forEach(m => {
+          map.set(m.employee_id, supervisorEmp.full_name);
+        });
+      }
+    });
+    return map;
+  }, [supervisedEmpsMap, employees]);
+
   // Employee click handler
   const handleEmpClick = (emp: Employee, dirName?: string, deptName?: string) => {
     const dir = directorates.find(d => {
@@ -298,13 +314,17 @@ const OrgTree: React.FC<OrgTreeProps> = ({
       return dirEmpIds?.has(emp.id);
     });
     const dirSpecificTitle = dir ? empDirJobTitle.get(`${emp.id}:${dir.id}`) : undefined;
+    // If employee has a supervisor, show supervisor as المدير المباشر; otherwise show directorate director(s)
+    const supervisorName = empSupervisorName.get(emp.id);
+    const reportsTo = supervisorName
+      || (dir ? [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') : undefined);
     onClickPerson({
       name: emp.full_name, email: emp.email, role: 'employee',
       jobTitle: dirSpecificTitle || emp.job_title, phone: emp.phone,
       directorate: dirName || dir?.name,
       department: deptName,
       employeeNumber: emp.employee_number,
-      reportsTo: dir ? [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') : undefined,
+      reportsTo,
       userId: emp.user_id,
     });
   };
@@ -392,6 +412,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                   jobTitle: se.job_title, phone: se.phone,
                   directorate: dirName, department: deptName,
                   employeeNumber: se.employee_number, userId: se.user_id,
+                  reportsTo: emp.full_name,
                 })}
               >
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#f97316' }} />
@@ -423,7 +444,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
   return (
     <div
       className="org-tree-dark rounded-2xl overflow-x-auto overflow-y-auto p-8"
-      style={{ background: 'linear-gradient(to bottom, #0f172a, #1e293b)', minHeight: '100%' }}
+      style={{ background: 'linear-gradient(to bottom, #0f172a, #1e293b)', minHeight: 450 }}
     >
       <div style={{ minWidth: 'fit-content', transform: `scale(${zoom})`, transformOrigin: 'top center', transition: 'transform 0.15s ease-out' }}>
       {/* Single unified column so CEO + directorates share the same center */}
@@ -879,7 +900,7 @@ export const OrgStructure: React.FC = () => {
     try {
       // Use exact same FK join pattern as admin/Directorates.tsx (only full_name — proven to work)
       const [directoratesRes, departmentsRes, employeesRes, supervisorRes, empDirRes] = await Promise.all([
-        supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name, email, job_title, phone, role), secondary_director:users!directorates_secondary_director_id_fkey(full_name, email, job_title, phone, role)'),
+        supabase.from('directorates').select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name, email, job_title, role), secondary_director:users!directorates_secondary_director_id_fkey(full_name, email, job_title, role)'),
         supabase.from('departments').select('id, name, manager_id, directorate_id').eq('status', 'active'),
         supabase.from('employees').select('id, user_id, full_name, email, job_title, phone, employee_number, department_id, directorate_id, manager_id').eq('status', 'active'),
         supabase.from('supervisor_assignments').select('id, user_id, title, status, start_date, end_date').eq('status', 'active'),
@@ -895,13 +916,14 @@ export const OrgStructure: React.FC = () => {
       // Fetch CEO users first so we can tag directors who are CEOs
       const { data: ceoData } = await supabase
         .from('users')
-        .select('id, full_name, email, role, job_title, phone')
+        .select('id, full_name, email, role, job_title')
         .eq('role', 'ceo');
       const ceoUsers_ = (ceoData || []) as OrgUser[];
       const ceoIdSet = new Set(ceoUsers_.map(c => c.id));
       setCeoUsers(ceoUsers_);
 
-      // Build director OrgUser from FK join (full_name) + director_id
+      // Build director OrgUser from FK join + director_id
+      // Note: phone is NOT on the users table — it comes from employees enrichment below
       const buildDirectorUser = (id: string | null, joinData: any): OrgUser | null => {
         if (!id || !joinData?.full_name) return null;
         return {
@@ -910,7 +932,7 @@ export const OrgStructure: React.FC = () => {
           email: joinData.email || '',
           role: ceoIdSet.has(id) ? 'ceo' : (joinData.role || 'director'),
           job_title: joinData.job_title || undefined,
-          phone: joinData.phone || undefined,
+          phone: undefined,
         };
       };
 

@@ -36,7 +36,8 @@ interface Criterion {
 
 interface DeptCriterion {
   id: string;
-  department_id: string;
+  department_id: string | null;
+  directorate_id: string | null;
   title: string;
   description: string;
   weight: number;
@@ -44,7 +45,7 @@ interface DeptCriterion {
   is_active: boolean;
 }
 
-interface Department {
+interface Directorate {
   id: string;
   name: string;
 }
@@ -91,10 +92,9 @@ export const EvaluationCriteria: React.FC = () => {
   const [generalWeightLimit, setGeneralWeightLimit] = useState(50);
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
   const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo' | 'supervisors'>('general');
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [directoratesCount, setDirectoratesCount] = useState(0);
-  const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
-  const [selectedDeptId, setSelectedDeptId] = useState<string>('all');
+  const [directorates, setDirectorates] = useState<Directorate[]>([]);
+  const [dirCriteriaMap, setDirCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
+  const [selectedDirId, setSelectedDirId] = useState<string>('all');
   const [ceoCriteria, setCeoCriteria] = useState<DeptCriterion[]>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<Criterion | null>(null);
@@ -133,20 +133,19 @@ export const EvaluationCriteria: React.FC = () => {
   }, []);
 
   const fetchDepartmentsAndCriteria = useCallback(async () => {
-    const [deptsRes, deptCriteriaRes, ceoCriteriaRes, dirCountRes] = await Promise.all([
-      supabase.from('departments').select('id, name').eq('status', 'active').order('name'),
-      supabase.from('department_criteria').select('*').not('department_id', 'is', null).order('order'),
-      supabase.from('department_criteria').select('*').is('department_id', null).order('order'),
-      supabase.from('directorates').select('*', { count: 'exact', head: true }),
+    const [dirsRes, dirCriteriaRes, ceoCriteriaRes] = await Promise.all([
+      supabase.from('directorates').select('id, name').order('name'),
+      supabase.from('department_criteria').select('*').not('directorate_id', 'is', null).order('order'),
+      supabase.from('department_criteria').select('*').is('department_id', null).is('directorate_id', null).order('order'),
     ]);
-    setDepartments((deptsRes.data as unknown as Department[]) || []);
-    setDirectoratesCount(dirCountRes.count || 0);
+    const dirsList = (dirsRes.data as unknown as Directorate[]) || [];
+    setDirectorates(dirsList);
     const map: Record<string, DeptCriterion[]> = {};
-    (deptCriteriaRes.data || []).forEach((c: any) => {
-      if (!map[c.department_id]) map[c.department_id] = [];
-      map[c.department_id].push(c);
+    (dirCriteriaRes.data || []).forEach((c: any) => {
+      if (!map[c.directorate_id]) map[c.directorate_id] = [];
+      map[c.directorate_id].push(c);
     });
-    setDeptCriteriaMap(map);
+    setDirCriteriaMap(map);
     setCeoCriteria((ceoCriteriaRes.data || []) as DeptCriterion[]);
   }, []);
 
@@ -587,7 +586,7 @@ export const EvaluationCriteria: React.FC = () => {
   const activeCount = criteria.filter(c => c.is_active).length;
   const inactiveCount = criteria.filter(c => !c.is_active).length;
 
-  const filteredDepts = selectedDeptId === 'all' ? departments : departments.filter(d => d.id === selectedDeptId);
+  const filteredDirs = selectedDirId === 'all' ? directorates : directorates.filter(d => d.id === selectedDirId);
 
   return (
     <div className="space-y-6">
@@ -828,7 +827,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">عدد الإدارات</p>
-                    <p className="text-xl font-bold text-gray-900">{directoratesCount}</p>
+                    <p className="text-xl font-bold text-gray-900">{directorates.length}</p>
                   </div>
                   <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
                     <Building2 className="h-6 w-6" />
@@ -842,44 +841,51 @@ export const EvaluationCriteria: React.FC = () => {
             <Filter className="h-5 w-5 text-gray-500" />
             <label className="text-sm font-medium text-gray-700">عرض المعايير الخاصة لـ:</label>
             <select
-              value={selectedDeptId}
-              onChange={(e) => setSelectedDeptId(e.target.value)}
+              value={selectedDirId}
+              onChange={(e) => setSelectedDirId(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="all">جميع الإدارات</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              {directorates.map(dir => (
+                <option key={dir.id} value={dir.id}>{dir.name}</option>
               ))}
             </select>
           </div>
 
-          {filteredDepts.map(dept => {
-            const deptCriteria = deptCriteriaMap[dept.id] || [];
-            const activeDeptCriteria = deptCriteria.filter(c => c.is_active);
-            const deptTotal = activeDeptCriteria.reduce((s, c) => s + c.weight, 0);
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3">
+            <Shield className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+            <p className="text-emerald-800 text-sm">
+              هذه المعايير يتم إنشاؤها وإدارتها بواسطة مديري الإدارات وتستخدم في تقييم الموظفين التابعين لهم.
+            </p>
+          </div>
+
+          {filteredDirs.map(dir => {
+            const dirCriteria = dirCriteriaMap[dir.id] || [];
+            const activeDirCriteria = dirCriteria.filter(c => c.is_active);
+            const dirTotal = activeDirCriteria.reduce((s, c) => s + c.weight, 0);
 
             return (
-              <Card key={dept.id}>
+              <Card key={dir.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full bg-emerald-500" />
                       <div>
-                        <h2 className="text-lg font-bold text-gray-900">{dept.name}</h2>
+                        <h2 className="text-lg font-bold text-gray-900">{dir.name}</h2>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={deptTotal === specificWeightLimit ? 'success' : 'warning'} size="sm">
-                        المجموع: {deptTotal}% / {specificWeightLimit}%
+                      <Badge variant={dirTotal === specificWeightLimit ? 'success' : 'warning'} size="sm">
+                        المجموع: {dirTotal}% / {specificWeightLimit}%
                       </Badge>
                       <Badge variant="info" size="sm">
-                        {activeDeptCriteria.length} معيار
+                        {activeDirCriteria.length} معيار
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
                 <CardBody className="p-0">
-                  {deptCriteria.length === 0 ? (
+                  {dirCriteria.length === 0 ? (
                     <div className="p-6 text-center text-gray-500 text-sm">
                       لم يتم تحديد معايير خاصة لهذه الإدارة بعد
                     </div>
@@ -894,7 +900,7 @@ export const EvaluationCriteria: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {deptCriteria.map(c => (
+                        {dirCriteria.map(c => (
                           <TableRow key={c.id} className={!c.is_active ? 'opacity-60 bg-gray-50' : ''}>
                             <TableCell>
                               <span className="font-bold text-gray-900">{c.title}</span>
