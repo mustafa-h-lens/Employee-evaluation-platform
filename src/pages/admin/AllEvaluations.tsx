@@ -53,6 +53,13 @@ interface Department {
   name: string;
 }
 
+interface DirectorateFilter {
+  id: string;
+  name: string;
+  director_id: string | null;
+  secondary_director_id: string | null;
+}
+
 interface DirectorEval {
   id: string;
   director_id: string;
@@ -123,10 +130,12 @@ export const AllEvaluations: React.FC = () => {
   const [supervisorEvals, setSupervisorEvals] = useState<SupervisorEval[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [directoratesFilter, setDirectoratesFilter] = useState<DirectorateFilter[]>([]);
 
   // Filters
   const [filterPeriod, setFilterPeriod] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
+  const [filterDirectorate, setFilterDirectorate] = useState('');
 
   // Detail modal
   const [detailModal, setDetailModal] = useState(false);
@@ -146,12 +155,14 @@ export const AllEvaluations: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const fetchFilters = useCallback(async () => {
-    const [{ data: periodsData }, { data: deptsData }] = await Promise.all([
+    const [{ data: periodsData }, { data: deptsData }, { data: dirsData }] = await Promise.all([
       supabase.from('evaluation_periods').select('id, year, month').order('year', { ascending: false }).order('month', { ascending: false }),
       supabase.from('departments').select('id, name').order('name'),
+      supabase.from('directorates').select('id, name, director_id, secondary_director_id').order('name'),
     ]);
     setPeriods(periodsData || []);
     setDepartments(deptsData || []);
+    setDirectoratesFilter((dirsData as DirectorateFilter[]) || []);
   }, []);
 
   const fetchDirectorEvals = useCallback(async () => {
@@ -169,10 +180,20 @@ export const AllEvaluations: React.FC = () => {
 
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
 
+    if (filterDirectorate) {
+      const dir = directoratesFilter.find(d => d.id === filterDirectorate);
+      if (dir) {
+        const directorIds = [dir.director_id, dir.secondary_director_id].filter(Boolean) as string[];
+        if (directorIds.length > 0) {
+          query = query.in('director_id', directorIds);
+        }
+      }
+    }
+
     const { data } = await query;
     setDirectorEvals((data as unknown as DirectorEval[]) || []);
     setLoading(false);
-  }, [filterPeriod]);
+  }, [filterPeriod, filterDirectorate, directoratesFilter]);
 
   const fetchEmployeeEvals = useCallback(async () => {
     setLoading(true);
@@ -559,17 +580,17 @@ export const AllEvaluations: React.FC = () => {
             </select>
             {activeTab === 'directors' && (
               <select
-                value={filterDepartment}
-                onChange={(e) => setFilterDepartment(e.target.value)}
+                value={filterDirectorate}
+                onChange={(e) => setFilterDirectorate(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">جميع الإدارات</option>
-                {departments.map(d => (
+                {directoratesFilter.map(d => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             )}
-            {(filterPeriod || filterDepartment) && (
+            {(filterPeriod || filterDepartment || filterDirectorate) && (
               <button
                 onClick={resetFilters}
                 className="text-sm text-red-500 hover:text-red-700 transition-colors"

@@ -18,7 +18,8 @@ import {
   Scale,
   EyeOff,
   Building2,
-  Filter
+  Filter,
+  Shield
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,6 +49,23 @@ interface Department {
   name: string;
 }
 
+interface SupervisorAssignment {
+  id: string;
+  title: string | null;
+  user: { full_name: string } | null;
+}
+
+interface SupervisorCriterion {
+  id: string;
+  assignment_id: string;
+  title: string;
+  description: string;
+  weight: number;
+  order: number;
+  is_active: boolean;
+  created_by: string | null;
+}
+
 interface FormData {
   title: string;
   description: string;
@@ -72,7 +90,7 @@ export const EvaluationCriteria: React.FC = () => {
   const [formError, setFormError] = useState('');
   const [generalWeightLimit, setGeneralWeightLimit] = useState(50);
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
-  const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo' | 'supervisors'>('general');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [directoratesCount, setDirectoratesCount] = useState(0);
   const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
@@ -83,6 +101,20 @@ export const EvaluationCriteria: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Supervisor criteria state
+  const [supAssignments, setSupAssignments] = useState<SupervisorAssignment[]>([]);
+  const [selectedSupAssignment, setSelectedSupAssignment] = useState('');
+  const [supCriteria, setSupCriteria] = useState<SupervisorCriterion[]>([]);
+  const [isSupModalOpen, setIsSupModalOpen] = useState(false);
+  const [editingSupCriterion, setEditingSupCriterion] = useState<SupervisorCriterion | null>(null);
+  const [supFormData, setSupFormData] = useState<FormData>(defaultFormData);
+  const [supSaving, setSupSaving] = useState(false);
+  const [supFormError, setSupFormError] = useState('');
+  const [supDeleteTarget, setSupDeleteTarget] = useState<SupervisorCriterion | null>(null);
+  const [isSupDeleteModalOpen, setIsSupDeleteModalOpen] = useState(false);
+  const [supDeleting, setSupDeleting] = useState(false);
+  const [supDeleteError, setSupDeleteError] = useState('');
 
   // CEO criteria CRUD state
   const [isCeoModalOpen, setIsCeoModalOpen] = useState(false);
@@ -153,11 +185,37 @@ export const EvaluationCriteria: React.FC = () => {
     }
   }, []);
 
+  const fetchSupAssignments = useCallback(async () => {
+    const { data } = await supabase
+      .from('supervisor_assignments')
+      .select('id, title, user:users!supervisor_assignments_user_id_fkey(full_name)')
+      .eq('status', 'active')
+      .order('created_at');
+    const list = (data || []) as unknown as SupervisorAssignment[];
+    setSupAssignments(list);
+    if (list.length > 0 && !selectedSupAssignment) {
+      setSelectedSupAssignment(list[0].id);
+    }
+  }, []);
+
+  const fetchSupCriteria = useCallback(async () => {
+    if (!selectedSupAssignment) { setSupCriteria([]); return; }
+    const { data } = await supabase
+      .from('supervisor_criteria')
+      .select('*')
+      .eq('assignment_id', selectedSupAssignment)
+      .order('order', { ascending: true });
+    setSupCriteria((data || []) as SupervisorCriterion[]);
+  }, [selectedSupAssignment]);
+
   useEffect(() => {
     fetchCriteria();
     fetchSettings();
     fetchDepartmentsAndCriteria();
-  }, [fetchCriteria, fetchSettings, fetchDepartmentsAndCriteria]);
+    fetchSupAssignments();
+  }, [fetchCriteria, fetchSettings, fetchDepartmentsAndCriteria, fetchSupAssignments]);
+
+  useEffect(() => { fetchSupCriteria(); }, [fetchSupCriteria]);
 
   const totalWeight = criteria
     .filter(c => c.is_active)
@@ -531,6 +589,87 @@ export const EvaluationCriteria: React.FC = () => {
     fetchDepartmentsAndCriteria();
   };
 
+  // ── Supervisor criteria handlers ──
+  const supTotalWeight = supCriteria.filter(c => c.is_active).reduce((sum, c) => sum + c.weight, 0);
+
+  const openSupAddModal = () => {
+    setEditingSupCriterion(null);
+    setSupFormData(defaultFormData);
+    setSupFormError('');
+    setIsSupModalOpen(true);
+  };
+
+  const openSupEditModal = (criterion: SupervisorCriterion) => {
+    setEditingSupCriterion(criterion);
+    setSupFormData({ title: criterion.title, description: criterion.description, weight: criterion.weight.toString(), is_active: criterion.is_active });
+    setSupFormError('');
+    setIsSupModalOpen(true);
+  };
+
+  const handleSupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSupFormError('');
+    setSupSaving(true);
+    const weight = parseInt(supFormData.weight);
+    if (!supFormData.title.trim()) { setSupFormError('يرجى إدخال عنوان المعيار'); setSupSaving(false); return; }
+    if (!supFormData.description.trim()) { setSupFormError('يرجى إدخال وصف المعيار'); setSupSaving(false); return; }
+    if (!weight || weight < 1 || weight > 100) { setSupFormError('يرجى إدخال وزن صحيح (1-100)'); setSupSaving(false); return; }
+
+    try {
+      if (editingSupCriterion) {
+        const { error } = await supabase.from('supervisor_criteria')
+          .update({ title: supFormData.title.trim(), description: supFormData.description.trim(), weight, is_active: supFormData.is_active })
+          .eq('id', editingSupCriterion.id);
+        if (error) { setSupFormError(error.message); setSupSaving(false); return; }
+        if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'تحديث معيار خاص بالمشرفين', entity_type: 'supervisor_criteria', entity_id: editingSupCriterion.id, details: { title: supFormData.title, weight } });
+      } else {
+        const maxOrder = supCriteria.length > 0 ? Math.max(...supCriteria.map(c => c.order)) : 0;
+        const { data, error } = await supabase.from('supervisor_criteria')
+          .insert({ assignment_id: selectedSupAssignment, title: supFormData.title.trim(), description: supFormData.description.trim(), weight, order: maxOrder + 1, is_active: supFormData.is_active, created_by: user?.id || null })
+          .select().single();
+        if (error) { setSupFormError(error.message); setSupSaving(false); return; }
+        if (user && data) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'إضافة معيار خاص بالمشرفين', entity_type: 'supervisor_criteria', entity_id: data.id, details: { title: supFormData.title, weight } });
+      }
+      setIsSupModalOpen(false);
+      setEditingSupCriterion(null);
+      fetchSupCriteria();
+    } catch { setSupFormError('حدث خطأ أثناء الحفظ'); } finally { setSupSaving(false); }
+  };
+
+  const confirmSupDelete = (c: SupervisorCriterion) => { setSupDeleteTarget(c); setSupDeleteError(''); setIsSupDeleteModalOpen(true); };
+
+  const handleSupDelete = async () => {
+    if (!supDeleteTarget) return;
+    setSupDeleting(true);
+    try {
+      const { error } = await supabase.from('supervisor_criteria').delete().eq('id', supDeleteTarget.id);
+      if (error) { setSupDeleteError('فشل حذف المعيار.'); setSupDeleting(false); return; }
+      if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'حذف معيار خاص بالمشرفين', entity_type: 'supervisor_criteria', entity_id: supDeleteTarget.id, details: { title: supDeleteTarget.title } });
+      setIsSupDeleteModalOpen(false); setSupDeleteTarget(null); fetchSupCriteria();
+    } catch { console.error('Error deleting supervisor criterion'); } finally { setSupDeleting(false); }
+  };
+
+  const handleSupToggleActive = async (criterion: SupervisorCriterion) => {
+    const newActive = !criterion.is_active;
+    const { error } = await supabase.from('supervisor_criteria').update({ is_active: newActive }).eq('id', criterion.id);
+    if (!error) {
+      if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: newActive ? 'تفعيل معيار مشرفين' : 'تعطيل معيار مشرفين', entity_type: 'supervisor_criteria', entity_id: criterion.id, details: { title: criterion.title, is_active: newActive } });
+      fetchSupCriteria();
+    }
+  };
+
+  const handleSupReorder = async (criterion: SupervisorCriterion, direction: 'up' | 'down') => {
+    const currentIndex = supCriteria.findIndex(c => c.id === criterion.id);
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (swapIndex < 0 || swapIndex >= supCriteria.length) return;
+    const swap = supCriteria[swapIndex];
+    await Promise.all([
+      supabase.from('supervisor_criteria').update({ order: swap.order }).eq('id', criterion.id),
+      supabase.from('supervisor_criteria').update({ order: criterion.order }).eq('id', swap.id),
+    ]);
+    fetchSupCriteria();
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
   }
@@ -576,7 +715,17 @@ export const EvaluationCriteria: React.FC = () => {
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          معايير تقييم المديرين ({ceoCriteria.length})
+          المعايير الخاصة بالإدارة العليا ({ceoCriteria.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('supervisors')}
+          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'supervisors'
+              ? 'border-teal-600 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          المعايير الخاصة بالمشرفين ({supCriteria.length})
         </button>
       </div>
 
@@ -1029,6 +1178,180 @@ export const EvaluationCriteria: React.FC = () => {
         </>
       )}
 
+      {activeTab === 'supervisors' && (
+        <>
+          <div className="flex items-center justify-between">
+            {supAssignments.length > 1 && (
+              <select
+                value={selectedSupAssignment}
+                onChange={(e) => setSelectedSupAssignment(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+              >
+                {supAssignments.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.user?.full_name}{a.title ? ` — ${a.title}` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+            {supAssignments.length === 1 && (
+              <p className="text-sm text-gray-600">
+                المشرف: <span className="font-bold text-gray-900">{supAssignments[0].user?.full_name}</span>
+                {supAssignments[0].title && <span> — {supAssignments[0].title}</span>}
+              </p>
+            )}
+            {selectedSupAssignment && (
+              <Button onClick={openSupAddModal} className="flex items-center gap-2">
+                <span>إضافة معيار</span>
+                <Plus className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+
+          {supAssignments.length === 0 ? (
+            <Card>
+              <CardBody>
+                <EmptyState
+                  message="لا يوجد مشرفون مُعيَّنون حاليًا"
+                  icon={<Shield className="h-12 w-12 text-gray-400" />}
+                />
+              </CardBody>
+            </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardBody>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
+                        <p className="text-xl font-bold text-gray-900">{supCriteria.filter(c => c.is_active).length}</p>
+                      </div>
+                      <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                        <ClipboardList className="h-6 w-6" />
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardBody>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
+                        <p className="text-xl font-bold text-gray-900">{supCriteria.filter(c => !c.is_active).length}</p>
+                      </div>
+                      <div className="bg-gray-100 text-gray-500 p-3 rounded-xl">
+                        <EyeOff className="h-6 w-6" />
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardBody>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                        <p className={`text-xl font-bold ${supTotalWeight === specificWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
+                          {supTotalWeight}% / {specificWeightLimit}%
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-xl ${supTotalWeight === specificWeightLimit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                        <Scale className="h-6 w-6" />
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
+
+              {supTotalWeight !== specificWeightLimit && supCriteria.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                  <p className="text-amber-800 text-sm">
+                    مجموع أوزان المعايير النشطة يجب أن يساوي {specificWeightLimit}%. المجموع الحالي: <span className="font-bold">{supTotalWeight}%</span>
+                  </p>
+                </div>
+              )}
+
+              <Card>
+                <CardBody className="p-0">
+                  {supCriteria.length === 0 ? (
+                    <EmptyState
+                      message="لا توجد معايير خاصة مضافة لهذا المشرف حاليًا"
+                      icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+                    />
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>المعيار</TableHead>
+                          <TableHead>الوصف</TableHead>
+                          <TableHead>الحالة</TableHead>
+                          <TableHead>الترتيب</TableHead>
+                          <TableHead>الوزن</TableHead>
+                          <TableHead>الإجراءات</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {supCriteria.map((criterion, index) => (
+                          <TableRow key={criterion.id} className={!criterion.is_active ? 'opacity-60 bg-gray-50' : ''}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <GripVertical className="h-4 w-4" />
+                                </div>
+                                <span className="font-bold text-gray-900">{criterion.title}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={criterion.is_active ? 'success' : 'default'}>
+                                {criterion.is_active ? 'نشط' : 'معطل'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleSupReorder(criterion, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500">
+                                  <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                <button onClick={() => handleSupReorder(criterion, 'down')} disabled={index === supCriteria.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500">
+                                  <ArrowDown className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div className="bg-teal-600 h-2 rounded-full transition-all" style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }} />
+                                </div>
+                                <span className="font-bold text-teal-600">{criterion.weight}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button size="sm" variant="outline" onClick={() => openSupEditModal(criterion)} className="flex items-center gap-1">
+                                  <Edit className="h-4 w-4" /><span>تعديل</span>
+                                </Button>
+                                <Toggle checked={criterion.is_active} onChange={() => handleSupToggleActive(criterion)} size="sm" />
+                                <Button size="sm" variant="danger" onClick={() => confirmSupDelete(criterion)} className="flex items-center gap-1">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardBody>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -1225,6 +1548,54 @@ export const EvaluationCriteria: React.FC = () => {
               <Trash2 className="h-4 w-4" />
               <span>حذف المعيار</span>
             </span>
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Supervisor criteria modal */}
+      <Modal
+        isOpen={isSupModalOpen}
+        onClose={() => setIsSupModalOpen(false)}
+        title={editingSupCriterion ? 'تعديل معيار المشرفين' : 'إضافة معيار مشرفين جديد'}
+      >
+        <form onSubmit={handleSupSubmit}>
+          <div className="space-y-4">
+            {supFormError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{supFormError}</div>
+            )}
+            <Input label="عنوان المعيار" value={supFormData.title} onChange={(e) => setSupFormData({ ...supFormData, title: e.target.value })} placeholder="مثال: جودة الإشراف" required />
+            <TextArea label="وصف المعيار" value={supFormData.description} onChange={(e) => setSupFormData({ ...supFormData, description: e.target.value })} placeholder="وصف مختصر لما يقيسه هذا المعيار" rows={3} required />
+            <Input label="الوزن (%)" type="number" value={supFormData.weight} onChange={(e) => setSupFormData({ ...supFormData, weight: e.target.value })} placeholder="مثال: 10" min={1} max={specificWeightLimit} required helperText={`مجموع أوزان المعايير النشطة الحالي: ${supTotalWeight}% من ${specificWeightLimit}%`} />
+            {editingSupCriterion && (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <Toggle checked={supFormData.is_active} onChange={() => setSupFormData({ ...supFormData, is_active: !supFormData.is_active })} size="sm" />
+                <span className="text-sm font-medium text-gray-700">{supFormData.is_active ? 'المعيار نشط' : 'المعيار معطل'}</span>
+              </div>
+            )}
+          </div>
+          <ModalFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsSupModalOpen(false)}>إلغاء</Button>
+            <Button type="submit" loading={supSaving}>{editingSupCriterion ? 'تحديث' : 'إضافة'}</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Supervisor criteria delete confirmation */}
+      <Modal isOpen={isSupDeleteModalOpen} onClose={() => setIsSupDeleteModalOpen(false)} title="تأكيد الحذف">
+        <div className="flex flex-col items-center text-center py-4">
+          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-7 w-7 text-red-600" />
+          </div>
+          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-gray-500 text-sm">سيتم حذف معيار <span className="font-bold text-gray-700">{supDeleteTarget?.title}</span> نهائيًا.</p>
+          {supDeleteError && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">{supDeleteError}</div>
+          )}
+        </div>
+        <ModalFooter className="justify-center">
+          <Button type="button" variant="secondary" onClick={() => setIsSupDeleteModalOpen(false)}>إلغاء</Button>
+          <Button type="button" variant="danger" onClick={handleSupDelete} loading={supDeleting}>
+            <span className="flex items-center gap-1"><Trash2 className="h-4 w-4" /><span>حذف المعيار</span></span>
           </Button>
         </ModalFooter>
       </Modal>
