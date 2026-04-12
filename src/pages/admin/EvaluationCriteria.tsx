@@ -607,6 +607,16 @@ export const EvaluationCriteria: React.FC = () => {
           المعايير العامة ({generalWeightLimit}%)
         </button>
         <button
+          onClick={() => setActiveTab('ceo')}
+          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'ceo'
+              ? 'border-purple-600 text-purple-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          المعايير الخاصة بالإدارة العليا ({ceoCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0)}%)
+        </button>
+        <button
           onClick={() => setActiveTab('departments')}
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'departments'
@@ -617,16 +627,6 @@ export const EvaluationCriteria: React.FC = () => {
           المعايير الخاصة بالإدارات ({specificWeightLimit}%)
         </button>
         <button
-          onClick={() => setActiveTab('ceo')}
-          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'ceo'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          المعايير الخاصة بالإدارة العليا ({ceoCriteria.length})
-        </button>
-        <button
           onClick={() => setActiveTab('supervisors')}
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'supervisors'
@@ -634,7 +634,7 @@ export const EvaluationCriteria: React.FC = () => {
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          المعايير الخاصة بالمشرفين ({supCriteria.length})
+          المعايير الخاصة بالمشرفين ({supCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0)}%)
         </button>
       </div>
 
