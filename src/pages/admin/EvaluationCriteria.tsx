@@ -91,7 +91,7 @@ export const EvaluationCriteria: React.FC = () => {
   const [formError, setFormError] = useState('');
   const [generalWeightLimit, setGeneralWeightLimit] = useState(50);
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
-  const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo' | 'supervisors'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo' | 'supervisors' | 'ceo-eval'>('general');
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [dirCriteriaMap, setDirCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
   const [selectedDirId, setSelectedDirId] = useState<string>('all');
@@ -101,6 +101,18 @@ export const EvaluationCriteria: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // CEO evaluation criteria state (criteria for employees evaluating CEOs)
+  const [ceoEvalCriteria, setCeoEvalCriteria] = useState<Criterion[]>([]);
+  const [isCeoEvalModalOpen, setIsCeoEvalModalOpen] = useState(false);
+  const [editingCeoEvalCriterion, setEditingCeoEvalCriterion] = useState<Criterion | null>(null);
+  const [ceoEvalFormData, setCeoEvalFormData] = useState<FormData>(defaultFormData);
+  const [ceoEvalSaving, setCeoEvalSaving] = useState(false);
+  const [ceoEvalFormError, setCeoEvalFormError] = useState('');
+  const [ceoEvalDeleteTarget, setCeoEvalDeleteTarget] = useState<Criterion | null>(null);
+  const [isCeoEvalDeleteModalOpen, setIsCeoEvalDeleteModalOpen] = useState(false);
+  const [ceoEvalDeleting, setCeoEvalDeleting] = useState(false);
+  const [ceoEvalDeleteError, setCeoEvalDeleteError] = useState('');
 
   // Supervisor criteria state (read-only)
   const [supAssignments, setSupAssignments] = useState<SupervisorAssignment[]>([]);
@@ -175,6 +187,14 @@ export const EvaluationCriteria: React.FC = () => {
     }
   }, []);
 
+  const fetchCeoEvalCriteria = useCallback(async () => {
+    const { data } = await supabase
+      .from('ceo_evaluation_criteria')
+      .select('*')
+      .order('order', { ascending: true });
+    setCeoEvalCriteria((data || []) as Criterion[]);
+  }, []);
+
   const fetchSupAssignments = useCallback(async () => {
     const { data } = await supabase
       .from('supervisor_assignments')
@@ -202,6 +222,7 @@ export const EvaluationCriteria: React.FC = () => {
     fetchCriteria();
     fetchSettings();
     fetchDepartmentsAndCriteria();
+    fetchCeoEvalCriteria();
     fetchSupAssignments();
   }, [fetchCriteria, fetchSettings, fetchDepartmentsAndCriteria, fetchSupAssignments]);
 
@@ -404,6 +425,68 @@ export const EvaluationCriteria: React.FC = () => {
     ]);
 
     fetchCriteria();
+  };
+
+  // ── CEO evaluation criteria handlers (for employees evaluating CEOs) ──
+  const ceoEvalTotalWeight = ceoEvalCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+
+  const handleCeoEvalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCeoEvalFormError('');
+    setCeoEvalSaving(true);
+    const weight = parseInt(ceoEvalFormData.weight);
+    if (!ceoEvalFormData.title.trim()) { setCeoEvalFormError('يرجى إدخال عنوان المعيار'); setCeoEvalSaving(false); return; }
+    if (!ceoEvalFormData.description.trim()) { setCeoEvalFormError('يرجى إدخال وصف المعيار'); setCeoEvalSaving(false); return; }
+    if (!weight || weight < 1 || weight > 100) { setCeoEvalFormError('يرجى إدخال وزن صحيح (1-100)'); setCeoEvalSaving(false); return; }
+    try {
+      if (editingCeoEvalCriterion) {
+        const { error } = await supabase.from('ceo_evaluation_criteria').update({ title: ceoEvalFormData.title.trim(), description: ceoEvalFormData.description.trim(), weight, is_active: ceoEvalFormData.is_active }).eq('id', editingCeoEvalCriterion.id);
+        if (error) { setCeoEvalFormError(error.message); setCeoEvalSaving(false); return; }
+        if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'تحديث معيار تقييم الإدارة العليا', entity_type: 'ceo_evaluation_criteria', entity_id: editingCeoEvalCriterion.id, details: { title: ceoEvalFormData.title, weight } });
+      } else {
+        const maxOrder = ceoEvalCriteria.length > 0 ? Math.max(...ceoEvalCriteria.map(c => c.order)) : 0;
+        const { data, error } = await supabase.from('ceo_evaluation_criteria').insert({ title: ceoEvalFormData.title.trim(), description: ceoEvalFormData.description.trim(), weight, order: maxOrder + 1, is_active: ceoEvalFormData.is_active }).select().single();
+        if (error) { setCeoEvalFormError(error.message); setCeoEvalSaving(false); return; }
+        if (user && data) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'إضافة معيار تقييم الإدارة العليا', entity_type: 'ceo_evaluation_criteria', entity_id: data.id, details: { title: ceoEvalFormData.title, weight } });
+      }
+      setIsCeoEvalModalOpen(false);
+      setEditingCeoEvalCriterion(null);
+      fetchCeoEvalCriteria();
+    } catch { setCeoEvalFormError('حدث خطأ أثناء الحفظ'); } finally { setCeoEvalSaving(false); }
+  };
+
+  const handleCeoEvalDelete = async () => {
+    if (!ceoEvalDeleteTarget) return;
+    setCeoEvalDeleting(true);
+    try {
+      const { error } = await supabase.from('ceo_evaluation_criteria').delete().eq('id', ceoEvalDeleteTarget.id);
+      if (error) { setCeoEvalDeleteError('فشل حذف المعيار.'); setCeoEvalDeleting(false); return; }
+      if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: 'حذف معيار تقييم الإدارة العليا', entity_type: 'ceo_evaluation_criteria', entity_id: ceoEvalDeleteTarget.id, details: { title: ceoEvalDeleteTarget.title } });
+      setIsCeoEvalDeleteModalOpen(false);
+      setCeoEvalDeleteTarget(null);
+      fetchCeoEvalCriteria();
+    } catch { console.error('Error deleting CEO eval criterion'); } finally { setCeoEvalDeleting(false); }
+  };
+
+  const handleCeoEvalToggleActive = async (criterion: Criterion) => {
+    const newActive = !criterion.is_active;
+    const { error } = await supabase.from('ceo_evaluation_criteria').update({ is_active: newActive }).eq('id', criterion.id);
+    if (!error) {
+      if (user) await supabase.from('audit_logs').insert({ user_id: user.id, action: newActive ? 'تفعيل معيار تقييم الإدارة العليا' : 'تعطيل معيار تقييم الإدارة العليا', entity_type: 'ceo_evaluation_criteria', entity_id: criterion.id, details: { title: criterion.title, is_active: newActive } });
+      fetchCeoEvalCriteria();
+    }
+  };
+
+  const handleCeoEvalReorder = async (criterion: Criterion, direction: 'up' | 'down') => {
+    const currentIndex = ceoEvalCriteria.findIndex(c => c.id === criterion.id);
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (swapIndex < 0 || swapIndex >= ceoEvalCriteria.length) return;
+    const swapCriterion = ceoEvalCriteria[swapIndex];
+    await Promise.all([
+      supabase.from('ceo_evaluation_criteria').update({ order: swapCriterion.order }).eq('id', criterion.id),
+      supabase.from('ceo_evaluation_criteria').update({ order: criterion.order }).eq('id', swapCriterion.id),
+    ]);
+    fetchCeoEvalCriteria();
   };
 
   // ── CEO criteria handlers ──
@@ -635,6 +718,16 @@ export const EvaluationCriteria: React.FC = () => {
           }`}
         >
           المعايير الخاصة بالمشرفين ({supCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0)}%)
+        </button>
+        <button
+          onClick={() => setActiveTab('ceo-eval')}
+          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'ceo-eval'
+              ? 'border-amber-600 text-amber-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          معايير تقييم الموظفين للرؤساء ({ceoEvalTotalWeight}%)
         </button>
       </div>
 
@@ -1186,6 +1279,130 @@ export const EvaluationCriteria: React.FC = () => {
         </>
       )}
 
+      {activeTab === 'ceo-eval' && (
+        <>
+          <div className="flex items-center justify-end">
+            <Button onClick={() => { setEditingCeoEvalCriterion(null); setCeoEvalFormData(defaultFormData); setCeoEvalFormError(''); setIsCeoEvalModalOpen(true); }} className="flex items-center gap-2">
+              <span>إضافة معيار</span>
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+            <Shield className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <p className="text-amber-800 text-sm">
+              هذه المعايير تُستخدم من قبل جميع الموظفين لتقييم أداء أعضاء الإدارة العليا بشكل ربعي ومجهول. يتم إنشاؤها وإدارتها بواسطة الموارد البشرية فقط.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
+                    <p className="text-xl font-bold text-gray-900">{ceoEvalCriteria.filter(c => c.is_active).length}</p>
+                  </div>
+                  <div className="bg-green-50 text-green-600 p-3 rounded-xl"><ClipboardList className="h-6 w-6" /></div>
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
+                    <p className="text-xl font-bold text-gray-900">{ceoEvalCriteria.filter(c => !c.is_active).length}</p>
+                  </div>
+                  <div className="bg-gray-100 text-gray-500 p-3 rounded-xl"><EyeOff className="h-6 w-6" /></div>
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                    <p className={`text-xl font-bold ${ceoEvalTotalWeight === 100 ? 'text-green-600' : 'text-red-600'}`}>
+                      {ceoEvalTotalWeight}% / 100%
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-xl ${ceoEvalTotalWeight === 100 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    <Scale className="h-6 w-6" />
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {ceoEvalTotalWeight !== 100 && ceoEvalCriteria.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <p className="text-amber-800 text-sm">
+                مجموع أوزان المعايير النشطة يجب أن يساوي 100%. المجموع الحالي: <span className="font-bold">{ceoEvalTotalWeight}%</span>
+              </p>
+            </div>
+          )}
+
+          <Card>
+            <CardBody className="p-0">
+              {ceoEvalCriteria.length === 0 ? (
+                <EmptyState message="لا توجد معايير مضافة لتقييم الإدارة العليا" icon={<ClipboardList className="h-12 w-12 text-gray-400" />} />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>المعيار</TableHead>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الترتيب</TableHead>
+                      <TableHead>الوزن</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ceoEvalCriteria.map((criterion, index) => (
+                      <TableRow key={criterion.id} className={!criterion.is_active ? 'opacity-60 bg-gray-50' : ''}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <GripVertical className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-gray-900">{criterion.title}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell><p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p></TableCell>
+                        <TableCell><Badge variant={criterion.is_active ? 'success' : 'default'}>{criterion.is_active ? 'نشط' : 'معطل'}</Badge></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleCeoEvalReorder(criterion, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"><ArrowUp className="h-4 w-4" /></button>
+                            <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                            <button onClick={() => handleCeoEvalReorder(criterion, 'down')} disabled={index === ceoEvalCriteria.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"><ArrowDown className="h-4 w-4" /></button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2"><div className="bg-amber-600 h-2 rounded-full transition-all" style={{ width: `${criterion.weight}%` }} /></div>
+                            <span className="font-bold text-amber-600">{criterion.weight}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { setEditingCeoEvalCriterion(criterion); setCeoEvalFormData({ title: criterion.title, description: criterion.description, weight: criterion.weight.toString(), is_active: criterion.is_active }); setCeoEvalFormError(''); setIsCeoEvalModalOpen(true); }} className="flex items-center gap-1"><Edit className="h-4 w-4" /><span>تعديل</span></Button>
+                            <Toggle checked={criterion.is_active} onChange={() => handleCeoEvalToggleActive(criterion)} size="sm" />
+                            <Button size="sm" variant="danger" onClick={() => { setCeoEvalDeleteTarget(criterion); setCeoEvalDeleteError(''); setIsCeoEvalDeleteModalOpen(true); }} className="flex items-center gap-1"><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardBody>
+          </Card>
+        </>
+      )}
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -1378,6 +1595,102 @@ export const EvaluationCriteria: React.FC = () => {
             إلغاء
           </Button>
           <Button type="button" variant="danger" onClick={handleCeoDelete} loading={ceoDeleting}>
+            <span className="flex items-center gap-1">
+              <Trash2 className="h-4 w-4" />
+              <span>حذف المعيار</span>
+            </span>
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* CEO evaluation criteria modal (employees evaluating CEOs) */}
+      <Modal
+        isOpen={isCeoEvalModalOpen}
+        onClose={() => setIsCeoEvalModalOpen(false)}
+        title={editingCeoEvalCriterion ? 'تعديل معيار تقييم الإدارة العليا' : 'إضافة معيار تقييم الإدارة العليا'}
+      >
+        <form onSubmit={handleCeoEvalSubmit}>
+          <div className="space-y-4">
+            {ceoEvalFormError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                {ceoEvalFormError}
+              </div>
+            )}
+            <Input
+              label="عنوان المعيار"
+              value={ceoEvalFormData.title}
+              onChange={(e) => setCeoEvalFormData({ ...ceoEvalFormData, title: e.target.value })}
+              placeholder="مثال: التواصل مع الموظفين"
+              required
+            />
+            <TextArea
+              label="وصف المعيار"
+              value={ceoEvalFormData.description}
+              onChange={(e) => setCeoEvalFormData({ ...ceoEvalFormData, description: e.target.value })}
+              placeholder="وصف مختصر لما يقيسه هذا المعيار"
+              rows={3}
+              required
+            />
+            <Input
+              label="الوزن (%)"
+              type="number"
+              value={ceoEvalFormData.weight}
+              onChange={(e) => setCeoEvalFormData({ ...ceoEvalFormData, weight: e.target.value })}
+              placeholder="مثال: 20"
+              min={1}
+              max={100}
+              required
+              helperText={`مجموع أوزان المعايير النشطة الحالي: ${ceoEvalTotalWeight}% من 100%`}
+            />
+            {editingCeoEvalCriterion && (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <Toggle
+                  checked={ceoEvalFormData.is_active}
+                  onChange={() => setCeoEvalFormData({ ...ceoEvalFormData, is_active: !ceoEvalFormData.is_active })}
+                  size="sm"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {ceoEvalFormData.is_active ? 'المعيار نشط' : 'المعيار معطل'}
+                </span>
+              </div>
+            )}
+          </div>
+          <ModalFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsCeoEvalModalOpen(false)}>
+              إلغاء
+            </Button>
+            <Button type="submit" loading={ceoEvalSaving}>
+              {editingCeoEvalCriterion ? 'تحديث' : 'إضافة'}
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* CEO evaluation criteria delete confirmation */}
+      <Modal
+        isOpen={isCeoEvalDeleteModalOpen}
+        onClose={() => setIsCeoEvalDeleteModalOpen(false)}
+        title="تأكيد الحذف"
+      >
+        <div className="flex flex-col items-center text-center py-4">
+          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-7 w-7 text-red-600" />
+          </div>
+          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-gray-500 text-sm">
+            سيتم حذف معيار <span className="font-bold text-gray-700">{ceoEvalDeleteTarget?.title}</span> نهائيًا.
+          </p>
+          {ceoEvalDeleteError && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">
+              {ceoEvalDeleteError}
+            </div>
+          )}
+        </div>
+        <ModalFooter className="justify-center">
+          <Button type="button" variant="secondary" onClick={() => setIsCeoEvalDeleteModalOpen(false)}>
+            إلغاء
+          </Button>
+          <Button type="button" variant="danger" onClick={handleCeoEvalDelete} loading={ceoEvalDeleting}>
             <span className="flex items-center gap-1">
               <Trash2 className="h-4 w-4" />
               <span>حذف المعيار</span>

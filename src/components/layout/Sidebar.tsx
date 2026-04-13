@@ -20,7 +20,8 @@ import {
   Landmark,
   Shield,
   Lock,
-  Network
+  Network,
+  Star
 } from 'lucide-react';
 
 interface MenuItem {
@@ -41,6 +42,8 @@ const menuItems: MenuItem[] = [
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/reports', roles: ['admin'] },
   { label: 'تعيين مشرف', icon: <Shield className="h-5 w-5" />, path: '/supervisor-assignments', roles: ['admin'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/org-structure', roles: ['admin'] },
+  { label: 'فترات تقييم الرؤساء', icon: <Calendar className="h-5 w-5" />, path: '/ceo-eval-periods', roles: ['admin'] },
+  { label: 'تقييمات الرؤساء', icon: <Star className="h-5 w-5" />, path: '/all-ceo-evaluations', roles: ['admin'] },
   { label: 'سجل النشاط', icon: <Activity className="h-5 w-5" />, path: '/audit', roles: ['admin'] },
   { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/ceo-directors', roles: ['ceo'] },
   { label: 'تقييم المديرين', icon: <FileText className="h-5 w-5" />, path: '/ceo-evaluations', roles: ['ceo'] },
@@ -48,13 +51,16 @@ const menuItems: MenuItem[] = [
   { label: 'اعتمادية التقييمات', icon: <ClipboardList className="h-5 w-5" />, path: '/ceo-approvals', roles: ['ceo'] },
   { label: 'جميع التقييمات', icon: <FileText className="h-5 w-5" />, path: '/ceo-all-evaluations', roles: ['ceo'] },
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/ceo-reports', roles: ['ceo'] },
+  { label: 'تقييماتي من الموظفين', icon: <Star className="h-5 w-5" />, path: '/my-ceo-evaluations', roles: ['ceo'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/ceo-org-structure', roles: ['ceo'] },
   { label: 'الموظفون', icon: <Users className="h-5 w-5" />, path: '/director-employees', roles: ['director'] },
   { label: 'التقييمات', icon: <FileText className="h-5 w-5" />, path: '/director-evaluate', roles: ['director'] },
   { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/director-criteria', roles: ['director'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/director-evaluations', roles: ['director'] },
+  { label: 'تقييم الرؤساء', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['director'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/director-org-structure', roles: ['director'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/my-evaluations', roles: ['employee'] },
+  { label: 'تقييم الرؤساء', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['employee'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/employee-org-structure', roles: ['employee'] },
 
   { label: 'الإعدادات', icon: <Settings className="h-5 w-5" />, path: '/settings', roles: ['admin', 'employee', 'ceo', 'director'] },

@@ -39,6 +39,10 @@ import { SupervisorCriteria } from './pages/supervisor/SupervisorCriteria';
 
 import { ChangePassword } from './pages/shared/ChangePassword';
 import { OrgStructure } from './pages/shared/OrgStructure';
+import { CeoEvaluationForm } from './pages/shared/CeoEvaluationForm';
+import { CeoEvaluationPeriods } from './pages/admin/CeoEvaluationPeriods';
+import { AllCeoEvaluations } from './pages/admin/AllCeoEvaluations';
+import { MyCeoEvaluations } from './pages/ceo/MyCeoEvaluations';
 
 const AUTO_DISMISS_MS = 10000;
 
@@ -199,6 +203,10 @@ function AppContent() {
           return <SupervisorAssignments />;
         case '/org-structure':
           return <OrgStructure />;
+        case '/ceo-eval-periods':
+          return <CeoEvaluationPeriods />;
+        case '/all-ceo-evaluations':
+          return <AllCeoEvaluations />;
         case '/settings':
           return <AdminSettings />;
         default:
@@ -227,6 +235,8 @@ function AppContent() {
           return <DirectorCriteria />;
         case '/ceo-org-structure':
           return <OrgStructure />;
+        case '/my-ceo-evaluations':
+          return <MyCeoEvaluations />;
         // Director routes for CEO users assigned as department directors
         case '/director-employees':
           return <DirectorEmployees onNavigate={setCurrentPath} />;
@@ -260,6 +270,8 @@ function AppContent() {
           return <SupervisorEvaluateForm />;
         case '/supervisor-criteria':
           return <SupervisorCriteria />;
+        case '/ceo-evaluate':
+          return <CeoEvaluationForm />;
         case '/director-org-structure':
           return <OrgStructure />;
         case '/settings':
@@ -279,6 +291,8 @@ function AppContent() {
           return <SupervisorEvaluateForm />;
         case '/supervisor-criteria':
           return <SupervisorCriteria />;
+        case '/ceo-evaluate':
+          return <CeoEvaluationForm />;
         case '/employee-org-structure':
           return <OrgStructure />;
         case '/settings':
