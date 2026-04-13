@@ -735,25 +735,9 @@ export const Employees: React.FC = () => {
               {dirAssignments.map((assignment, index) => {
                 const filteredDepts = getFilteredDepts(assignment.directorate_id);
                 return (
-                  <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-purple-200 bg-purple-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="primary_dir"
-                            checked={assignment.is_primary}
-                            onChange={() => updateDirAssignment(index, 'is_primary', true)}
-                            className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500"
-                          />
-                          <span className="text-xs text-gray-600">
-                            {assignment.is_primary ? (
-                              <span className="text-purple-700 font-medium">الإدارة الرئيسية</span>
-                            ) : 'تعيين كرئيسية'}
-                          </span>
-                        </label>
-                      </div>
-                      {dirAssignments.length > 1 && (
+                  <div key={index} className="p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+                    {dirAssignments.length > 1 && (
+                      <div className="flex items-center justify-end mb-2">
                         <button
                           type="button"
                           onClick={() => removeDirAssignment(index)}
@@ -761,8 +745,8 @@ export const Employees: React.FC = () => {
                         >
                           <X className="h-4 w-4" />
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">الإدارة</label>
