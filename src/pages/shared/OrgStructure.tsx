@@ -57,11 +57,17 @@ interface SupervisedEmployee {
   job_title: string; phone?: string; employee_number: string;
   department_id: string | null; user_id: string;
 }
+interface DirAssignmentInfo {
+  directorate: string;
+  jobTitle?: string;
+}
+
 interface SelectedPerson {
   name: string; email: string; role: string; jobTitle?: string; phone?: string;
   department?: string; directorate?: string; reportsTo?: string;
   employeeNumber?: string; isSupervisor?: boolean; supervisorTitle?: string;
   supervisorMemberCount?: number; teamSize?: number;
+  dirAssignments?: DirAssignmentInfo[];
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -143,8 +149,19 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
             <DetailRow icon={<Mail />} label="البريد الإلكتروني" value={person.email} />
             {person.phone && <DetailRow icon={<Phone />} label="الهاتف" value={person.phone} />}
             {person.employeeNumber && <DetailRow icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} />}
-            {person.jobTitle && <DetailRow icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
-            {person.directorate && <DetailRow icon={<Landmark />} label="الإدارة" value={person.directorate} />}
+            {person.dirAssignments && person.dirAssignments.length > 1 ? (
+              person.dirAssignments.map((a, i) => (
+                <div key={i} className={i > 0 ? 'pt-2 border-t border-gray-50' : ''}>
+                  <DetailRow icon={<Landmark />} label="الإدارة" value={a.directorate} />
+                  {a.jobTitle && <DetailRow icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />}
+                </div>
+              ))
+            ) : (
+              <>
+                {person.jobTitle && <DetailRow icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
+                {person.directorate && <DetailRow icon={<Landmark />} label="الإدارة" value={person.directorate} />}
+              </>
+            )}
             {person.department && <DetailRow icon={<Building2 />} label="الوحدة" value={person.department} />}
             {person.reportsTo && <DetailRow icon={<UserCog />} label="المدير المباشر" value={person.reportsTo} />}
             {person.supervisorTitle && <DetailRow icon={<Shield />} label="مهمة الإشراف" value={person.supervisorTitle} accent />}
@@ -309,23 +326,41 @@ const OrgTree: React.FC<OrgTreeProps> = ({
 
   // Employee click handler
   const handleEmpClick = (emp: Employee, dirName?: string, deptName?: string) => {
-    const dir = directorates.find(d => {
+    // Gather all directorate assignments for this employee
+    const allAssignments: DirAssignmentInfo[] = [];
+    empDirAssignments.forEach(a => {
+      if (a.employee_id === emp.id) {
+        const d = directorates.find(dir => dir.id === a.directorate_id);
+        if (d) allAssignments.push({ directorate: d.name, jobTitle: a.job_title || undefined });
+      }
+    });
+    // Fallback: if no assignments found, use the employee's direct directorate
+    if (allAssignments.length === 0) {
+      const dir = directorates.find(d => {
+        const dirEmpIds = empIdsByDir.get(d.id);
+        return dirEmpIds?.has(emp.id);
+      });
+      if (dir) allAssignments.push({ directorate: dir.name, jobTitle: emp.job_title || undefined });
+    }
+
+    const firstDir = directorates.find(d => {
       const dirEmpIds = empIdsByDir.get(d.id);
       return dirEmpIds?.has(emp.id);
     });
-    const dirSpecificTitle = dir ? empDirJobTitle.get(`${emp.id}:${dir.id}`) : undefined;
     // If employee has a supervisor, show supervisor as المدير المباشر; otherwise show directorate director(s)
     const supervisorName = empSupervisorName.get(emp.id);
     const reportsTo = supervisorName
-      || (dir ? [dir.director?.full_name, dir.secondary_director?.full_name].filter(Boolean).join(' و ') : undefined);
+      || (firstDir ? [firstDir.director?.full_name, firstDir.secondary_director?.full_name].filter(Boolean).join(' و ') : undefined);
     onClickPerson({
       name: emp.full_name, email: emp.email, role: 'employee',
-      jobTitle: dirSpecificTitle || emp.job_title, phone: emp.phone,
-      directorate: dirName || dir?.name,
+      jobTitle: allAssignments.length === 1 ? (allAssignments[0].jobTitle || emp.job_title) : emp.job_title,
+      phone: emp.phone,
+      directorate: allAssignments.length === 1 ? allAssignments[0].directorate : undefined,
       department: deptName,
       employeeNumber: emp.employee_number,
       reportsTo,
       userId: emp.user_id,
+      dirAssignments: allAssignments.length > 1 ? allAssignments : undefined,
     });
   };
 
