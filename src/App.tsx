@@ -40,7 +40,6 @@ import { SupervisorCriteria } from './pages/supervisor/SupervisorCriteria';
 import { ChangePassword } from './pages/shared/ChangePassword';
 import { OrgStructure } from './pages/shared/OrgStructure';
 import { CeoEvaluationForm } from './pages/shared/CeoEvaluationForm';
-import { AllCeoEvaluations } from './pages/admin/AllCeoEvaluations';
 import { MyCeoEvaluations } from './pages/ceo/MyCeoEvaluations';
 
 const AUTO_DISMISS_MS = 10000;
@@ -202,8 +201,6 @@ function AppContent() {
           return <SupervisorAssignments />;
         case '/org-structure':
           return <OrgStructure />;
-        case '/all-ceo-evaluations':
-          return <AllCeoEvaluations />;
         case '/settings':
           return <AdminSettings />;
         default:

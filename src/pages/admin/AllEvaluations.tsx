@@ -5,8 +5,9 @@ import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { Crown, Users, Eye, Filter, Star, Shield } from 'lucide-react';
+import { Crown, Users, Eye, Filter, Star, Shield, ArrowUp } from 'lucide-react';
 import { percentageToRating } from '../../lib/scoring';
+import { AllCeoEvaluations } from './AllCeoEvaluations';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -119,7 +120,7 @@ interface ScoreDetail {
   type: 'general' | 'specific';
 }
 
-type TabType = 'ceo' | 'directors' | 'supervisors';
+type TabType = 'ceo' | 'directors' | 'supervisors' | 'ceo-eval';
 
 export const AllEvaluations: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('ceo');
@@ -260,9 +261,10 @@ export const AllEvaluations: React.FC = () => {
       fetchDirectorEvals();
     } else if (activeTab === 'directors') {
       fetchEmployeeEvals();
-    } else {
+    } else if (activeTab === 'supervisors') {
       fetchSupervisorEvals();
     }
+    // 'ceo-eval' tab is handled by embedded AllCeoEvaluations component
   }, [activeTab, fetchDirectorEvals, fetchEmployeeEvals, fetchSupervisorEvals]);
 
   const resetFilters = () => {
@@ -471,6 +473,7 @@ export const AllEvaluations: React.FC = () => {
     { key: 'ceo', label: 'تقييمات الإدارة العليا', icon: <Crown className="h-4 w-4" />, color: 'amber' },
     { key: 'directors', label: 'تقييمات مدراء الإدارات', icon: <Users className="h-4 w-4" />, color: 'blue' },
     { key: 'supervisors', label: 'تقييمات المشرفين', icon: <Shield className="h-4 w-4" />, color: 'emerald' },
+    { key: 'ceo-eval', label: 'تقييمات الموظفين للرؤساء', icon: <ArrowUp className="h-4 w-4" />, color: 'rose' },
   ];
 
   const renderEvalTable = (evals: EvalItem[], emptyMessage: string) => (
@@ -562,7 +565,7 @@ export const AllEvaluations: React.FC = () => {
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeTab === tab.key
-                ? tab.color === 'amber' ? 'border-amber-600 text-amber-600 bg-amber-50' : tab.color === 'blue' ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-emerald-600 text-emerald-600 bg-emerald-50'
+                ? tab.color === 'amber' ? 'border-amber-600 text-amber-600 bg-amber-50' : tab.color === 'blue' ? 'border-blue-600 text-blue-600 bg-blue-50' : tab.color === 'rose' ? 'border-rose-600 text-rose-600 bg-rose-50' : 'border-emerald-600 text-emerald-600 bg-emerald-50'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
@@ -573,7 +576,7 @@ export const AllEvaluations: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      {activeTab !== 'ceo-eval' && <Card>
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2 text-gray-500">
@@ -612,7 +615,7 @@ export const AllEvaluations: React.FC = () => {
             )}
           </div>
         </CardBody>
-      </Card>
+      </Card>}
 
       {/* Content */}
       {loading ? (
@@ -693,7 +696,7 @@ export const AllEvaluations: React.FC = () => {
         </Card>
       ) : activeTab === 'directors' ? (
         renderEvalTable(employeeEvals, 'لا توجد تقييمات من مدراء الإدارات')
-      ) : (
+      ) : activeTab === 'supervisors' ? (
         <Card>
           <CardBody className="p-0">
             {supervisorEvals.length === 0 ? (
@@ -761,6 +764,8 @@ export const AllEvaluations: React.FC = () => {
             )}
           </CardBody>
         </Card>
+      ) : (
+        <AllCeoEvaluations embedded />
       )}
 
       {/* Detail Modal */}

@@ -76,7 +76,7 @@ interface CriterionScore {
   weighted_result: number;
 }
 
-export const AllCeoEvaluations: React.FC = () => {
+export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -206,11 +206,12 @@ export const AllCeoEvaluations: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقييمات الإدارة العليا</h1>
-        <p className="text-gray-600 mt-2">جميع تقييمات الموظفين للإدارة العليا</p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">تقييمات الإدارة العليا</h1>
+          <p className="text-gray-600 mt-2">جميع تقييمات الموظفين للإدارة العليا</p>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
