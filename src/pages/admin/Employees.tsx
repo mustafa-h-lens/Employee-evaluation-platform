@@ -143,6 +143,8 @@ export const Employees: React.FC = () => {
     // Get primary assignment for backward compat
     const primary = dirAssignments.find(a => a.is_primary) || dirAssignments[0];
     const validAssignments = dirAssignments.filter(a => a.directorate_id);
+    // Use primary assignment's job_title as the main job_title
+    const effectiveJobTitle = primary?.job_title || formData.job_title;
 
     try {
       if (editingEmployee) {
@@ -152,7 +154,7 @@ export const Employees: React.FC = () => {
             full_name: formData.full_name,
             email: formData.email,
             phone: formData.phone,
-            job_title: formData.job_title,
+            job_title: effectiveJobTitle,
             directorate_id: primary?.directorate_id || null,
             department_id: primary?.department_id || null
           })
@@ -195,7 +197,7 @@ export const Employees: React.FC = () => {
             full_name: formData.full_name,
             email: formData.email,
             phone: formData.phone,
-            job_title: formData.job_title,
+            job_title: effectiveJobTitle,
             directorate_id: primary?.directorate_id || null,
             department_id: primary?.department_id || null
           })
@@ -712,13 +714,6 @@ export const Employees: React.FC = () => {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+966501234567"
-            />
-            <Input
-              label="المسمى الوظيفي"
-              value={formData.job_title}
-              onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-              required
-              placeholder="مطور برمجيات"
             />
           </div>
 
