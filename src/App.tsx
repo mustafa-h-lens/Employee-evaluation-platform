@@ -40,7 +40,6 @@ import { SupervisorCriteria } from './pages/supervisor/SupervisorCriteria';
 import { ChangePassword } from './pages/shared/ChangePassword';
 import { OrgStructure } from './pages/shared/OrgStructure';
 import { CeoEvaluationForm } from './pages/shared/CeoEvaluationForm';
-import { CeoEvaluationPeriods } from './pages/admin/CeoEvaluationPeriods';
 import { AllCeoEvaluations } from './pages/admin/AllCeoEvaluations';
 import { MyCeoEvaluations } from './pages/ceo/MyCeoEvaluations';
 
@@ -203,8 +202,6 @@ function AppContent() {
           return <SupervisorAssignments />;
         case '/org-structure':
           return <OrgStructure />;
-        case '/ceo-eval-periods':
-          return <CeoEvaluationPeriods />;
         case '/all-ceo-evaluations':
           return <AllCeoEvaluations />;
         case '/settings':

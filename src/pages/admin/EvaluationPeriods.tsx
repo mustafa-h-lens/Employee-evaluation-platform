@@ -6,8 +6,9 @@ import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge, getStatusBadgeVariant } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Plus, CreditCard as Edit, Trash2, Calendar, AlertTriangle, Play, Lock } from 'lucide-react';
+import { Plus, CreditCard as Edit, Trash2, Calendar, AlertTriangle, Play, Lock, ArrowDown, ArrowUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { CeoEvaluationPeriods } from './CeoEvaluationPeriods';
 
 interface EvaluationPeriod {
   id: string;
@@ -59,6 +60,7 @@ const formatDate = (dateString: string) => {
 };
 
 export const EvaluationPeriods: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'top-down' | 'bottom-up'>('top-down');
   const [periods, setPeriods] = useState<EvaluationPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -405,11 +407,40 @@ export const EvaluationPeriods: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">فترات التقييم</h1>
-          <p className="text-gray-600 mt-2">إدارة فترات التقييم الشهرية</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">فترات التقييم</h1>
+        <p className="text-gray-600 mt-2">إدارة فترات التقييم الشهرية والربعية</p>
+      </div>
+
+      <div className="flex gap-1 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('top-down')}
+          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'top-down'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <ArrowDown className="h-4 w-4" />
+          <span>تقييم من أعلى لأسفل</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('bottom-up')}
+          className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'bottom-up'
+              ? 'border-amber-600 text-amber-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <ArrowUp className="h-4 w-4" />
+          <span>تقييم من أسفل لأعلى</span>
+        </button>
+      </div>
+
+      {activeTab === 'bottom-up' && <CeoEvaluationPeriods embedded />}
+
+      {activeTab === 'top-down' && (<>
+      <div className="flex items-center justify-end">
         <Button onClick={openAddModal} className="flex items-center gap-2">
           <span>إضافة فترة</span>
           <Plus className="h-5 w-5" />
@@ -534,6 +565,7 @@ export const EvaluationPeriods: React.FC = () => {
           )}
         </CardBody>
       </Card>
+      </>)}
 
       {/* Add/Edit Modal */}
       <Modal

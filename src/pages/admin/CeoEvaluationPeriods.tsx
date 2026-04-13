@@ -60,7 +60,7 @@ const formatDate = (dateString: string) => {
   });
 };
 
-export const CeoEvaluationPeriods: React.FC = () => {
+export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const [periods, setPeriods] = useState<CeoEvaluationPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -398,16 +398,26 @@ export const CeoEvaluationPeriods: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">فترات تقييم الإدارة العليا</h1>
-          <p className="text-gray-600 mt-2">إدارة فترات التقييم الربعية للإدارة العليا</p>
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">فترات تقييم الإدارة العليا</h1>
+            <p className="text-gray-600 mt-2">إدارة فترات التقييم الربعية للإدارة العليا</p>
+          </div>
+          <Button onClick={openAddModal} className="flex items-center gap-2">
+            <span>إضافة فترة</span>
+            <Plus className="h-5 w-5" />
+          </Button>
         </div>
-        <Button onClick={openAddModal} className="flex items-center gap-2">
-          <span>إضافة فترة</span>
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
+      )}
+      {embedded && (
+        <div className="flex items-center justify-end">
+          <Button onClick={openAddModal} className="flex items-center gap-2">
+            <span>إضافة فترة</span>
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>

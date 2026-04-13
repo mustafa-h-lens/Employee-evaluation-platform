@@ -42,7 +42,6 @@ const menuItems: MenuItem[] = [
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/reports', roles: ['admin'] },
   { label: 'تعيين مشرف', icon: <Shield className="h-5 w-5" />, path: '/supervisor-assignments', roles: ['admin'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/org-structure', roles: ['admin'] },
-  { label: 'فترات تقييم الرؤساء', icon: <Calendar className="h-5 w-5" />, path: '/ceo-eval-periods', roles: ['admin'] },
   { label: 'تقييمات الرؤساء', icon: <Star className="h-5 w-5" />, path: '/all-ceo-evaluations', roles: ['admin'] },
   { label: 'سجل النشاط', icon: <Activity className="h-5 w-5" />, path: '/audit', roles: ['admin'] },
   { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/ceo-directors', roles: ['ceo'] },
