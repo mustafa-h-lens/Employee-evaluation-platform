@@ -93,18 +93,26 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
     fetchPeriods();
   }, []);
 
-  // Check if director has specific criteria
+  // Check if director has specific criteria (skip if general weight is 100%)
   useEffect(() => {
     const checkCriteria = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from('department_criteria')
-        .select('id')
-        .is('department_id', null)
-        .eq('created_by', user.id)
-        .eq('is_active', true)
-        .limit(1);
-      setHasSpecificCriteria(!!(data && data.length > 0));
+      const [{ data }, { data: weightSettings }] = await Promise.all([
+        supabase
+          .from('department_criteria')
+          .select('id')
+          .is('department_id', null)
+          .eq('created_by', user.id)
+          .eq('is_active', true)
+          .limit(1),
+        supabase
+          .from('evaluation_settings')
+          .select('specific_weight')
+          .limit(1)
+          .single(),
+      ]);
+      const noSpecificNeeded = weightSettings?.specific_weight === 0;
+      setHasSpecificCriteria(noSpecificNeeded || !!(data && data.length > 0));
     };
     checkCriteria();
   }, [user]);

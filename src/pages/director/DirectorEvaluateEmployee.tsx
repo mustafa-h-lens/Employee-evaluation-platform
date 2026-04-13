@@ -103,17 +103,25 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
 
-  // Check if director has specific criteria
+  // Check if director has specific criteria (skip if general weight is 100%)
   useEffect(() => {
     const checkCriteria = async () => {
       if (!user) return;
-      const { count } = await supabase
-        .from('department_criteria')
-        .select('id', { count: 'exact', head: true })
-        .is('department_id', null)
-        .eq('created_by', user.id)
-        .eq('is_active', true);
-      setHasSpecificCriteria((count ?? 0) > 0);
+      const [{ count }, { data: weightSettings }] = await Promise.all([
+        supabase
+          .from('department_criteria')
+          .select('id', { count: 'exact', head: true })
+          .is('department_id', null)
+          .eq('created_by', user.id)
+          .eq('is_active', true),
+        supabase
+          .from('evaluation_settings')
+          .select('specific_weight')
+          .limit(1)
+          .single(),
+      ]);
+      const noSpecificNeeded = weightSettings?.specific_weight === 0;
+      setHasSpecificCriteria(noSpecificNeeded || (count ?? 0) > 0);
     };
     checkCriteria();
   }, [user]);

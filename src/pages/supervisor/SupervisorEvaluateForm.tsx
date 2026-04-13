@@ -165,13 +165,22 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
       // Check if supervisor has added criteria for any active assignment
       const assignmentIds = assignmentList.map(a => a.id);
-      const { data: supCriteria } = await supabase
-        .from('supervisor_criteria')
-        .select('id')
-        .in('assignment_id', assignmentIds)
-        .eq('is_active', true)
-        .limit(1);
-      setHasSupervisorCriteria(!!supCriteria && supCriteria.length > 0);
+      const [{ data: supCriteria }, { data: weightSettings }] = await Promise.all([
+        supabase
+          .from('supervisor_criteria')
+          .select('id')
+          .in('assignment_id', assignmentIds)
+          .eq('is_active', true)
+          .limit(1),
+        supabase
+          .from('evaluation_settings')
+          .select('specific_weight')
+          .limit(1)
+          .single(),
+      ]);
+      // If specific weight is 0 (general is 100%), no criteria needed
+      const noSpecificNeeded = weightSettings?.specific_weight === 0;
+      setHasSupervisorCriteria(noSpecificNeeded || (!!supCriteria && supCriteria.length > 0));
 
       const { data: periods } = await supabase
         .from('evaluation_periods')
