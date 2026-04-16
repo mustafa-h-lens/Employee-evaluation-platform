@@ -29,7 +29,8 @@ const statusVariant = (status: string): 'success' | 'warning' | 'danger' | 'defa
   return map[status] || 'default';
 };
 
-const statusLabel = (status: string): string => {
+const statusLabel = (status: string, hasReply?: boolean): string => {
+  if (status === 'بانتظار الموافقة') return hasReply ? 'بانتظار اعتماد الإدارة' : 'تقييم جديد — بانتظار ردك';
   if (['موافقة', 'اطلع المدير', 'مغلق', 'مكتمل'].includes(status)) return 'تم اعتماد التقييم';
   if (status === 'مرفوض') return 'مرفوض';
   return status;
@@ -109,7 +110,7 @@ export const DirectorMyEvaluations: React.FC = () => {
     setLoading(true);
 
     try {
-      // Only fetch approved evaluations — director should not see until approved
+      // Fetch evaluations — director sees them once both CEOs have submitted
       const { data } = await supabase
         .from('director_evaluations')
         .select(`
@@ -119,7 +120,7 @@ export const DirectorMyEvaluations: React.FC = () => {
         `)
         .eq('director_id', user.id)
         .eq('evaluation_type', 'ceo_director')
-        .in('status', ['موافقة', 'اطلع المدير', 'مغلق', 'مكتمل'])
+        .in('status', ['بانتظار الموافقة', 'موافقة', 'اطلع المدير', 'مغلق', 'مكتمل'])
         .order('created_at', { ascending: false });
 
       setRawEvaluations((data || []) as unknown as EvaluationRow[]);
@@ -337,7 +338,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Badge variant={statusVariant(combined.status)}>
-                          {statusLabel(combined.status)}
+                          {statusLabel(combined.status, !!combined.director_note)}
                         </Badge>
                         {isExpanded
                           ? <ChevronUp className="h-5 w-5 text-gray-400" />
@@ -494,7 +495,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                         )}
 
                         {/* Reply Section */}
-                        {combined.status === 'موافقة' && (
+                        {(combined.status === 'بانتظار الموافقة' || combined.status === 'موافقة') && (
                           <div className="bg-teal-50 border border-teal-100 rounded-lg p-4">
                             <h4 className="text-sm font-bold text-teal-800 mb-2 flex items-center gap-2">
                               <MessageSquare className="h-4 w-4" />

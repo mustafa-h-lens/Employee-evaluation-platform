@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Button } from '../../components/ui/Button';
-import { Crown, Filter, ChevronDown, ChevronUp, Users, BarChart3 } from 'lucide-react';
+import {
+  Crown, ChevronDown, ChevronUp, Users, BarChart3, TrendingUp,
+  Calendar, MessageSquare, FileX,
+} from 'lucide-react';
 import { percentageToRating, percentageToScore5 } from '../../lib/scoring';
 
 const quarterLabels: Record<number, string> = {
@@ -77,15 +77,13 @@ interface CriterionScore {
 }
 
 export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
-  const { } = useAuth();
-
   const [loading, setLoading] = useState(true);
   const [evaluations, setEvaluations] = useState<CeoEvaluation[]>([]);
   const [periods, setPeriods] = useState<CeoPeriod[]>([]);
   const [ceoUsers, setCeoUsers] = useState<CeoUser[]>([]);
 
   // Filters
-  const [filterCeo, setFilterCeo] = useState('');
+  const [activeCeoId, setActiveCeoId] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('');
 
   // Expandable rows
@@ -101,6 +99,10 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
     ]);
     setPeriods(periodsData || []);
     setCeoUsers(ceosData || []);
+    // Auto-select first CEO tab
+    if (ceosData && ceosData.length > 0) {
+      setActiveCeoId(ceosData[0].id);
+    }
   }, []);
 
   const fetchEvaluations = useCallback(async () => {
@@ -117,13 +119,12 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
       `)
       .order('created_at', { ascending: false });
 
-    if (filterCeo) query = query.eq('ceo_id', filterCeo);
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
 
     const { data } = await query;
     setEvaluations((data as unknown as CeoEvaluation[]) || []);
     setLoading(false);
-  }, [filterCeo, filterPeriod]);
+  }, [filterPeriod]);
 
   useEffect(() => {
     fetchFilters();
@@ -133,42 +134,32 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
     fetchEvaluations();
   }, [fetchEvaluations]);
 
-  const resetFilters = () => {
-    setFilterCeo('');
-    setFilterPeriod('');
-  };
+  // Filtered evaluations for active CEO tab
+  const filtered = useMemo(() => {
+    if (!activeCeoId) return evaluations;
+    return evaluations.filter(e => e.ceo_id === activeCeoId);
+  }, [evaluations, activeCeoId]);
 
-  // Summary stats
-  const summaryStats = useMemo(() => {
-    const submitted = evaluations.filter(e => e.status === 'تم الإرسال');
-    const totalEvaluations = evaluations.length;
-    const submissionRate = totalEvaluations > 0
-      ? ((submitted.length / totalEvaluations) * 100).toFixed(0)
-      : '0';
-
-    // Average score per CEO
-    const ceosMap = new Map<string, { name: string; totalPercentage: number; count: number }>();
-    submitted.forEach(ev => {
-      const ceoName = ev.ceo?.full_name || 'غير معروف';
-      if (!ceosMap.has(ev.ceo_id)) {
-        ceosMap.set(ev.ceo_id, { name: ceoName, totalPercentage: 0, count: 0 });
-      }
-      const entry = ceosMap.get(ev.ceo_id)!;
-      entry.totalPercentage += ev.percentage || 0;
-      entry.count += 1;
-    });
-
-    const ceoAverages = Array.from(ceosMap.values()).map(c => ({
-      name: c.name,
-      avgPercentage: c.count > 0 ? c.totalPercentage / c.count : 0,
-    }));
-
-    const overallAvg = submitted.length > 0
+  // Stats for the active CEO
+  const ceoStats = useMemo(() => {
+    const submitted = filtered.filter(e => e.status === 'تم الإرسال');
+    const total = filtered.length;
+    const avgPercentage = submitted.length > 0
       ? submitted.reduce((sum, e) => sum + (e.percentage || 0), 0) / submitted.length
       : 0;
+    const avgScore5 = submitted.length > 0
+      ? submitted.reduce((sum, e) => sum + (e.final_score_5 || 0), 0) / submitted.length
+      : 0;
+    const submissionRate = total > 0 ? ((submitted.length / total) * 100) : 0;
 
-    return { totalEvaluations, submissionRate, ceoAverages, overallAvg };
-  }, [evaluations]);
+    const ratingDistribution = submitted.reduce<Record<string, number>>((acc, e) => {
+      const rating = e.general_rating || percentageToRating(e.percentage);
+      acc[rating] = (acc[rating] || 0) + 1;
+      return acc;
+    }, {});
+
+    return { total, submitted: submitted.length, avgPercentage, avgScore5, submissionRate, ratingDistribution };
+  }, [filtered]);
 
   const toggleExpandRow = async (evalId: string) => {
     if (expandedRow === evalId) {
@@ -204,6 +195,13 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
     setExpandLoading(false);
   };
 
+  // Get initials for avatar
+  const getInitials = (name: string | undefined) => {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    return parts.length >= 2 ? parts[0].charAt(0) + parts[1].charAt(0) : parts[0].charAt(0);
+  };
+
   return (
     <div className="space-y-6">
       {!embedded && (
@@ -213,268 +211,241 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardBody>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">إجمالي التقييمات</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryStats.totalEvaluations}</p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <Crown className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">متوسط النتيجة العام</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {summaryStats.overallAvg > 0 ? `${summaryStats.overallAvg.toFixed(0)}%` : '-'}
-                </p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">نسبة الإرسال</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryStats.submissionRate}%</p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+      {/* CEO Tabs */}
+      {ceoUsers.length > 0 && (
+        <div className="border-b border-gray-200">
+          <nav className="flex gap-1 -mb-px">
+            {ceoUsers.map(ceo => {
+              const isActive = activeCeoId === ceo.id;
+              const ceoSubmitted = evaluations.filter(e => e.ceo_id === ceo.id && e.status === 'تم الإرسال');
+              const ceoAvg = ceoSubmitted.length > 0
+                ? ceoSubmitted.reduce((s, e) => s + (e.percentage || 0), 0) / ceoSubmitted.length
+                : 0;
 
-      {/* Per-CEO average scores */}
-      {summaryStats.ceoAverages.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {summaryStats.ceoAverages.map((ceo, i) => (
-            <Card key={i}>
-              <CardBody className="py-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">{ceo.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-gray-900">{ceo.avgPercentage.toFixed(0)}%</span>
-                    <Badge variant={getRatingVariant(percentageToRating(ceo.avgPercentage))} size="sm">
-                      {percentageToRating(ceo.avgPercentage)}
-                    </Badge>
+              return (
+                <button
+                  key={ceo.id}
+                  onClick={() => { setActiveCeoId(ceo.id); setExpandedRow(null); }}
+                  className={`
+                    relative flex items-center gap-3 px-6 py-3.5 text-sm font-semibold transition-all rounded-t-xl
+                    ${isActive
+                      ? 'bg-white text-blue-700 border border-gray-200 border-b-white shadow-sm -mb-px z-10'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <div className={`
+                    w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+                    ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}
+                  `}>
+                    {getInitials(ceo.full_name)}
                   </div>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
+                  <span>{ceo.full_name}</span>
+                  {ceoAvg > 0 && (
+                    <Badge variant={getRatingVariant(percentageToRating(ceoAvg))} size="sm">
+                      {ceoAvg.toFixed(0)}%
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardBody>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 text-gray-500">
-              <Filter className="h-4 w-4" />
-              <span className="text-sm font-medium">تصفية:</span>
-            </div>
-            <select
-              value={filterCeo}
-              onChange={(e) => setFilterCeo(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">جميع المدراء التنفيذيين</option>
-              {ceoUsers.map(c => (
-                <option key={c.id} value={c.id}>{c.full_name}</option>
-              ))}
-            </select>
-            <select
-              value={filterPeriod}
-              onChange={(e) => setFilterPeriod(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">جميع الفترات</option>
-              {periods.map(p => (
-                <option key={p.id} value={p.id}>{quarterLabels[p.quarter]} {p.year}</option>
-              ))}
-            </select>
-            {(filterCeo || filterPeriod) && (
-              <button
-                onClick={resetFilters}
-                className="text-sm text-red-500 hover:text-red-700 transition-colors"
-              >
-                مسح الفلاتر
-              </button>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+      {/* Period Filter */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Calendar className="h-4 w-4 text-gray-400" />
+        <select
+          value={filterPeriod}
+          onChange={(e) => setFilterPeriod(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+        >
+          <option value="">جميع الفترات</option>
+          {periods.map(p => (
+            <option key={p.id} value={p.id}>{quarterLabels[p.quarter]} {p.year}</option>
+          ))}
+        </select>
+        {filterPeriod && (
+          <button
+            onClick={() => setFilterPeriod('')}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            مسح الفلتر
+          </button>
+        )}
+      </div>
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="text-gray-500">جاري التحميل...</div>
+      {/* Stats Cards for Active CEO */}
+      {ceoStats.submitted > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardBody className="text-center py-4">
+              <Users className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-gray-900">{ceoStats.total}</p>
+              <p className="text-sm text-gray-500">عدد التقييمات</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="text-center py-4">
+              <TrendingUp className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-gray-900">{ceoStats.avgScore5.toFixed(2)} / 5</p>
+              <p className="text-sm text-gray-500">متوسط الدرجة</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="text-center py-4">
+              <BarChart3 className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-gray-900">{ceoStats.avgPercentage.toFixed(1)}%</p>
+              <p className="text-sm text-gray-500">متوسط النسبة</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="text-center py-4">
+              <Badge variant={getRatingVariant(percentageToRating(ceoStats.avgPercentage))} size="sm">
+                {percentageToRating(ceoStats.avgPercentage)}
+              </Badge>
+              <p className="text-sm text-gray-500 mt-2">التقييم العام</p>
+              <div className="mt-2 space-y-1">
+                {Object.entries(ceoStats.ratingDistribution).map(([rating, count]) => (
+                  <div key={rating} className="flex items-center justify-between text-xs px-2">
+                    <Badge variant={getRatingVariant(rating)} size="sm">{rating}</Badge>
+                    <span className="text-gray-600">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
         </div>
-      ) : (
+      )}
+
+      {/* Evaluations List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : filtered.length === 0 ? (
         <Card>
-          <CardBody className="p-0">
-            {evaluations.length === 0 ? (
-              <EmptyState
-                message="لا توجد تقييمات للإدارة العليا"
-                icon={<Crown className="h-12 w-12 text-gray-400" />}
-              />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>المُقيّم</TableHead>
-                    <TableHead>المُقيَّم</TableHead>
-                    <TableHead>الفترة</TableHead>
-                    <TableHead>النتيجة</TableHead>
-                    <TableHead>النسبة</TableHead>
-                    <TableHead>التقدير</TableHead>
-                    <TableHead>الحالة</TableHead>
-                    <TableHead>التفاصيل</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {evaluations.map(ev => (
-                    <React.Fragment key={ev.id}>
-                      <TableRow>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                              {ev.evaluator?.full_name?.charAt(0) || '?'}
-                            </div>
-                            <span className="font-medium text-gray-900">{ev.evaluator?.full_name || '-'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                              {ev.ceo?.full_name?.charAt(0) || '?'}
-                            </div>
-                            <span className="font-medium text-gray-900">{ev.ceo?.full_name || '-'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {ev.period && (
-                            <span className="text-sm text-gray-700">{quarterLabels[ev.period.quarter]} {ev.period.year}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-bold text-gray-900">{ev.final_score_5?.toFixed(2)}/5</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-bold text-gray-900">{ev.percentage?.toFixed(0)}%</span>
-                        </TableCell>
-                        <TableCell>
-                          {ev.general_rating ? (
-                            <Badge variant={getRatingVariant(ev.general_rating)} size="sm">
-                              {ev.general_rating}
-                            </Badge>
-                          ) : (
-                            <span className="text-gray-400 text-sm">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusVariant(ev.status)} size="sm">
-                            {getStatusLabel(ev.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => toggleExpandRow(ev.id)}
-                            className="flex items-center gap-1"
-                          >
-                            {expandedRow === ev.id ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                            <span>{expandedRow === ev.id ? 'إخفاء' : 'عرض'}</span>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Expanded row */}
-                      {expandedRow === ev.id && (
-                        <TableRow>
-                          <TableCell colSpan={8}>
-                            {expandLoading ? (
-                              <div className="flex items-center justify-center py-6">
-                                <div className="text-gray-500">جاري التحميل...</div>
-                              </div>
-                            ) : (
-                              <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                                {/* Criterion scores */}
-                                {expandedScores.length > 0 && (
-                                  <div>
-                                    <h4 className="text-sm font-bold text-blue-700 mb-2">درجات المعايير</h4>
-                                    <div className="border rounded-lg overflow-hidden">
-                                      <table className="w-full text-sm">
-                                        <thead className="bg-blue-50">
-                                          <tr>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">المعيار</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الوزن</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الدرجة</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100 bg-white">
-                                          {expandedScores.map((s, i) => (
-                                            <tr key={i}>
-                                              <td className="px-4 py-2">
-                                                <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                                                {s.criterion_description && (
-                                                  <p className="text-xs text-gray-500">{s.criterion_description}</p>
-                                                )}
-                                              </td>
-                                              <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                                              <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
-                                              <td className="px-4 py-2 font-bold text-blue-600">{s.weighted_result?.toFixed(1)}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Evaluator note */}
-                                {expandedNote && (
-                                  <div>
-                                    <h4 className="text-sm font-bold text-gray-700 mb-1">ملاحظات المُقيّم</h4>
-                                    <p className="text-sm text-gray-600 bg-white rounded-lg p-3 border">{expandedNote}</p>
-                                  </div>
-                                )}
-
-                                {expandedScores.length === 0 && !expandedNote && (
-                                  <p className="text-sm text-gray-400 text-center py-4">لا توجد تفاصيل متاحة</p>
-                                )}
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+          <CardBody className="text-center py-16">
+            <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">لا توجد تقييمات</p>
           </CardBody>
         </Card>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((ev, index) => {
+            const rating = ev.general_rating || percentageToRating(ev.percentage);
+            const score5 = ev.final_score_5 || percentageToScore5(ev.percentage);
+            const isExpanded = expandedRow === ev.id;
+
+            return (
+              <Card key={ev.id} className="overflow-hidden">
+                <button
+                  onClick={() => toggleExpandRow(ev.id)}
+                  className="w-full text-right"
+                >
+                  <div className="px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    {/* Left side - chevron + rating */}
+                    <div className="flex items-center gap-3">
+                      <Badge variant={getRatingVariant(rating)}>
+                        {rating}
+                      </Badge>
+                      <Badge variant={getStatusVariant(ev.status)} size="sm">
+                        {getStatusLabel(ev.status)}
+                      </Badge>
+                      {isExpanded
+                        ? <ChevronUp className="h-5 w-5 text-gray-400" />
+                        : <ChevronDown className="h-5 w-5 text-gray-400" />}
+                    </div>
+
+                    {/* Right side - info */}
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-lg text-gray-900">
+                        {ev.percentage?.toFixed(1)}%
+                      </span>
+                      <span className="text-gray-300">|</span>
+                      <span className="text-sm font-semibold text-blue-600">
+                        {score5.toFixed(2)} / 5
+                      </span>
+                      <span className="text-gray-300">|</span>
+                      {ev.period && (
+                        <>
+                          <span className="text-gray-700 font-medium text-sm">
+                            {quarterLabels[ev.period.quarter]} {ev.period.year}
+                          </span>
+                          <span className="text-gray-300">|</span>
+                        </>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                          {getInitials(ev.evaluator?.full_name)}
+                        </div>
+                        <span className="text-gray-700 text-sm font-medium">{ev.evaluator?.full_name || '-'}</span>
+                      </div>
+                      {ev.evaluator_note && (
+                        <MessageSquare className="h-4 w-4 text-amber-500" />
+                      )}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 space-y-4">
+                    {expandLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Criterion Scores */}
+                        {expandedScores.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-bold text-blue-800 mb-3">تفاصيل معايير التقييم</h4>
+                            <div className="space-y-2">
+                              {expandedScores.map((s, i) => (
+                                <div
+                                  key={i}
+                                  className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200"
+                                >
+                                  <div>
+                                    <p className="font-medium text-gray-900">{s.criterion_title}</p>
+                                    {s.criterion_description && (
+                                      <p className="text-xs text-gray-500 mt-0.5">{s.criterion_description}</p>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-0.5">الوزن: {s.criterion_weight}%</p>
+                                  </div>
+                                  <div className="text-left">
+                                    <p className="font-semibold text-blue-600">{s.score} / 5</p>
+                                    {s.weighted_result != null && (
+                                      <p className="text-xs text-gray-500">المرجحة: {s.weighted_result.toFixed(1)}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Evaluator Note */}
+                        {expandedNote && (
+                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                            <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المُقيّم</p>
+                            <p className="text-sm text-blue-900 leading-relaxed">{expandedNote}</p>
+                          </div>
+                        )}
+
+                        {expandedScores.length === 0 && !expandedNote && (
+                          <p className="text-sm text-gray-400 text-center py-4">لا توجد تفاصيل متاحة</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );

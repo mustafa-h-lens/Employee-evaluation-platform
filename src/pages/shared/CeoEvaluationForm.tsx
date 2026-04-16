@@ -153,7 +153,7 @@ export const CeoEvaluationForm: React.FC = () => {
 
       const scoresMap: Record<string, number> = {};
       evalScores?.forEach((s: any) => {
-        if (s.criterion_id) scoresMap[s.criterion_id] = s.score;
+        if (s.criterion_id) scoresMap[s.criterion_id] = s.score_1_to_5 || s.score || 0;
       });
       setScores(scoresMap);
     } else {
@@ -240,22 +240,37 @@ export const CeoEvaluationForm: React.FC = () => {
       }
 
       // Delete old scores and insert new ones
-      await supabase
+      const { error: deleteError } = await supabase
         .from('ceo_evaluation_scores')
         .delete()
         .eq('evaluation_id', evaluationId);
 
+      if (deleteError) {
+        console.error('Error deleting old scores:', deleteError);
+      }
+
+      const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
       const scoreInserts = criteria
         .filter((c) => scores[c.id] && scores[c.id] > 0)
         .map((criterion) => ({
           evaluation_id: evaluationId,
           criterion_id: criterion.id,
-          score: scores[criterion.id],
-          weight: criterion.weight,
+          score_1_to_5: scores[criterion.id],
+          weighted_result: totalWeight > 0
+            ? (scores[criterion.id] / 5) * criterion.weight * (500 / totalWeight)
+            : 0,
         }));
 
+      console.log('Score inserts:', JSON.stringify(scoreInserts, null, 2));
+
       if (scoreInserts.length > 0) {
-        await supabase.from('ceo_evaluation_scores').insert(scoreInserts);
+        const { error: insertError } = await supabase.from('ceo_evaluation_scores').insert(scoreInserts);
+        if (insertError) {
+          console.error('Error inserting CEO evaluation scores:', insertError);
+          alert('خطأ في حفظ درجات المعايير: ' + insertError.message);
+          setLoading(false);
+          return;
+        }
       }
 
       setEvaluationStatus(status);

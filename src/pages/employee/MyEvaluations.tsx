@@ -16,9 +16,9 @@ const monthLabels: Record<number, string> = {
   9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
 };
 
-const statusLabel = (status: string): string => {
-  if (status === 'تم الإرسال' || status === 'بانتظار الموافقة') return 'بانتظار الموافقة';
-  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تمت الموافقة';
+const statusLabel = (status: string, hasReply?: boolean): string => {
+  if (status === 'تم الإرسال' || status === 'بانتظار الموافقة') return hasReply ? 'بانتظار اعتماد الإدارة' : 'تقييم جديد — بانتظار ردك';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تم اعتماد التقييم';
   if (status === 'مرفوض') return 'التقييم مرفوض';
   return status;
 };
@@ -28,7 +28,7 @@ const statusVariant = (status: string): 'success' | 'warning' | 'danger' | 'defa
     'موافقة': 'success',
     'بانتظار الموافقة': 'warning',
     'مرفوض': 'danger',
-    'تم الإرسال': 'warning',
+    'تم الإرسال': 'info',
     'اطلع الموظف': 'success',
     'مغلق': 'success',
   };
@@ -143,16 +143,6 @@ export const MyEvaluations: React.FC = () => {
     const replies: Record<string, string> = {};
     evalList.forEach(ev => { replies[ev.id] = ev.employee_note || ''; });
     setReplyText(replies);
-
-    // Mark director evals "تم الإرسال" as viewed
-    for (const ev of dirEvals) {
-      if (ev.status === 'تم الإرسال') {
-        await supabase
-          .from('evaluations')
-          .update({ status: 'اطلع الموظف', viewed_by_employee_at: new Date().toISOString() })
-          .eq('id', ev.id);
-      }
-    }
 
     setLoading(false);
   };
@@ -311,7 +301,7 @@ export const MyEvaluations: React.FC = () => {
                 <div className={`px-6 py-5 flex items-center justify-between transition-colors ${isExpanded ? 'bg-gradient-to-l from-blue-50 to-white' : 'hover:bg-gray-50'}`}>
                   <div className="flex items-center gap-3">
                     <Badge variant={statusVariant(ev.status)}>
-                      {statusLabel(ev.status)}
+                      {statusLabel(ev.status, !!ev.employee_note)}
                     </Badge>
                     {isExpanded
                       ? <ChevronUp className="h-5 w-5 text-gray-400" />

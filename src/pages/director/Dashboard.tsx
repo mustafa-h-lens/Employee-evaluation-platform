@@ -111,7 +111,7 @@ export const DirectorDashboard: React.FC = () => {
         .select('percentage, general_rating, period:evaluation_periods(year, month)')
         .eq('director_id', user.id)
         .eq('evaluation_type', 'ceo_director')
-        .in('status', ['موافقة', 'اطلع المدير', 'مغلق', 'مكتمل'])
+        .in('status', ['بانتظار الموافقة', 'موافقة', 'اطلع المدير', 'مغلق', 'مكتمل'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

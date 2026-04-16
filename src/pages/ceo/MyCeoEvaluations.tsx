@@ -37,7 +37,8 @@ interface CeoEvaluation {
 
 interface CeoScoreDetail {
   id: string;
-  score: number;
+  score_1_to_5: number;
+  weighted_result: number;
   criterion: {
     title: string;
     weight: number;
@@ -89,7 +90,7 @@ export const MyCeoEvaluations: React.FC = () => {
         const { data } = await supabase
           .from('ceo_evaluation_scores')
           .select(`
-            id, score,
+            id, score_1_to_5, weighted_result,
             criterion:ceo_evaluation_criteria(title, weight)
           `)
           .eq('evaluation_id', evalId);
@@ -310,8 +311,11 @@ export const MyCeoEvaluations: React.FC = () => {
                                   </div>
                                   <div className="text-right">
                                     <p className="font-semibold text-blue-600">
-                                      {score.score} / 5
+                                      {score.score_1_to_5} / 5
                                     </p>
+                                    {score.weighted_result != null && (
+                                      <p className="text-xs text-gray-500">المرجحة: {score.weighted_result.toFixed(1)}</p>
+                                    )}
                                   </div>
                                 </div>
                               ))}

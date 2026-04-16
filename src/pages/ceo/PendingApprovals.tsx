@@ -169,13 +169,13 @@ export const PendingApprovals: React.FC = () => {
       .order('submitted_at', { ascending: false });
 
     if (activeFilter === 'pending') {
-      query = query.eq('status', 'بانتظار الموافقة');
+      query = query.in('status', ['تم الإرسال', 'بانتظار الموافقة']);
     } else if (activeFilter === 'rejected') {
       query = query.eq('status', 'مرفوض');
     } else if (activeFilter === 'approved') {
       query = query.eq('status', 'موافقة');
     } else {
-      query = query.in('status', ['بانتظار الموافقة', 'موافقة', 'مرفوض']);
+      query = query.in('status', ['تم الإرسال', 'بانتظار الموافقة', 'موافقة', 'مرفوض']);
     }
 
     const { data } = await query;

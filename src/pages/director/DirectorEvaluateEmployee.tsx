@@ -47,15 +47,17 @@ const monthLabels: Record<number, string> = {
 
 const getEvalStatusLabel = (status: string | null | undefined): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
-  if (status === 'بانتظار الموافقة') return 'بانتظار الموافقة على التقييم';
+  if (status === 'تم الإرسال') return 'تم الإرسال — بانتظار الاعتماد';
+  if (status === 'بانتظار الموافقة') return 'بانتظار الاعتماد';
   if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
-  if (status === 'مرفوض') return 'التقييم مرفوض';
+  if (status === 'مرفوض') return 'التقييم مرفوض — يجب إعادة الإرسال';
   return status;
 };
 
 const getEvalStatusVariant = (status: string | null | undefined): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   if (!status || status === 'مسودة') return 'default';
   const map: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
+    'تم الإرسال': 'info',
     'بانتظار الموافقة': 'warning',
     'موافقة': 'success',
     'اطلع الموظف': 'success',
@@ -194,10 +196,33 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         return;
       }
 
+      // Exclude employees who have an active supervisor — they are evaluated by their supervisor, not director
+      const { data: activeAssignments } = await supabase
+        .from('supervisor_assignments')
+        .select('id')
+        .eq('status', 'active');
+
+      const supervisedIds = new Set<string>();
+      if (activeAssignments && activeAssignments.length > 0) {
+        const assignmentIds = activeAssignments.map(a => a.id);
+        const { data: members } = await supabase
+          .from('supervisor_assignment_members')
+          .select('employee_id')
+          .in('assignment_id', assignmentIds);
+        (members || []).forEach((m: any) => supervisedIds.add(m.employee_id));
+      }
+      const unsupervisedIds = allEmpIds.filter(id => !supervisedIds.has(id));
+
+      if (unsupervisedIds.length === 0) {
+        setAllEmployees([]);
+        setEmployeesLoading(false);
+        return;
+      }
+
       const { data: employees } = await supabase
         .from('employees')
         .select('id, user_id, full_name, email, job_title, employee_number, directorate_id, department_id')
-        .in('id', allEmpIds)
+        .in('id', unsupervisedIds)
         .order('full_name');
 
       if (!employees || employees.length === 0) {
@@ -423,7 +448,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         manager_id: user.id,
         department_id: employee?.department_id || null,
         period_id: activePeriod.id,
-        status: isDraft ? 'مسودة' : 'بانتظار الموافقة',
+        status: isDraft ? 'مسودة' : 'تم الإرسال',
         final_score_500: results.finalScore500,
         final_score_5: results.finalScore5,
         percentage: results.percentage,

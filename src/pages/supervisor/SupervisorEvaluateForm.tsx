@@ -59,9 +59,9 @@ const monthLabels: Record<number, string> = {
 
 const getEvalStatusLabel = (status: string | null | undefined): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
-  if (status === 'تم الإرسال') return 'بانتظار الموافقة على التقييم';
-  if (status === 'مرفوض') return 'التقييم مرفوض';
-  if (status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
+  if (status === 'تم الإرسال') return 'تم الإرسال — بانتظار الاعتماد';
+  if (status === 'مرفوض') return 'التقييم مرفوض — يجب إعادة الإرسال';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
   return status;
 };
 
@@ -532,7 +532,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   const results = calculateResults();
   const scoredCount = criteria.filter(c => scores[c.id] && scores[c.id] > 0).length;
-  const isReadOnly = evaluationStatus !== '' && evaluationStatus !== 'مسودة';
+  const isReadOnly = evaluationStatus !== '' && evaluationStatus !== 'مسودة' && evaluationStatus !== 'مرفوض';
 
   if (employeesLoading) {
     return (
