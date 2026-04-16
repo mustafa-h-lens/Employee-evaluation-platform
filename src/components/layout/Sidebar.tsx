@@ -51,8 +51,7 @@ const menuItems: MenuItem[] = [
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/ceo-reports', roles: ['ceo'] },
   { label: 'تقييماتي من الموظفين', icon: <Star className="h-5 w-5" />, path: '/my-ceo-evaluations', roles: ['ceo'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/ceo-org-structure', roles: ['ceo'] },
-  { label: 'الموظفون', icon: <Users className="h-5 w-5" />, path: '/director-employees', roles: ['director'] },
-  { label: 'التقييمات', icon: <FileText className="h-5 w-5" />, path: '/director-evaluate', roles: ['director'] },
+  { label: 'موظفو الإدارات', icon: <Users className="h-5 w-5" />, path: '/director-evaluate', roles: ['director'] },
   { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/director-criteria', roles: ['director'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/director-evaluations', roles: ['director'] },
   { label: 'تقييم الرؤساء', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['director'] },
@@ -132,19 +131,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
                       {hasDirectorAccess ? (
                         <>
                           <button
-                            onClick={() => onNavigate('/director-employees')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                              currentPath.split('?')[0] === '/director-employees'
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span>موظفو الإدارة</span>
-                            <span className="mr-auto">
-                              <Users className="h-5 w-5" />
-                            </span>
-                          </button>
-                          <button
                             onClick={() => onNavigate('/director-evaluate')}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
                               currentPath.split('?')[0] === '/director-evaluate'
@@ -152,9 +138,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
                                 : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
-                            <span>تقييم الموظفين</span>
+                            <span>موظفو الإدارات</span>
                             <span className="mr-auto">
-                              <FileText className="h-5 w-5" />
+                              <Users className="h-5 w-5" />
                             </span>
                           </button>
                           <button

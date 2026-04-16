@@ -28,11 +28,19 @@ const getRatingVariant = (rating: string | null): 'success' | 'info' | 'warning'
 
 const getStatusVariant = (status: string): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   switch (status) {
-    case 'بانتظار الموافقة': return 'warning';
-    case 'موافقة': return 'success';
+    case 'تم الإرسال': case 'بانتظار الموافقة': return 'warning';
+    case 'موافقة': case 'اطلع الموظف': case 'مغلق': return 'success';
     case 'مرفوض': return 'danger';
     default: return 'default';
   }
+};
+
+const getStatusLabel = (status: string): string => {
+  if (status === 'تم الإرسال') return 'بانتظار الموافقة';
+  if (status === 'بانتظار الموافقة') return 'بانتظار الموافقة';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تمت الموافقة';
+  if (status === 'مرفوض') return 'مرفوض';
+  return status;
 };
 
 interface EvalItem {
@@ -646,7 +654,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(ev.status)} size="sm">{ev.status}</Badge>
+                          <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -751,7 +759,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(combined.status)} size="sm">{combined.status}</Badge>
+                          <Badge variant={getStatusVariant(combined.status)} size="sm">{getStatusLabel(combined.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -852,7 +860,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(ev.status)} size="sm">{ev.status}</Badge>
+                          <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -948,7 +956,7 @@ export const PendingApprovals: React.FC = () => {
                     })()}
                   </p>
                   <Badge variant={getStatusVariant(currentDetailStatus)} size="sm" className="mt-1">
-                    {currentDetailStatus}
+                    {getStatusLabel(currentDetailStatus)}
                   </Badge>
                 </div>
               </div>

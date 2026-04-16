@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Users, Search, Mail, Briefcase, FileCheck, FileClock, Clipboard as ClipboardEdit, Eye, Calendar, AlertTriangle } from 'lucide-react';
+import { Users, Search, Mail, Briefcase, FileCheck, FileClock, Clipboard as ClipboardEdit, Eye, Calendar, AlertTriangle, Building2 } from 'lucide-react';
 
 interface EmployeeInfo {
   id: string;
@@ -32,9 +32,9 @@ const getRatingBadgeVariant = (rating: string | null): 'success' | 'info' | 'war
 
 const getEvalStatusLabel = (status: string | null): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
-  if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
-  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تم اعتماد التقييم';
-  if (status === 'مرفوض') return 'مرفوض';
+  if (status === 'بانتظار الموافقة') return 'بانتظار الموافقة على التقييم';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
+  if (status === 'مرفوض') return 'التقييم مرفوض';
   return status;
 };
 
@@ -75,6 +75,8 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
   const [allPeriods, setAllPeriods] = useState<PeriodOption[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(false);
+  const [myDirectorates, setMyDirectorates] = useState<{ id: string; name: string }[]>([]);
+  const [selectedDirectorateId, setSelectedDirectorateId] = useState<string>('all');
 
   // Fetch periods once
   useEffect(() => {
@@ -122,33 +124,48 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
     try {
       setLoading(true);
 
-      // Find directorate (check both primary and secondary director)
-      const { data: directorates } = await supabase
+      // Find ALL directorates where user is director or secondary director
+      const { data: dirs } = await supabase
         .from('directorates')
         .select('id, name')
         .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`);
 
-      const directorate = directorates?.[0];
-      if (!directorate) {
+      if (!dirs || dirs.length === 0) {
         setLoading(false);
         return;
       }
 
-      // Find employees assigned to this directorate (via junction table)
+      setMyDirectorates(dirs);
+      const dirIds = dirs.map(d => d.id);
+      const dirNameMap = new Map(dirs.map(d => [d.id, d.name]));
+
+      // Find employees assigned to ALL directorates (via junction table)
       const { data: assignmentData } = await supabase
         .from('employee_directorates')
-        .select('employee_id')
-        .eq('directorate_id', directorate.id);
+        .select('employee_id, directorate_id')
+        .in('directorate_id', dirIds);
 
-      const assignedEmpIds = (assignmentData || []).map(a => a.employee_id);
+      // Build employee -> directorate mapping
+      const empDirMap = new Map<string, string>();
+      (assignmentData || []).forEach(a => {
+        if (!empDirMap.has(a.employee_id)) {
+          empDirMap.set(a.employee_id, a.directorate_id);
+        }
+      });
 
-      // Also get employees with legacy directorate_id (backward compat)
+      // Also get employees with legacy directorate_id
       const { data: legacyEmps } = await supabase
         .from('employees')
-        .select('id')
-        .eq('directorate_id', directorate.id);
+        .select('id, directorate_id')
+        .in('directorate_id', dirIds);
 
-      const allEmpIds = [...new Set([...assignedEmpIds, ...(legacyEmps || []).map(e => e.id)])];
+      (legacyEmps || []).forEach(e => {
+        if (!empDirMap.has(e.id) && e.directorate_id) {
+          empDirMap.set(e.id, e.directorate_id);
+        }
+      });
+
+      const allEmpIds = [...empDirMap.keys()];
 
       if (allEmpIds.length === 0) {
         setEmployees([]);
@@ -188,18 +205,21 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
         });
       }
 
-      const enriched: EmployeeInfo[] = empData.map(emp => ({
-        id: emp.id,
-        user_id: emp.user_id,
-        full_name: emp.full_name,
-        email: emp.email,
-        job_title: emp.job_title || '',
-        department_name: directorate.name,
-        employee_number: emp.employee_number || '',
-        evaluation_status: evalMap.get(emp.id)?.status || null,
-        general_rating: evalMap.get(emp.id)?.general_rating || null,
-        percentage: evalMap.get(emp.id)?.percentage || null,
-      }));
+      const enriched: EmployeeInfo[] = empData.map(emp => {
+        const dId = empDirMap.get(emp.id) || emp.directorate_id;
+        return {
+          id: emp.id,
+          user_id: emp.user_id,
+          full_name: emp.full_name,
+          email: emp.email,
+          job_title: emp.job_title || '',
+          department_name: dId ? (dirNameMap.get(dId) || '') : '',
+          employee_number: emp.employee_number || '',
+          evaluation_status: evalMap.get(emp.id)?.status || null,
+          general_rating: evalMap.get(emp.id)?.general_rating || null,
+          percentage: evalMap.get(emp.id)?.percentage || null,
+        };
+      });
 
       setEmployees(enriched);
     } catch (error) {
@@ -213,15 +233,19 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
     if (selectedPeriodId) fetchEmployees();
   }, [selectedPeriodId, fetchEmployees]);
 
-  const filtered = employees.filter(m =>
+  const dirFiltered = selectedDirectorateId === 'all'
+    ? employees
+    : employees.filter(m => m.department_name === myDirectorates.find(d => d.id === selectedDirectorateId)?.name);
+
+  const filtered = dirFiltered.filter(m =>
     m.full_name.includes(searchQuery) ||
     m.email.includes(searchQuery) ||
     m.department_name.includes(searchQuery) ||
     m.job_title.includes(searchQuery)
   );
 
-  const evaluatedCount = employees.filter(m => m.evaluation_status && m.evaluation_status !== 'مسودة').length;
-  const pendingCount = employees.filter(m => !m.evaluation_status || m.evaluation_status === 'مسودة').length;
+  const evaluatedCount = dirFiltered.filter(m => m.evaluation_status && m.evaluation_status !== 'مسودة').length;
+  const pendingCount = dirFiltered.filter(m => !m.evaluation_status || m.evaluation_status === 'مسودة').length;
 
   if (loading) {
     return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
@@ -249,7 +273,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">إجمالي الموظفين</p>
-                <p className="text-2xl font-bold text-gray-900">{employees.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{dirFiltered.length}</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                 <Users className="h-6 w-6" />
@@ -298,6 +322,21 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                 className="w-full pr-10 pl-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
               />
             </div>
+            {myDirectorates.length > 1 && (
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-gray-400" />
+                <select
+                  value={selectedDirectorateId}
+                  onChange={(e) => setSelectedDirectorateId(e.target.value)}
+                  className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="all">جميع الإدارات</option>
+                  {myDirectorates.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-gray-400" />
               <select
@@ -327,7 +366,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                   <TableHead>الرقم الوظيفي</TableHead>
                   <TableHead>البريد الإلكتروني</TableHead>
                   <TableHead>الإدارة</TableHead>
-                  <TableHead>التقييم الحالي</TableHead>
+                  <TableHead>حالة التقييم</TableHead>
                   <TableHead>إجراء</TableHead>
                 </TableRow>
               </TableHeader>
@@ -362,15 +401,9 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {emp.evaluation_status && emp.evaluation_status !== 'مسودة' && emp.general_rating ? (
-                            <Badge variant={getRatingBadgeVariant(emp.general_rating)} size="sm">
-                              {emp.general_rating}
-                            </Badge>
-                          ) : (
-                            <Badge variant={getEvalStatusVariant(emp.evaluation_status)} size="sm">
-                              {getEvalStatusLabel(emp.evaluation_status)}
-                            </Badge>
-                          )}
+                          <Badge variant={getEvalStatusVariant(emp.evaluation_status)} size="sm">
+                            {getEvalStatusLabel(emp.evaluation_status)}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell>

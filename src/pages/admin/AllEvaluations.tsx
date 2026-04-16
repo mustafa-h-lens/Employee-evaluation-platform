@@ -27,19 +27,20 @@ const getRatingVariant = (rating: string | null): 'success' | 'info' | 'warning'
 
 const getStatusVariant = (status: string): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   switch (status) {
-    case 'بانتظار الموافقة': return 'warning';
-    case 'موافقة': case 'تم الإرسال': case 'اطلع الموظف': case 'اطلع المدير': case 'مغلق': case 'مكتمل': return 'success';
+    case 'تم الإرسال': case 'بانتظار الموافقة': return 'warning';
+    case 'موافقة': case 'اطلع الموظف': case 'اطلع المدير': case 'مغلق': case 'مكتمل': return 'success';
     case 'مرفوض': return 'danger';
     default: return 'default';
   }
 };
 
 const getStatusLabel = (status: string, context?: string): string => {
-  if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
-  if (status === 'تم الإرسال' && context === 'ceo') return 'بانتظار تقييم الشريك';
-  if (['موافقة', 'تم الإرسال', 'اطلع الموظف', 'اطلع المدير', 'مغلق', 'مكتمل'].includes(status)) return 'تم اعتماد التقييم';
-  if (status === 'مرفوض') return 'مرفوض';
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
+  if (status === 'تم الإرسال' && context === 'ceo') return 'بانتظار تقييم الشريك';
+  if (status === 'تم الإرسال') return 'بانتظار الموافقة';
+  if (status === 'بانتظار الموافقة') return 'بانتظار الموافقة';
+  if (['موافقة', 'اطلع الموظف', 'اطلع المدير', 'مغلق', 'مكتمل'].includes(status)) return 'تم اعتماد التقييم';
+  if (status === 'مرفوض') return 'التقييم مرفوض';
   return status;
 };
 

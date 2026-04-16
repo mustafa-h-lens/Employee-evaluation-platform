@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { TextArea } from '../../components/ui/Input';
 import {
   FileX, ChevronDown, ChevronUp, Calendar, MessageSquare, Send, CheckCircle2,
+  User, Award, TrendingUp, BarChart3, Star,
 } from 'lucide-react';
 
 const monthLabels: Record<number, string> = {
@@ -16,9 +17,9 @@ const monthLabels: Record<number, string> = {
 };
 
 const statusLabel = (status: string): string => {
-  if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
-  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تم اعتماد التقييم';
-  if (status === 'مرفوض') return 'مرفوض';
+  if (status === 'تم الإرسال' || status === 'بانتظار الموافقة') return 'بانتظار الموافقة';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تمت الموافقة';
+  if (status === 'مرفوض') return 'التقييم مرفوض';
   return status;
 };
 
@@ -55,6 +56,7 @@ interface Evaluation {
   created_at: string;
   period: { year: number; month: number };
   manager: { full_name: string };
+  source: 'director' | 'supervisor';
 }
 
 interface ScoreDetail {
@@ -97,7 +99,8 @@ export const MyEvaluations: React.FC = () => {
       return;
     }
 
-    const { data } = await supabase
+    // Fetch director/manager evaluations
+    const { data: dirData } = await supabase
       .from('evaluations')
       .select(`
         id, status, percentage, final_score_5, general_rating,
@@ -106,25 +109,48 @@ export const MyEvaluations: React.FC = () => {
         manager:users!evaluations_manager_id_fkey(full_name)
       `)
       .eq('employee_id', employee.id)
-      .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
+      .in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
       .order('created_at', { ascending: false });
 
-    const evalList = (data as Evaluation[]) || [];
+    const dirEvals: Evaluation[] = ((dirData as any[]) || []).map(ev => ({ ...ev, source: 'director' as const }));
+
+    // Fetch supervisor evaluations
+    const { data: supData } = await supabase
+      .from('supervisor_evaluations')
+      .select(`
+        id, status, percentage, final_score_5, general_rating,
+        supervisor_note, employee_note, created_at,
+        period:evaluation_periods(year, month),
+        supervisor:users!supervisor_evaluations_supervisor_id_fkey(full_name)
+      `)
+      .eq('employee_id', employee.id)
+      .in('status', ['تم الإرسال', 'اطلع الموظف', 'مغلق', 'مرفوض'])
+      .order('created_at', { ascending: false });
+
+    const supEvals: Evaluation[] = ((supData as any[]) || []).map(ev => ({
+      ...ev,
+      manager_note: ev.supervisor_note,
+      manager: ev.supervisor,
+      source: 'supervisor' as const,
+    }));
+
+    // Merge and sort by created_at descending
+    const evalList = [...dirEvals, ...supEvals].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
     setEvaluations(evalList);
 
     const replies: Record<string, string> = {};
     evalList.forEach(ev => { replies[ev.id] = ev.employee_note || ''; });
     setReplyText(replies);
 
-    // Mark "تم الإرسال" as viewed
-    if (data) {
-      for (const ev of data) {
-        if (ev.status === 'تم الإرسال') {
-          await supabase
-            .from('evaluations')
-            .update({ status: 'اطلع الموظف', viewed_by_employee_at: new Date().toISOString() })
-            .eq('id', ev.id);
-        }
+    // Mark director evals "تم الإرسال" as viewed
+    for (const ev of dirEvals) {
+      if (ev.status === 'تم الإرسال') {
+        await supabase
+          .from('evaluations')
+          .update({ status: 'اطلع الموظف', viewed_by_employee_at: new Date().toISOString() })
+          .eq('id', ev.id);
       }
     }
 
@@ -141,17 +167,40 @@ export const MyEvaluations: React.FC = () => {
 
     if (!scores[evalId]) {
       setScoresLoading(evalId);
+      const ev = evaluations.find(e => e.id === evalId);
       try {
-        const { data } = await supabase
-          .from('evaluation_scores')
-          .select(`
-            id, score_1_to_5, weighted_result, criterion_type,
-            criterion:evaluation_criteria(title, weight),
-            dept_criterion:department_criteria(title, weight)
-          `)
-          .eq('evaluation_id', evalId);
+        if (ev?.source === 'supervisor') {
+          const { data, error } = await supabase
+            .from('supervisor_evaluation_scores')
+            .select(`
+              id, score_1_to_5, weighted_result, criterion_type,
+              criterion:evaluation_criteria!supervisor_evaluation_scores_criterion_id_fkey(title, weight),
+              sup_criterion:supervisor_criteria!supervisor_evaluation_scores_supervisor_criterion_id_fkey(title, weight)
+            `)
+            .eq('evaluation_id', evalId);
 
-        setScores(prev => ({ ...prev, [evalId]: (data || []) as unknown as ScoreDetail[] }));
+          if (error) console.error('Sup scores error:', error);
+          const mapped: ScoreDetail[] = ((data as any[]) || []).map(s => ({
+            id: s.id,
+            score_1_to_5: s.score_1_to_5,
+            weighted_result: s.weighted_result,
+            criterion_type: s.criterion_type,
+            criterion: s.criterion,
+            dept_criterion: s.sup_criterion,
+          }));
+          setScores(prev => ({ ...prev, [evalId]: mapped }));
+        } else {
+          const { data } = await supabase
+            .from('evaluation_scores')
+            .select(`
+              id, score_1_to_5, weighted_result, criterion_type,
+              criterion:evaluation_criteria(title, weight),
+              dept_criterion:department_criteria(title, weight)
+            `)
+            .eq('evaluation_id', evalId);
+
+          setScores(prev => ({ ...prev, [evalId]: (data || []) as unknown as ScoreDetail[] }));
+        }
       } catch (error) {
         console.error('Error fetching scores:', error);
       } finally {
@@ -165,9 +214,11 @@ export const MyEvaluations: React.FC = () => {
     if (!text) return;
 
     setReplySaving(evaluationId);
+    const ev = evaluations.find(e => e.id === evaluationId);
+    const table = ev?.source === 'supervisor' ? 'supervisor_evaluations' : 'evaluations';
     try {
       await supabase
-        .from('evaluations')
+        .from(table)
         .update({ employee_note: text })
         .eq('id', evaluationId);
 
@@ -243,126 +294,195 @@ export const MyEvaluations: React.FC = () => {
             </CardBody>
           </Card>
         ) : (
-        <div className="space-y-4">
-          {filtered.map(ev => (
-            <Card key={ev.id} className="overflow-hidden">
+        <div className="space-y-5">
+          {filtered.map(ev => {
+            const generalScores = scores[ev.id]?.filter(s => s.criterion_type === 'general') || [];
+            const specificScores = scores[ev.id]?.filter(s => s.criterion_type === 'specific') || [];
+            const isExpanded = expandedId === ev.id;
+            const sourceLabel = ev.source === 'supervisor' ? 'تقييم المشرف' : 'تقييم مدير الإدارة';
+
+            return (
+            <Card key={ev.id} className="overflow-hidden border border-gray-200 shadow-sm">
+              {/* Header - clickable */}
               <button
                 onClick={() => toggleExpand(ev.id)}
                 className="w-full text-right"
               >
-                <div className="px-6 py-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div className={`px-6 py-5 flex items-center justify-between transition-colors ${isExpanded ? 'bg-gradient-to-l from-blue-50 to-white' : 'hover:bg-gray-50'}`}>
                   <div className="flex items-center gap-3">
                     <Badge variant={statusVariant(ev.status)}>
                       {statusLabel(ev.status)}
                     </Badge>
-                    {expandedId === ev.id
+                    {isExpanded
                       ? <ChevronUp className="h-5 w-5 text-gray-400" />
                       : <ChevronDown className="h-5 w-5 text-gray-400" />}
                   </div>
 
                   <div className="flex items-center gap-4">
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{sourceLabel}</span>
+                    <span className="text-gray-300">|</span>
                     <span className="font-bold text-lg text-gray-900">
                       {ev.percentage?.toFixed(1)}%
                     </span>
-                    <span className="text-gray-300">|</span>
-                    {ev.final_score_5 != null && (
-                      <>
-                        <span className="text-sm font-semibold text-blue-600">
-                          {ev.final_score_5.toFixed(2)} / 5
-                        </span>
-                        <span className="text-gray-300">|</span>
-                      </>
-                    )}
                     {ev.general_rating && (
                       <>
+                        <span className="text-gray-300">|</span>
                         <Badge variant={ratingVariant(ev.general_rating)} size="sm">
                           {ev.general_rating}
                         </Badge>
-                        <span className="text-gray-300">|</span>
                       </>
                     )}
-                    <span className="text-gray-600">
+                    <span className="text-gray-300">|</span>
+                    <span className="text-gray-600 flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5" />
                       {ev.manager?.full_name || '—'}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="text-gray-700 font-semibold">
+                    <span className="text-gray-700 font-semibold flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
                       {ev.period
-                        ? `${monthLabels[ev.period.month]} - ${ev.period.year}`
+                        ? `${monthLabels[ev.period.month]} ${ev.period.year}`
                         : '—'}
                     </span>
                   </div>
                 </div>
               </button>
 
-              {expandedId === ev.id && (
-                <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 space-y-4">
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div className="border-t border-gray-200">
                   {scoresLoading === ev.id ? (
-                    <div className="flex items-center justify-center py-6">
-                      <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex items-center justify-center py-12">
+                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   ) : (
                     <>
-                      {/* General Criteria */}
-                      {scores[ev.id]?.filter(s => s.criterion_type === 'general').length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-bold text-blue-800 mb-2">معايير التقييم العامة</h4>
-                          <div className="space-y-2">
-                            {scores[ev.id]
-                              .filter(s => s.criterion_type === 'general')
-                              .map(score => (
-                                <div key={score.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
-                                  <div>
-                                    <p className="font-medium text-gray-900">{score.criterion?.title || '—'}</p>
-                                    <p className="text-xs text-gray-500">الوزن: {score.criterion?.weight || 0}%</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold text-blue-600">{score.score_1_to_5} / 5</p>
-                                    <p className="text-xs text-gray-500">المرجحة: {score.weighted_result.toFixed(1)}</p>
-                                  </div>
-                                </div>
-                              ))}
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-5 bg-gradient-to-l from-slate-50 to-white">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+                          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <TrendingUp className="h-5 w-5 text-blue-600" />
                           </div>
+                          <p className="text-2xl font-bold text-gray-900">{ev.percentage?.toFixed(1)}%</p>
+                          <p className="text-xs text-gray-500 mt-1">النسبة المئوية</p>
                         </div>
-                      )}
-
-                      {/* Specific Criteria */}
-                      {scores[ev.id]?.filter(s => s.criterion_type === 'specific').length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-bold text-emerald-800 mb-2">معايير التقييم الخاصة</h4>
-                          <div className="space-y-2">
-                            {scores[ev.id]
-                              .filter(s => s.criterion_type === 'specific')
-                              .map(score => (
-                                <div key={score.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
-                                  <div>
-                                    <p className="font-medium text-gray-900">{score.dept_criterion?.title || '—'}</p>
-                                    <p className="text-xs text-gray-500">الوزن: {score.dept_criterion?.weight || 0}%</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold text-emerald-600">{score.score_1_to_5} / 5</p>
-                                    <p className="text-xs text-gray-500">المرجحة: {score.weighted_result.toFixed(1)}</p>
-                                  </div>
-                                </div>
-                              ))}
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+                          <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <BarChart3 className="h-5 w-5 text-indigo-600" />
                           </div>
+                          <p className="text-2xl font-bold text-gray-900">{ev.final_score_5 != null ? ev.final_score_5.toFixed(2) : '—'}</p>
+                          <p className="text-xs text-gray-500 mt-1">الدرجة من 5</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+                          <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <Award className="h-5 w-5 text-amber-600" />
+                          </div>
+                          <p className="text-lg font-bold text-gray-900 mt-1">{ev.general_rating || '—'}</p>
+                          <p className="text-xs text-gray-500 mt-1">التقدير العام</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+                          <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <User className="h-5 w-5 text-emerald-600" />
+                          </div>
+                          <p className="text-lg font-bold text-gray-900 mt-1 truncate">{ev.manager?.full_name || '—'}</p>
+                          <p className="text-xs text-gray-500 mt-1">المقيّم</p>
+                        </div>
+                      </div>
+
+                      {/* Criteria Scores */}
+                      {(generalScores.length > 0 || specificScores.length > 0) && (
+                        <div className="px-6 py-5 space-y-5">
+                          {/* General Criteria */}
+                          {generalScores.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
+                                <h4 className="text-sm font-bold text-gray-800">المعايير العامة</h4>
+                                <span className="text-xs text-gray-400">({generalScores.length} معيار)</span>
+                              </div>
+                              <div className="space-y-2">
+                                {generalScores.map(score => {
+                                  const pct = ((score.score_1_to_5 / 5) * 100);
+                                  const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-blue-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
+                                  return (
+                                    <div key={score.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <Star className="h-4 w-4 text-blue-400" />
+                                          <p className="font-medium text-gray-900 text-sm">{score.criterion?.title || '—'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <span className="text-xs text-gray-400">الوزن: {score.criterion?.weight || 0}%</span>
+                                          <span className="font-bold text-blue-700 text-sm">{score.score_1_to_5} / 5</span>
+                                        </div>
+                                      </div>
+                                      <div className="w-full bg-gray-100 rounded-full h-2">
+                                        <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Specific Criteria */}
+                          {specificScores.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
+                                <h4 className="text-sm font-bold text-gray-800">المعايير الخاصة</h4>
+                                <span className="text-xs text-gray-400">({specificScores.length} معيار)</span>
+                              </div>
+                              <div className="space-y-2">
+                                {specificScores.map(score => {
+                                  const pct = ((score.score_1_to_5 / 5) * 100);
+                                  const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-blue-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
+                                  return (
+                                    <div key={score.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <Star className="h-4 w-4 text-emerald-400" />
+                                          <p className="font-medium text-gray-900 text-sm">{score.dept_criterion?.title || '—'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <span className="text-xs text-gray-400">الوزن: {score.dept_criterion?.weight || 0}%</span>
+                                          <span className="font-bold text-emerald-700 text-sm">{score.score_1_to_5} / 5</span>
+                                        </div>
+                                      </div>
+                                      <div className="w-full bg-gray-100 rounded-full h-2">
+                                        <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
                       {(!scores[ev.id] || scores[ev.id].length === 0) && (
-                        <p className="text-center text-gray-400 py-4">لا توجد تفاصيل درجات لهذا التقييم</p>
+                        <div className="text-center py-8 px-6">
+                          <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                          <p className="text-gray-400">لا توجد تفاصيل درجات لهذا التقييم</p>
+                        </div>
                       )}
 
                       {/* Manager Note */}
                       {ev.manager_note && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                          <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
-                          <p className="text-sm text-blue-900 leading-relaxed">{ev.manager_note}</p>
+                        <div className="mx-6 mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MessageSquare className="h-4 w-4 text-blue-600" />
+                            <p className="text-sm font-bold text-blue-800">ملاحظات المقيّم</p>
+                          </div>
+                          <p className="text-sm text-blue-900 leading-relaxed bg-white/60 rounded-lg p-3">{ev.manager_note}</p>
                         </div>
                       )}
 
                       {/* Reply Section */}
-                      {(ev.status === 'موافقة' || ev.status === 'اطلع الموظف' || ev.status === 'مغلق') && (
-                        <div className="bg-teal-50 border border-teal-100 rounded-lg p-4">
+                      {(ev.status === 'موافقة' || ev.status === 'اطلع الموظف' || ev.status === 'مغلق' || ev.status === 'تم الإرسال') && (
+                        <div className="mx-6 mb-5 bg-teal-50 border border-teal-100 rounded-xl p-4">
                           <h4 className="text-sm font-bold text-teal-800 mb-2 flex items-center gap-2">
                             <MessageSquare className="h-4 w-4" />
                             ردك على التقييم
@@ -398,7 +518,8 @@ export const MyEvaluations: React.FC = () => {
                 </div>
               )}
             </Card>
-          ))}
+            );
+          })}
         </div>
         );
       })()}

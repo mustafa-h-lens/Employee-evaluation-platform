@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar, Shield, Clock } from 'lucide-react';
+import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar, Shield, Clock, MessageSquare } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 
 interface EmployeeInfo {
@@ -59,15 +59,17 @@ const monthLabels: Record<number, string> = {
 
 const getEvalStatusLabel = (status: string | null | undefined): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
-  if (status === 'تم الإرسال') return 'تم التقييم';
-  if (status === 'اطلع الموظف' || status === 'مغلق') return 'تم التقييم';
+  if (status === 'تم الإرسال') return 'بانتظار الموافقة على التقييم';
+  if (status === 'مرفوض') return 'التقييم مرفوض';
+  if (status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
   return status;
 };
 
 const getEvalStatusVariant = (status: string | null | undefined): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   if (!status || status === 'مسودة') return 'default';
   const map: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
-    'تم الإرسال': 'success',
+    'تم الإرسال': 'warning',
+    'مرفوض': 'danger',
     'اطلع الموظف': 'success',
     'مغلق': 'success',
   };
@@ -102,6 +104,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const [activePeriod, setActivePeriod] = useState<EvaluationPeriod | null>(null);
   const [allPeriods, setAllPeriods] = useState<EvaluationPeriod[]>([]);
   const [evaluatorNotes, setEvaluatorNotes] = useState('');
+  const [employeeReply, setEmployeeReply] = useState('');
   const [evaluationStatus, setEvaluationStatus] = useState('');
   const [existingEvaluationId, setExistingEvaluationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -343,6 +346,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
     if (evaluation) {
       setExistingEvaluationId(evaluation.id);
       setEvaluatorNotes(evaluation.supervisor_note || '');
+      setEmployeeReply(evaluation.employee_note || '');
       setEvaluationStatus(evaluation.status || '');
 
       const { data: evalScores } = await supabase
@@ -734,7 +738,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                     <TableHead>الرقم الوظيفي</TableHead>
                     <TableHead>المسمى الوظيفي</TableHead>
                     <TableHead>الإدارة</TableHead>
-                    <TableHead>التقييم الحالي</TableHead>
+                    <TableHead>حالة التقييم</TableHead>
                     <TableHead>الإجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -762,15 +766,9 @@ export const SupervisorEvaluateForm: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {emp.eval_status && emp.eval_status !== 'مسودة' && emp.eval_rating ? (
-                            <Badge variant={getRatingBadgeVariant(emp.eval_rating)} size="sm">
-                              {emp.eval_rating}
-                            </Badge>
-                          ) : (
-                            <Badge variant={getEvalStatusVariant(emp.eval_status)} size="sm">
-                              {getEvalStatusLabel(emp.eval_status)}
-                            </Badge>
-                          )}
+                          <Badge variant={getEvalStatusVariant(emp.eval_status)} size="sm">
+                            {getEvalStatusLabel(emp.eval_status)}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1086,6 +1084,21 @@ export const SupervisorEvaluateForm: React.FC = () => {
             />
           </CardBody>
         </Card>
+
+        {/* Employee Reply */}
+        {isReadOnly && employeeReply && (
+          <Card className="border-teal-200">
+            <CardHeader className="bg-teal-50">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-teal-600" />
+                <h2 className="text-lg font-semibold text-teal-800">رد الموظف على التقييم</h2>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <p className="text-sm text-gray-800 leading-relaxed">{employeeReply}</p>
+            </CardBody>
+          </Card>
+        )}
 
         {/* Action Buttons */}
         {!isReadOnly && (

@@ -44,19 +44,19 @@ const monthLabels: Record<number, string> = {
   9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
 };
 
-const getEvalStatusLabel = (status: string | null | undefined): string => {
+const getEvalStatusLabel = (status: string | null | undefined, who?: 'me' | 'partner'): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
-  if (status === 'تم الإرسال') return 'بانتظار تقييم الشريك';
-  if (status === 'بانتظار الموافقة') return 'بانتظار اعتماد التقييم';
-  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تم اعتماد التقييم';
-  if (status === 'مرفوض') return 'مرفوض';
+  if (status === 'تم الإرسال') return who === 'me' ? 'تم التقييم' : 'تم التقييم';
+  if (status === 'بانتظار الموافقة') return 'بانتظار الموافقة على التقييم';
+  if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
+  if (status === 'مرفوض') return 'التقييم مرفوض';
   return status;
 };
 
 const getEvalStatusVariant = (status: string | null | undefined): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   if (!status || status === 'مسودة') return 'default';
   const map: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
-    'تم الإرسال': 'info',
+    'تم الإرسال': 'success',
     'بانتظار الموافقة': 'warning',
     'موافقة': 'success',
     'اطلع الموظف': 'success',
@@ -499,9 +499,32 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
           setEvaluationStatus('بانتظار الموافقة');
           setPartnerStatus('بانتظار الموافقة');
           alert('تم إرسال التقييم بنجاح — كلا التقييمين الآن بانتظار الاعتماد');
+        } else if (!partnerEval) {
+          // No partner evaluation exists — check if another CEO user exists
+          const { count: otherCeoCount } = await supabase
+            .from('users')
+            .select('id', { count: 'exact', head: true })
+            .eq('role', 'ceo')
+            .neq('id', user.id);
+
+          if (!otherCeoCount || otherCeoCount === 0) {
+            // Single CEO — go directly to بانتظار الموافقة
+            await supabase
+              .from('director_evaluations')
+              .update({ status: 'بانتظار الموافقة' })
+              .eq('id', evaluationId);
+            setEvaluationStatus('بانتظار الموافقة');
+            alert('تم إرسال التقييم بنجاح — التقييم الآن بانتظار الاعتماد');
+          } else {
+            // Partner CEO exists but hasn't evaluated yet
+            setEvaluationStatus('تم الإرسال');
+            setPartnerStatus(null);
+            alert('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
+          }
         } else {
+          // Partner exists but is still a draft
           setEvaluationStatus('تم الإرسال');
-          setPartnerStatus(partnerEval?.status || null);
+          setPartnerStatus(partnerEval.status);
           alert('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
         }
       } else {
@@ -644,7 +667,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                     <TableHead>الرقم الوظيفي</TableHead>
                     <TableHead>البريد الإلكتروني</TableHead>
                     <TableHead>المسمى الوظيفي</TableHead>
-                    <TableHead>التقييم الحالي</TableHead>
+                    <TableHead>حالة التقييم</TableHead>
                     <TableHead>الإجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -672,20 +695,14 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-gray-400">أنت:</span>
-                            {dir.eval_status && dir.eval_status !== 'مسودة' && dir.eval_rating ? (
-                              <Badge variant={getRatingBadgeVariant(dir.eval_rating)} size="sm">
-                                {dir.eval_rating}
-                              </Badge>
-                            ) : (
-                              <Badge variant={getEvalStatusVariant(dir.eval_status)} size="sm">
-                                {getEvalStatusLabel(dir.eval_status)}
-                              </Badge>
-                            )}
+                            <Badge variant={getEvalStatusVariant(dir.eval_status)} size="sm">
+                              {getEvalStatusLabel(dir.eval_status, 'me')}
+                            </Badge>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-gray-400">الشريك:</span>
                             <Badge variant={getEvalStatusVariant(dir.partner_eval_status)} size="sm">
-                              {getEvalStatusLabel(dir.partner_eval_status)}
+                              {getEvalStatusLabel(dir.partner_eval_status, 'partner')}
                             </Badge>
                           </div>
                         </div>

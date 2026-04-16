@@ -105,12 +105,13 @@ export const DirectorDashboard: React.FC = () => {
         pending: totalEmployees - evaluated,
       });
 
-      // Fetch latest evaluation received (CEO → director)
+      // Fetch latest approved evaluation received (CEO → director)
       const { data: latest } = await supabase
         .from('director_evaluations')
         .select('percentage, general_rating, period:evaluation_periods(year, month)')
         .eq('director_id', user.id)
         .eq('evaluation_type', 'ceo_director')
+        .in('status', ['موافقة', 'اطلع المدير', 'مغلق', 'مكتمل'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

@@ -27,7 +27,6 @@ import { DirectorCriteria } from './pages/ceo/DirectorCriteria';
 
 import { DirectorDashboard } from './pages/director/Dashboard';
 import { DirectorMyEvaluations } from './pages/director/MyEvaluations';
-import { DirectorEmployees } from './pages/director/DirectorEmployees';
 import { DirectorEvaluateEmployee } from './pages/director/DirectorEvaluateEmployee';
 import { DirectorSpecificCriteria } from './pages/director/DirectorCriteria';
 
@@ -232,8 +231,6 @@ function AppContent() {
         case '/my-ceo-evaluations':
           return <MyCeoEvaluations />;
         // Director routes for CEO users assigned as department directors
-        case '/director-employees':
-          return <DirectorEmployees onNavigate={setCurrentPath} />;
         case '/director-evaluate':
           return <DirectorEvaluateEmployee employeeId={params.get('employee') || undefined} />;
         case '/director-criteria':
@@ -252,8 +249,6 @@ function AppContent() {
       switch (basePath) {
         case '/':
           return <DirectorDashboard />;
-        case '/director-employees':
-          return <DirectorEmployees onNavigate={setCurrentPath} />;
         case '/director-evaluate':
           return <DirectorEvaluateEmployee employeeId={params.get('employee') || undefined} />;
         case '/director-criteria':
