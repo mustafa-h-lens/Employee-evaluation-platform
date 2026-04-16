@@ -239,21 +239,11 @@ export const CeoEvaluationForm: React.FC = () => {
         setExistingEvaluationId(evaluationId);
       }
 
-      // Delete old scores and insert new ones
-      const { error: deleteError } = await supabase
-        .from('ceo_evaluation_scores')
-        .delete()
-        .eq('evaluation_id', evaluationId);
-
-      if (deleteError) {
-        console.error('Error deleting old scores:', deleteError);
-      }
-
+      // Save scores via RPC (bypasses RLS issues)
       const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-      const scoreInserts = criteria
+      const scoreData = criteria
         .filter((c) => scores[c.id] && scores[c.id] > 0)
         .map((criterion) => ({
-          evaluation_id: evaluationId,
           criterion_id: criterion.id,
           score_1_to_5: scores[criterion.id],
           weighted_result: totalWeight > 0
@@ -261,13 +251,14 @@ export const CeoEvaluationForm: React.FC = () => {
             : 0,
         }));
 
-      console.log('Score inserts:', JSON.stringify(scoreInserts, null, 2));
-
-      if (scoreInserts.length > 0) {
-        const { error: insertError } = await supabase.from('ceo_evaluation_scores').insert(scoreInserts);
-        if (insertError) {
-          console.error('Error inserting CEO evaluation scores:', insertError);
-          alert('خطأ في حفظ درجات المعايير: ' + insertError.message);
+      if (scoreData.length > 0) {
+        const { error: scoresError } = await supabase.rpc('save_ceo_evaluation_scores', {
+          p_evaluation_id: evaluationId,
+          p_scores: scoreData,
+        });
+        if (scoresError) {
+          console.error('Error saving CEO evaluation scores:', scoresError);
+          alert('خطأ في حفظ درجات المعايير: ' + scoresError.message);
           setLoading(false);
           return;
         }
