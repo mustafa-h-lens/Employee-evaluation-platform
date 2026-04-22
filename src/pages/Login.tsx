@@ -25,9 +25,9 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="lp" dir="rtl">
-      {/* RIGHT — Form side */}
-      <div className="lp-form-side">
+    <div className="lp">
+      {/* LEFT — Form side */}
+      <div className="lp-form-side" dir="rtl">
         <div className="lp-form-inner">
           <div className="lp-form-content">
             <h1 className="lp-heading">مرحباً بعودتك</h1>
@@ -107,12 +107,12 @@ export const Login: React.FC = () => {
       {/* Glowing divider */}
       <div className="lp-divider" />
 
-      {/* LEFT — Brand side */}
-      <div className="lp-brand-side">
-        {/* Logo top-left */}
+      {/* RIGHT — Brand side */}
+      <div className="lp-brand-side" dir="rtl">
+        {/* Logo top-right */}
         <img src="/Logo_White.png" alt="Half Lens" className="lp-brand-logo" />
 
-        {/* Content bottom-left */}
+        {/* Content bottom-right */}
         <div className="lp-brand-bottom">
           <div className="lp-brand-badge">
             <span className="lp-badge-dot" />
@@ -134,17 +134,21 @@ export const Login: React.FC = () => {
       </div>
 
       <style>{`
+        /* ===== LAYOUT — forced LTR flex so panels don't flip ===== */
         .lp {
           display: flex;
+          flex-direction: row;
+          direction: ltr;
           min-height: 100vh;
           font-family: 'Cairo', sans-serif;
           background: #050d1e;
         }
 
-        /* ===== FORM SIDE (right in RTL) ===== */
+        /* ===== FORM SIDE (LEFT panel) ===== */
         .lp-form-side {
-          width: 420px;
-          min-width: 360px;
+          width: 30%;
+          min-width: 380px;
+          max-width: 440px;
           flex-shrink: 0;
           display: flex;
           align-items: center;
@@ -160,7 +164,7 @@ export const Login: React.FC = () => {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          min-height: 520px;
+          min-height: 500px;
         }
         .lp-form-content {
           flex: 1;
@@ -174,12 +178,14 @@ export const Login: React.FC = () => {
           font-weight: 800;
           color: #f0f4ff;
           margin: 0 0 8px;
+          text-align: right;
         }
         .lp-sub {
           font-size: 14px;
           color: rgba(160,185,230,0.45);
           margin: 0 0 40px;
           font-weight: 400;
+          text-align: right;
         }
 
         /* Form */
@@ -217,6 +223,8 @@ export const Login: React.FC = () => {
           outline: none;
           transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
           box-sizing: border-box;
+          text-align: right;
+          direction: rtl;
         }
         .lp-input-pass {
           padding-left: 44px;
@@ -272,6 +280,7 @@ export const Login: React.FC = () => {
           color: #f87171;
           font-size: 13px;
           font-weight: 500;
+          direction: rtl;
         }
 
         /* Button */
@@ -340,25 +349,26 @@ export const Login: React.FC = () => {
         /* ===== DIVIDER ===== */
         .lp-divider {
           width: 1px;
+          flex-shrink: 0;
           background: linear-gradient(
             180deg,
             transparent 0%,
-            rgba(37,99,235,0.15) 20%,
+            rgba(37,99,235,0.12) 15%,
             rgba(37,99,235,0.25) 50%,
-            rgba(37,99,235,0.15) 80%,
+            rgba(37,99,235,0.12) 85%,
             transparent 100%
           );
           position: relative;
           z-index: 3;
-          flex-shrink: 0;
         }
 
-        /* ===== BRAND SIDE (left in RTL) ===== */
+        /* ===== BRAND SIDE (RIGHT panel) ===== */
         .lp-brand-side {
           flex: 1;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          align-items: flex-end;
           padding: 48px 56px;
           background: linear-gradient(160deg, #0a1832 0%, #060f24 40%, #050c1c 100%);
           position: relative;
@@ -366,8 +376,7 @@ export const Login: React.FC = () => {
         }
 
         .lp-brand-logo {
-          align-self: flex-start;
-          height: 130px;
+          height: 140px;
           width: auto;
           filter: drop-shadow(0 0 30px rgba(37,99,235,0.1));
         }
@@ -375,7 +384,8 @@ export const Login: React.FC = () => {
         .lp-brand-bottom {
           display: flex;
           flex-direction: column;
-          align-items: flex-start;
+          align-items: flex-end;
+          text-align: right;
         }
 
         .lp-brand-badge {
@@ -390,6 +400,7 @@ export const Login: React.FC = () => {
           color: rgba(180,205,255,0.7);
           margin-bottom: 20px;
           background: rgba(37,99,235,0.06);
+          direction: rtl;
         }
         .lp-badge-dot {
           width: 7px; height: 7px;
@@ -425,6 +436,7 @@ export const Login: React.FC = () => {
           .lp-form-side {
             width: 100%;
             min-width: unset;
+            max-width: unset;
           }
         }
         @media (max-width: 480px) {
