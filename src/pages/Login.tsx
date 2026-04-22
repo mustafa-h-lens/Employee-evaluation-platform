@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn, Eye, EyeOff, AlertCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, AlertCircle, MessageSquare } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -26,86 +26,94 @@ export const Login: React.FC = () => {
 
   return (
     <div className="lp" dir="rtl">
-      {/* LEFT — Form side */}
+      {/* RIGHT — Form side */}
       <div className="lp-form-side">
         <div className="lp-form-inner">
-          <h1 className="lp-heading">مرحباً بعودتك</h1>
-          <p className="lp-sub">سجّل دخولك للوصول إلى نظام التقييم</p>
+          <div className="lp-form-content">
+            <h1 className="lp-heading">مرحباً بعودتك</h1>
+            <p className="lp-sub">سجّل دخولك للوصول إلى لوحة التحكم</p>
 
-          <form onSubmit={handleSubmit} className="lp-form">
-            {error && (
-              <div className="lp-error">
-                <AlertCircle size={15} />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Email */}
-            <div className="lp-field">
-              <label className="lp-label">البريد الإلكتروني</label>
-              <div className="lp-input-wrap">
-                <input
-                  type="email"
-                  className="lp-input"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-                <MessageSquare size={16} className="lp-input-icon" />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="lp-field">
-              <label className="lp-label">كلمة المرور</label>
-              <div className="lp-input-wrap">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="lp-input"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
-                <MessageSquare size={16} className="lp-input-icon" />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="lp-eye"
-                >
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Submit */}
-            <button type="submit" className="lp-btn" disabled={loading}>
-              {loading ? (
-                <div className="lp-spinner" />
-              ) : (
-                <>
-                  <span>تسجيل الدخول</span>
-                  <LogIn size={17} />
-                </>
+            <form onSubmit={handleSubmit} className="lp-form">
+              {error && (
+                <div className="lp-error">
+                  <AlertCircle size={15} />
+                  <span>{error}</span>
+                </div>
               )}
-            </button>
-          </form>
+
+              {/* Email */}
+              <div className="lp-field">
+                <label className="lp-label">البريد الإلكتروني</label>
+                <div className="lp-input-wrap">
+                  <input
+                    type="email"
+                    className="lp-input"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                  <div className="lp-input-icon-box">
+                    <MessageSquare size={14} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="lp-field">
+                <label className="lp-label">كلمة المرور</label>
+                <div className="lp-input-wrap">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="lp-input lp-input-pass"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <div className="lp-input-icon-box">
+                    <MessageSquare size={14} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="lp-eye"
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button type="submit" className="lp-btn" disabled={loading}>
+                {loading ? (
+                  <div className="lp-spinner" />
+                ) : (
+                  <>
+                    <span>تسجيل الدخول</span>
+                    <ArrowLeft size={17} />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
 
           <p className="lp-copy">&copy; Half Lens 2026. جميع الحقوق محفوظة.</p>
         </div>
       </div>
 
-      {/* RIGHT — Brand side */}
+      {/* Glowing divider */}
+      <div className="lp-divider" />
+
+      {/* LEFT — Brand side */}
       <div className="lp-brand-side">
-        {/* Subtle grid overlay */}
-        <div className="lp-grid-bg" />
+        {/* Logo top-left */}
+        <img src="/Logo_White.png" alt="Half Lens" className="lp-brand-logo" />
 
-        <div className="lp-brand-content">
-          <img src="/Logo_White.png" alt="Half Lens" className="lp-brand-logo" />
-
+        {/* Content bottom-left */}
+        <div className="lp-brand-bottom">
           <div className="lp-brand-badge">
             <span className="lp-badge-dot" />
             نظام تقييم الأداء الوظيفي
@@ -126,50 +134,59 @@ export const Login: React.FC = () => {
       </div>
 
       <style>{`
-        /* ===== LAYOUT ===== */
         .lp {
           display: flex;
           min-height: 100vh;
-          direction: rtl;
           font-family: 'Cairo', sans-serif;
+          background: #050d1e;
         }
 
-        /* ===== FORM SIDE ===== */
+        /* ===== FORM SIDE (right in RTL) ===== */
         .lp-form-side {
-          width: 480px;
-          min-width: 380px;
+          width: 420px;
+          min-width: 360px;
           flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 48px 40px;
+          padding: 40px 44px;
           background: #060e21;
-          border-left: 1px solid rgba(255,255,255,0.06);
           position: relative;
           z-index: 2;
         }
         .lp-form-inner {
           width: 100%;
-          max-width: 380px;
+          max-width: 360px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 520px;
+        }
+        .lp-form-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
 
         .lp-heading {
-          font-size: 28px;
+          font-size: 30px;
           font-weight: 800;
           color: #f0f4ff;
           margin: 0 0 8px;
         }
         .lp-sub {
           font-size: 14px;
-          color: rgba(180,200,240,0.5);
-          margin: 0 0 36px;
+          color: rgba(160,185,230,0.45);
+          margin: 0 0 40px;
+          font-weight: 400;
         }
 
         /* Form */
         .lp-form {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 18px;
         }
         .lp-field {
           display: flex;
@@ -179,7 +196,8 @@ export const Login: React.FC = () => {
         .lp-label {
           font-size: 13px;
           font-weight: 600;
-          color: rgba(180,200,240,0.6);
+          color: rgba(160,185,230,0.55);
+          text-align: right;
         }
         .lp-input-wrap {
           position: relative;
@@ -189,32 +207,42 @@ export const Login: React.FC = () => {
         .lp-input {
           width: 100%;
           height: 48px;
-          padding: 0 44px 0 14px;
-          background: rgba(255,255,255,0.04);
+          padding: 0 48px 0 14px;
+          background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 12px;
-          color: #f0f4ff;
+          color: #e8eef8;
           font-size: 14px;
           font-family: inherit;
           outline: none;
           transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
           box-sizing: border-box;
         }
-        .lp-input::placeholder { color: rgba(150,175,230,0.3); }
+        .lp-input-pass {
+          padding-left: 44px;
+        }
+        .lp-input::placeholder { color: rgba(140,165,220,0.3); }
         .lp-input:hover {
-          border-color: rgba(255,255,255,0.14);
-          background: rgba(255,255,255,0.06);
+          border-color: rgba(255,255,255,0.13);
+          background: rgba(255,255,255,0.05);
         }
         .lp-input:focus {
-          border-color: rgba(37,99,235,0.6);
+          border-color: rgba(37,99,235,0.55);
           background: rgba(37,99,235,0.04);
-          box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
         }
 
-        .lp-input-icon {
+        .lp-input-icon-box {
           position: absolute;
-          right: 14px;
-          color: rgba(120,150,220,0.35);
+          right: 12px;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          background: rgba(37,99,235,0.12);
+          color: rgba(96,165,250,0.7);
           pointer-events: none;
         }
 
@@ -223,7 +251,7 @@ export const Login: React.FC = () => {
           left: 14px;
           background: none;
           border: none;
-          color: rgba(150,175,230,0.35);
+          color: rgba(140,165,220,0.3);
           cursor: pointer;
           padding: 2px;
           display: flex;
@@ -238,8 +266,8 @@ export const Login: React.FC = () => {
           align-items: center;
           gap: 8px;
           padding: 10px 14px;
-          background: rgba(239,68,68,0.1);
-          border: 1px solid rgba(239,68,68,0.2);
+          background: rgba(239,68,68,0.08);
+          border: 1px solid rgba(239,68,68,0.18);
           border-radius: 10px;
           color: #f87171;
           font-size: 13px;
@@ -263,12 +291,30 @@ export const Login: React.FC = () => {
           font-family: inherit;
           cursor: pointer;
           transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-          box-shadow: 0 4px 20px rgba(37,99,235,0.35);
-          margin-top: 6px;
+          box-shadow:
+            0 4px 16px rgba(37,99,235,0.3),
+            0 8px 32px rgba(37,99,235,0.15);
+          margin-top: 8px;
+          position: relative;
+          overflow: hidden;
+        }
+        .lp-btn::after {
+          content: '';
+          position: absolute;
+          bottom: -6px;
+          left: 15%;
+          right: 15%;
+          height: 16px;
+          background: rgba(37,99,235,0.5);
+          filter: blur(14px);
+          border-radius: 50%;
+          pointer-events: none;
         }
         .lp-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 6px 28px rgba(37,99,235,0.5);
+          box-shadow:
+            0 6px 24px rgba(37,99,235,0.4),
+            0 12px 40px rgba(37,99,235,0.2);
         }
         .lp-btn:active:not(:disabled) { transform: scale(0.97); }
         .lp-btn:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -282,66 +328,67 @@ export const Login: React.FC = () => {
         }
         @keyframes lp-spin { to { transform: rotate(360deg); } }
 
-        /* Footer */
+        /* Copyright */
         .lp-copy {
-          margin-top: 40px;
           text-align: center;
           font-size: 12px;
-          color: rgba(150,175,230,0.25);
+          color: rgba(140,165,220,0.2);
+          margin: 0;
+          padding-top: 20px;
         }
 
-        /* ===== BRAND SIDE ===== */
+        /* ===== DIVIDER ===== */
+        .lp-divider {
+          width: 1px;
+          background: linear-gradient(
+            180deg,
+            transparent 0%,
+            rgba(37,99,235,0.15) 20%,
+            rgba(37,99,235,0.25) 50%,
+            rgba(37,99,235,0.15) 80%,
+            transparent 100%
+          );
+          position: relative;
+          z-index: 3;
+          flex-shrink: 0;
+        }
+
+        /* ===== BRAND SIDE (left in RTL) ===== */
         .lp-brand-side {
           flex: 1;
           display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 48px;
-          background: linear-gradient(160deg, #071428 0%, #050d1e 40%, #060c1a 100%);
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 48px 56px;
+          background: linear-gradient(160deg, #0a1832 0%, #060f24 40%, #050c1c 100%);
           position: relative;
           overflow: hidden;
         }
 
-        /* Subtle grid pattern */
-        .lp-grid-bg {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-          -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        .lp-brand-logo {
+          align-self: flex-start;
+          height: 130px;
+          width: auto;
+          filter: drop-shadow(0 0 30px rgba(37,99,235,0.1));
         }
 
-        .lp-brand-content {
-          position: relative;
-          z-index: 1;
+        .lp-brand-bottom {
           display: flex;
           flex-direction: column;
-          align-items: flex-end;
-          text-align: right;
-          max-width: 560px;
-        }
-
-        .lp-brand-logo {
-          height: 140px;
-          width: auto;
-          margin-bottom: 48px;
-          filter: drop-shadow(0 0 40px rgba(37,99,235,0.15));
+          align-items: flex-start;
         }
 
         .lp-brand-badge {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          padding: 6px 18px;
+          padding: 7px 20px;
           border: 1px solid rgba(37,99,235,0.3);
           border-radius: 9999px;
           font-size: 13px;
           font-weight: 600;
-          color: rgba(200,215,255,0.7);
-          margin-bottom: 24px;
+          color: rgba(180,205,255,0.7);
+          margin-bottom: 20px;
           background: rgba(37,99,235,0.06);
         }
         .lp-badge-dot {
@@ -352,14 +399,14 @@ export const Login: React.FC = () => {
         }
 
         .lp-brand-title {
-          font-size: 42px;
+          font-size: 44px;
           font-weight: 900;
-          line-height: 1.3;
+          line-height: 1.35;
           color: #f0f4ff;
-          margin: 0 0 20px;
+          margin: 0 0 18px;
         }
         .lp-brand-gradient {
-          background: linear-gradient(135deg, #60a5fa 0%, #818cf8 40%, #a78bfa 70%, #34d399 100%);
+          background: linear-gradient(135deg, #60a5fa 0%, #818cf8 35%, #a78bfa 60%, #34d399 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -367,18 +414,17 @@ export const Login: React.FC = () => {
 
         .lp-brand-desc {
           font-size: 15px;
-          line-height: 1.8;
-          color: rgba(180,200,240,0.45);
+          line-height: 1.9;
+          color: rgba(160,185,230,0.4);
           margin: 0;
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 1024px) {
-          .lp-brand-side { display: none; }
+          .lp-brand-side, .lp-divider { display: none; }
           .lp-form-side {
             width: 100%;
             min-width: unset;
-            border-left: none;
           }
         }
         @media (max-width: 480px) {
