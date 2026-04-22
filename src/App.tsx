@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import { Login } from './pages/Login';
+import { Landing } from './pages/Landing';
 import { PageLayout } from './components/layout/PageLayout';
 import { Shield, Settings, X } from 'lucide-react';
 
@@ -173,6 +174,9 @@ function AppContent() {
   }
 
   if (!user) {
+    if (currentPath === '/' || currentPath === '') {
+      return <Landing onLogin={() => setCurrentPath('/admin')} />;
+    }
     return <Login />;
   }
 

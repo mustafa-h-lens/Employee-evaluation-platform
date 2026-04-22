@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Eye, EyeOff, AlertCircle, MessageSquare } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,437 +14,297 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await login(email, password);
     } catch (err: any) {
-      setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+      setError(err?.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="lp">
-      {/* LEFT — Form side */}
-      <div className="lp-form-side" dir="rtl">
-        <div className="lp-form-inner">
-          <div className="lp-form-content">
-            <h1 className="lp-heading">مرحباً بعودتك</h1>
-            <p className="lp-sub">سجّل دخولك للوصول إلى لوحة التحكم</p>
-
-            <form onSubmit={handleSubmit} className="lp-form">
-              {error && (
-                <div className="lp-error">
-                  <AlertCircle size={15} />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Email */}
-              <div className="lp-field">
-                <label className="lp-label">البريد الإلكتروني</label>
-                <div className="lp-input-wrap">
-                  <input
-                    type="email"
-                    className="lp-input"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                  <div className="lp-input-icon-box">
-                    <MessageSquare size={14} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="lp-field">
-                <label className="lp-label">كلمة المرور</label>
-                <div className="lp-input-wrap">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    className="lp-input lp-input-pass"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <div className="lp-input-icon-box">
-                    <MessageSquare size={14} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="lp-eye"
-                  >
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit */}
-              <button type="submit" className="lp-btn" disabled={loading}>
-                {loading ? (
-                  <div className="lp-spinner" />
-                ) : (
-                  <>
-                    <span>تسجيل الدخول</span>
-                    <ArrowLeft size={17} />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-
-          <p className="lp-copy">&copy; Half Lens 2026. جميع الحقوق محفوظة.</p>
-        </div>
-      </div>
-
-      {/* Glowing divider */}
-      <div className="lp-divider" />
-
-      {/* RIGHT — Brand side */}
-      <div className="lp-brand-side" dir="rtl">
-        <div className="lp-brand-top">
-          {/* Logo */}
-          <img src="/Logo_White.png" alt="Half Lens" className="lp-brand-logo" />
-
-          {/* Badge + title + description right below logo */}
-          <div className="lp-brand-badge">
-            <span className="lp-badge-dot" />
-            نظام تقييم الأداء الوظيفي
-          </div>
-
-          <h2 className="lp-brand-title">
-            تقييم أداء موظفيك
-            <br />
-            <span className="lp-brand-gradient">باحترافية عالية</span>
-          </h2>
-
-          <p className="lp-brand-desc">
-            نظام Half Lens لتقييم الأداء — تقييمات دورية، متابعة الأداء،
-            <br />
-            وتقارير شاملة في مكان واحد متكامل.
-          </p>
-        </div>
-      </div>
-
+    <>
       <style>{`
-        /* ===== LAYOUT — forced LTR flex so panels don't flip ===== */
-        .lp {
-          display: flex;
-          flex-direction: row;
-          direction: ltr;
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+        .hl-login {
           min-height: 100vh;
-          font-family: 'Cairo', sans-serif;
-          background: #050d1e;
+          display: flex;
+          font-family: 'Cairo', 'Segoe UI', sans-serif;
+          background: #030b1a;
+          direction: rtl;
+          color: #f0f4ff;
         }
 
-        /* ===== FORM SIDE (LEFT panel) ===== */
-        .lp-form-side {
-          width: 30%;
-          min-width: 380px;
-          max-width: 440px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 44px;
-          background: #060e21;
+        /* ── Decorative panel (RIGHT in RTL) ── */
+        .hl-left {
+          flex: 1;
           position: relative;
-          z-index: 2;
-        }
-        .lp-form-inner {
-          width: 100%;
-          max-width: 360px;
-          display: flex;
+          overflow: hidden;
+          display: none;
           flex-direction: column;
           justify-content: space-between;
-          min-height: 500px;
+          padding: 48px 52px 44px;
+          background: linear-gradient(145deg, #020c20 0%, #071a40 55%, #082060 100%);
         }
-        .lp-form-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
+        @media (min-width: 1024px) { .hl-left { display: flex; } }
 
-        .lp-heading {
-          font-size: 30px;
-          font-weight: 800;
-          color: #f0f4ff;
-          margin: 0 0 8px;
-          text-align: right;
+        .hl-grid {
+          position: absolute; inset: 0; pointer-events: none;
+          background-image:
+            linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px);
+          background-size: 56px 56px;
         }
-        .lp-sub {
-          font-size: 14px;
-          color: rgba(160,185,230,0.45);
-          margin: 0 0 40px;
-          font-weight: 400;
-          text-align: right;
+        .hl-orb1 {
+          position: absolute; top: 12%; right: 8%;
+          width: 420px; height: 420px; border-radius: 50%; pointer-events: none;
+          background: radial-gradient(circle, rgba(37,99,235,0.22) 0%, transparent 65%);
         }
+        .hl-orb2 {
+          position: absolute; bottom: 8%; left: 4%;
+          width: 280px; height: 280px; border-radius: 50%; pointer-events: none;
+          background: radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 65%);
+        }
+        .hl-left-z { position: relative; z-index: 1; }
 
-        /* Form */
-        .lp-form {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
+        .hl-logo {
+          padding: 20px 0; display: flex; justify-content: flex-start;
+          cursor: pointer; text-decoration: none;
+          transition: opacity 0.2s, transform 0.2s;
         }
-        .lp-field {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .lp-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: rgba(160,185,230,0.55);
-          text-align: right;
-        }
-        .lp-input-wrap {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-        .lp-input {
-          width: 100%;
-          height: 48px;
-          padding: 0 48px 0 14px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          color: #e8eef8;
-          font-size: 14px;
-          font-family: inherit;
-          outline: none;
-          transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-          box-sizing: border-box;
-          text-align: right;
-          direction: rtl;
-        }
-        .lp-input-pass {
-          padding-left: 44px;
-        }
-        .lp-input::placeholder { color: rgba(140,165,220,0.3); }
-        .lp-input:hover {
-          border-color: rgba(255,255,255,0.13);
-          background: rgba(255,255,255,0.05);
-        }
-        .lp-input:focus {
-          border-color: rgba(37,99,235,0.55);
-          background: rgba(37,99,235,0.04);
-          box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
-        }
+        .hl-logo:hover { opacity: 0.85; transform: translateY(-1px); }
+        .hl-logo img { height: 192px; width: auto; object-fit: contain; pointer-events: none; }
 
-        .lp-input-icon-box {
-          position: absolute;
-          right: 12px;
-          width: 28px;
-          height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 8px;
-          background: rgba(37,99,235,0.12);
-          color: rgba(96,165,250,0.7);
-          pointer-events: none;
+        .hl-badge {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 5px 14px; border-radius: 9999px; margin-bottom: 20px;
+          background: rgba(29,78,216,0.18); border: 1px solid rgba(59,130,246,0.3);
         }
-
-        .lp-eye {
-          position: absolute;
-          left: 14px;
-          background: none;
-          border: none;
-          color: rgba(140,165,220,0.3);
-          cursor: pointer;
-          padding: 2px;
-          display: flex;
-          align-items: center;
-          transition: color 0.2s;
+        .hl-badge-dot {
+          width: 7px; height: 7px; border-radius: 50%; background: #60a5fa;
+          animation: hl-pulse 2s infinite;
         }
-        .lp-eye:hover { color: rgba(200,215,255,0.7); }
-
-        /* Error */
-        .lp-error {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 14px;
-          background: rgba(239,68,68,0.08);
-          border: 1px solid rgba(239,68,68,0.18);
-          border-radius: 10px;
-          color: #f87171;
-          font-size: 13px;
-          font-weight: 500;
-          direction: rtl;
+        @keyframes hl-pulse {
+          0%,100% { opacity:1; transform:scale(1); }
+          50%      { opacity:0.4; transform:scale(0.8); }
         }
-
-        /* Button */
-        .lp-btn {
-          width: 100%;
-          height: 50px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-          color: #fff;
-          border: none;
-          border-radius: 14px;
-          font-size: 16px;
-          font-weight: 700;
-          font-family: inherit;
-          cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-          box-shadow:
-            0 4px 16px rgba(37,99,235,0.3),
-            0 8px 32px rgba(37,99,235,0.15);
-          margin-top: 8px;
-          position: relative;
-          overflow: hidden;
+        .hl-badge-txt {
+          font-size: 0.72rem; font-weight: 700; color: #93c5fd;
+          letter-spacing: 0.1em; text-transform: uppercase;
         }
-        .lp-btn::after {
-          content: '';
-          position: absolute;
-          bottom: -6px;
-          left: 15%;
-          right: 15%;
-          height: 16px;
-          background: rgba(37,99,235,0.5);
-          filter: blur(14px);
-          border-radius: 50%;
-          pointer-events: none;
+        .hl-h1 {
+          font-size: 2.6rem; font-weight: 900; color: #fff;
+          line-height: 1.18; margin-bottom: 16px;
         }
-        .lp-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow:
-            0 6px 24px rgba(37,99,235,0.4),
-            0 12px 40px rgba(37,99,235,0.2);
-        }
-        .lp-btn:active:not(:disabled) { transform: scale(0.97); }
-        .lp-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-
-        .lp-spinner {
-          width: 20px; height: 20px;
-          border: 2.5px solid rgba(255,255,255,0.3);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: lp-spin 0.7s linear infinite;
-        }
-        @keyframes lp-spin { to { transform: rotate(360deg); } }
-
-        /* Copyright */
-        .lp-copy {
-          text-align: center;
-          font-size: 12px;
-          color: rgba(140,165,220,0.2);
-          margin: 0;
-          padding-top: 20px;
-        }
-
-        /* ===== DIVIDER ===== */
-        .lp-divider {
-          width: 1px;
-          flex-shrink: 0;
-          background: linear-gradient(
-            180deg,
-            transparent 0%,
-            rgba(37,99,235,0.12) 15%,
-            rgba(37,99,235,0.25) 50%,
-            rgba(37,99,235,0.12) 85%,
-            transparent 100%
-          );
-          position: relative;
-          z-index: 3;
-        }
-
-        /* ===== BRAND SIDE (RIGHT panel) ===== */
-        .lp-brand-side {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-start;
-          align-items: flex-end;
-          padding: 48px 56px;
-          background: linear-gradient(160deg, #0a1832 0%, #060f24 40%, #050c1c 100%);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .lp-brand-top {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          text-align: right;
-        }
-
-        .lp-brand-logo {
-          height: 140px;
-          width: auto;
-          filter: drop-shadow(0 0 30px rgba(37,99,235,0.1));
-          margin-bottom: 48px;
-        }
-
-        .lp-brand-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 20px;
-          border: 1px solid rgba(37,99,235,0.3);
-          border-radius: 9999px;
-          font-size: 13px;
-          font-weight: 600;
-          color: rgba(180,205,255,0.7);
-          margin-bottom: 20px;
-          background: rgba(37,99,235,0.06);
-          direction: rtl;
-        }
-        .lp-badge-dot {
-          width: 7px; height: 7px;
-          border-radius: 50%;
-          background: #3b82f6;
-          box-shadow: 0 0 8px rgba(59,130,246,0.6);
-        }
-
-        .lp-brand-title {
-          font-size: 44px;
-          font-weight: 900;
-          line-height: 1.35;
-          color: #f0f4ff;
-          margin: 0 0 18px;
-        }
-        .lp-brand-gradient {
-          background: linear-gradient(135deg, #60a5fa 0%, #818cf8 35%, #a78bfa 60%, #34d399 100%);
+        .hl-grad {
+          background: linear-gradient(90deg, #60a5fa, #34d399, #a78bfa);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
-
-        .lp-brand-desc {
-          font-size: 15px;
-          line-height: 1.9;
-          color: rgba(160,185,230,0.4);
-          margin: 0;
+        .hl-sub {
+          font-size: 0.95rem; color: rgba(255,255,255,0.5);
+          line-height: 1.7; max-width: 380px;
         }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 1024px) {
-          .lp-brand-side, .lp-divider { display: none; }
-          .lp-form-side {
-            width: 100%;
-            min-width: unset;
-            max-width: unset;
-          }
+        /* ── Form panel (LEFT in RTL) ── */
+        .hl-right {
+          width: 100%;
+          display: flex; align-items: center; justify-content: center;
+          padding: 48px 32px;
+          background: #030b1a;
+          border-right: 1px solid rgba(255,255,255,0.06);
         }
-        @media (max-width: 480px) {
-          .lp-form-side { padding: 32px 24px; }
-          .lp-heading { font-size: 24px; }
+        @media (min-width: 1024px) { .hl-right { width: 440px; flex-shrink: 0; } }
+
+        .hl-form-wrap { width: 100%; max-width: 380px; }
+
+        .hl-mobile-logo {
+          display: flex; justify-content: flex-end; margin-bottom: 48px; padding: 20px 0;
+          cursor: pointer; text-decoration: none;
+          transition: opacity 0.2s;
+        }
+        .hl-mobile-logo:hover { opacity: 0.8; }
+        .hl-mobile-logo img { height: 176px; object-fit: contain; pointer-events: none; }
+        @media (min-width: 1024px) { .hl-mobile-logo { display: none; } }
+
+        .hl-title { font-size: 1.8rem; font-weight: 800; color: #f0f4ff; margin-bottom: 6px; text-align: right; }
+        .hl-desc  { font-size: 0.875rem; color: #4a6480; margin-bottom: 32px; text-align: right; }
+
+        .hl-field { margin-bottom: 18px; }
+        .hl-label {
+          display: block; font-size: 0.8rem; font-weight: 600;
+          color: #7a9ab8; margin-bottom: 8px;
+        }
+        .hl-input {
+          width: 100%; padding: 12px 16px; border-radius: 10px;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+          color: #f0f4ff; font-size: 0.9rem; font-family: inherit;
+          outline: none; transition: all 0.15s; direction: ltr; text-align: left;
+          box-sizing: border-box;
+        }
+        .hl-input::placeholder { color: #2a3f55; }
+        .hl-input:focus {
+          border-color: rgba(59,130,246,0.55);
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+          background: rgba(37,99,235,0.05);
+        }
+
+        .hl-pw-wrap { position: relative; }
+        .hl-pw-wrap .hl-input { padding-left: 44px; }
+        .hl-eye {
+          position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+          background: none; border: none; cursor: pointer;
+          color: #3d5470; display: flex; align-items: center;
+          transition: color 0.15s; padding: 0;
+        }
+        .hl-eye:hover { color: #7a9ab8; }
+
+        .hl-error {
+          display: flex; align-items: center; gap: 10px;
+          padding: 12px 16px; border-radius: 10px; margin-bottom: 18px;
+          background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.2);
+          color: #fda4af; font-size: 0.82rem;
+        }
+        .hl-error-dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #f43f5e; flex-shrink: 0;
+        }
+
+        .hl-btn {
+          width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+          padding: 13px; border-radius: 12px; border: none;
+          background: linear-gradient(135deg, #1d4ed8, #2563eb);
+          color: #fff; font-size: 0.95rem; font-weight: 700; font-family: inherit;
+          cursor: pointer; box-shadow: 0 4px 24px rgba(37,99,235,0.4);
+          transition: box-shadow 0.2s, transform 0.15s; margin-top: 6px;
+        }
+        .hl-btn:hover:not(:disabled) {
+          box-shadow: 0 6px 32px rgba(37,99,235,0.6);
+          transform: translateY(-1px);
+        }
+        .hl-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .hl-spinner {
+          width: 16px; height: 16px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white; border-radius: 50%;
+          animation: hl-spin 0.7s linear infinite;
+        }
+        @keyframes hl-spin { to { transform: rotate(360deg); } }
+
+        .hl-footer {
+          margin-top: 28px; padding-top: 24px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          text-align: center; font-size: 0.78rem; color: #2a3f55;
         }
       `}</style>
-    </div>
+
+      <div className="hl-login">
+        {/* Decorative panel — right side in RTL */}
+        <div className="hl-left">
+          <div className="hl-grid" />
+          <div className="hl-orb1" />
+          <div className="hl-orb2" />
+
+          <a href="/" className="hl-left-z hl-logo" aria-label="Half Lens — الرئيسية">
+            <img src="/logo-white.png" alt="Half Lens" />
+          </a>
+
+          <div className="hl-left-z">
+            <div className="hl-badge">
+              <div className="hl-badge-dot" />
+              <span className="hl-badge-txt">نظام تقييم الأداء الوظيفي</span>
+            </div>
+            <div className="hl-h1">
+              تقييم أداء موظفيك<br />
+              <span className="hl-grad">باحترافية عالية</span>
+            </div>
+            <div className="hl-sub">
+              نظام Half Lens لتقييم الأداء — تقييمات دورية، متابعة الأداء، وتقارير شاملة في مكان واحد متكامل.
+            </div>
+          </div>
+
+          <div />
+        </div>
+
+        {/* Form panel — left side in RTL */}
+        <div className="hl-right">
+          <div className="hl-form-wrap">
+            <div className="hl-title">مرحباً بعودتك</div>
+            <div className="hl-desc">سجّل دخولك للوصول إلى لوحة التحكم</div>
+
+            <a href="/" className="hl-mobile-logo" aria-label="Half Lens — الرئيسية">
+              <img src="/logo-white.png" alt="Half Lens" />
+            </a>
+
+            <form onSubmit={handleSubmit}>
+              <div className="hl-field">
+                <label className="hl-label">البريد الإلكتروني</label>
+                <input
+                  className="hl-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="hl-field">
+                <label className="hl-label">كلمة المرور</label>
+                <div className="hl-pw-wrap">
+                  <input
+                    className="hl-input"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="hl-eye"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div className="hl-error">
+                  <div className="hl-error-dot" />
+                  {error}
+                </div>
+              )}
+
+              <button type="submit" className="hl-btn" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="hl-spinner" />
+                    <span>جارٍ تسجيل الدخول...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>تسجيل الدخول</span>
+                    <ArrowLeft size={16} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="hl-footer">
+              © {new Date().getFullYear()} Half Lens. جميع الحقوق محفوظة.
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
