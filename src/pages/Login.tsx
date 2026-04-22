@@ -53,7 +53,7 @@ export const Login: React.FC = () => {
         {/* Logo */}
         <div className="login-logo-box">
           <img
-            src={isDark ? '/logo-color.png' : '/logo-color.png'}
+            src={isDark ? '/Logo_White.png' : '/logo-color.png'}
             alt="Half Lens"
             className="login-logo"
           />
