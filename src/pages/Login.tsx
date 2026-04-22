@@ -109,11 +109,11 @@ export const Login: React.FC = () => {
 
       {/* RIGHT — Brand side */}
       <div className="lp-brand-side" dir="rtl">
-        {/* Logo top-right */}
-        <img src="/Logo_White.png" alt="Half Lens" className="lp-brand-logo" />
+        <div className="lp-brand-top">
+          {/* Logo */}
+          <img src="/Logo_White.png" alt="Half Lens" className="lp-brand-logo" />
 
-        {/* Content bottom-right */}
-        <div className="lp-brand-bottom">
+          {/* Badge + title + description right below logo */}
           <div className="lp-brand-badge">
             <span className="lp-badge-dot" />
             نظام تقييم الأداء الوظيفي
@@ -367,7 +367,7 @@ export const Login: React.FC = () => {
           flex: 1;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          justify-content: flex-start;
           align-items: flex-end;
           padding: 48px 56px;
           background: linear-gradient(160deg, #0a1832 0%, #060f24 40%, #050c1c 100%);
@@ -375,17 +375,18 @@ export const Login: React.FC = () => {
           overflow: hidden;
         }
 
-        .lp-brand-logo {
-          height: 140px;
-          width: auto;
-          filter: drop-shadow(0 0 30px rgba(37,99,235,0.1));
-        }
-
-        .lp-brand-bottom {
+        .lp-brand-top {
           display: flex;
           flex-direction: column;
           align-items: flex-end;
           text-align: right;
+        }
+
+        .lp-brand-logo {
+          height: 140px;
+          width: auto;
+          filter: drop-shadow(0 0 30px rgba(37,99,235,0.1));
+          margin-bottom: 48px;
         }
 
         .lp-brand-badge {
