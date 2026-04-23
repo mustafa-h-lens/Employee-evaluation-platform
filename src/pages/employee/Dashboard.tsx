@@ -29,11 +29,34 @@ export const EmployeeDashboard: React.FC = () => {
 
     const { data } = await supabase
       .from('employees')
-      .select('*, department:departments(name), manager:users!employees_manager_id_fkey(full_name)')
+      .select(`
+        *,
+        department:departments(name, manager:users!departments_manager_id_fkey(full_name)),
+        directorate:directorates(
+          name,
+          director:users!directorates_director_id_fkey(full_name),
+          secondary_director:users!directorates_secondary_director_id_fkey(full_name)
+        ),
+        manager:users!employees_manager_id_fkey(full_name)
+      `)
       .eq('user_id', user.id)
       .maybeSingle();
 
     setEmployeeData(data);
+  };
+
+  const resolveManagerLabel = (): string => {
+    if (!employeeData) return '';
+    // 1) Explicit direct manager
+    if (employeeData.manager?.full_name) return employeeData.manager.full_name;
+    // 2) Department manager
+    if (employeeData.department?.manager?.full_name) return employeeData.department.manager.full_name;
+    // 3) Directorate director(s) — primary + secondary if present
+    const names = [
+      employeeData.directorate?.director?.full_name,
+      employeeData.directorate?.secondary_director?.full_name,
+    ].filter(Boolean);
+    return names.join(' و ');
   };
 
   const fetchLatestEvaluation = async () => {
@@ -103,7 +126,7 @@ export const EmployeeDashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-blue-600">المدير المباشر</p>
-                <p className="font-semibold text-blue-900">{employeeData.manager?.full_name}</p>
+                <p className="font-semibold text-blue-900">{resolveManagerLabel() || '—'}</p>
               </div>
               <div>
                 <p className="text-sm text-blue-600">رقم الموظف</p>
