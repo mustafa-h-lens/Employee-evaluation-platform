@@ -460,26 +460,29 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       let evaluationId: string;
 
       if (existingEvaluationId) {
-        await supabase
+        const { error: updErr } = await supabase
           .from('evaluations')
           .update(evaluationData)
           .eq('id', existingEvaluationId);
+        if (updErr) throw new Error(`update evaluations: ${updErr.message}`);
         evaluationId = existingEvaluationId;
       } else {
-        const { data: newEval } = await supabase
+        const { data: newEval, error: insErr } = await supabase
           .from('evaluations')
           .insert(evaluationData)
           .select()
           .single();
-        evaluationId = newEval!.id;
+        if (insErr || !newEval) throw new Error(`insert evaluations: ${insErr?.message || 'no row returned (RLS?)'}`);
+        evaluationId = newEval.id;
         setExistingEvaluationId(evaluationId);
       }
 
       // Delete old scores and insert new ones
-      await supabase
+      const { error: delErr } = await supabase
         .from('evaluation_scores')
         .delete()
         .eq('evaluation_id', evaluationId);
+      if (delErr) throw new Error(`delete evaluation_scores: ${delErr.message}`);
 
       const generalTotalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
       const generalScoreInserts = criteria
@@ -511,14 +514,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
       const allScoreInserts = [...generalScoreInserts, ...specificScoreInserts];
       if (allScoreInserts.length > 0) {
-        await supabase.from('evaluation_scores').insert(allScoreInserts);
+        const { error: scoresErr } = await supabase.from('evaluation_scores').insert(allScoreInserts);
+        if (scoresErr) throw new Error(`insert evaluation_scores: ${scoresErr.message}`);
       }
 
       setEvaluationStatus(isDraft ? 'مسودة' : 'بانتظار الموافقة');
       alert(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving employee evaluation:', error);
-      alert('حدث خطأ أثناء حفظ التقييم');
+      const detail = error?.message ? `\n\nالتفاصيل: ${error.message}` : '';
+      alert(`حدث خطأ أثناء حفظ التقييم${detail}`);
     } finally {
       setLoading(false);
     }
