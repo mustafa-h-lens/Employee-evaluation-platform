@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { percentageToRating, percentageToScore5 } from '../../lib/scoring';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -57,7 +58,20 @@ interface Evaluation {
   period: { year: number; month: number };
   manager: { full_name: string };
   source: 'director' | 'supervisor';
+  // Set when two co-directors evaluated the same (employee, period)
+  is_combined?: boolean;
+  underlying_ids?: string[];
+  manager_notes_breakdown?: { name: string; note: string }[];
 }
+
+const COMBINED_STATUS_PRIORITY = [
+  'موافقة', 'اطلع الموظف', 'مغلق', 'بانتظار الموافقة', 'تم الإرسال', 'مرفوض',
+];
+
+const pickCombinedStatus = (statuses: string[]): string => {
+  for (const s of COMBINED_STATUS_PRIORITY) if (statuses.includes(s)) return s;
+  return statuses[0];
+};
 
 interface ScoreDetail {
   id: string;
@@ -104,7 +118,7 @@ export const MyEvaluations: React.FC = () => {
       .from('evaluations')
       .select(`
         id, status, percentage, final_score_5, general_rating,
-        manager_note, employee_note, created_at,
+        manager_note, employee_note, created_at, period_id,
         period:evaluation_periods(year, month),
         manager:users!evaluations_manager_id_fkey(full_name)
       `)
@@ -112,7 +126,56 @@ export const MyEvaluations: React.FC = () => {
       .in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
       .order('created_at', { ascending: false });
 
-    const dirEvals: Evaluation[] = ((dirData as any[]) || []).map(ev => ({ ...ev, source: 'director' as const }));
+    const rawDirEvals: any[] = ((dirData as any[]) || []);
+
+    // Group director evaluations by period_id. Two co-directors of the same
+    // directorate produce two rows for one period — collapse them into one
+    // "الإدارة العليا" entry with averaged scores. Single-director periods
+    // are unchanged.
+    const periodGroups = new Map<string, any[]>();
+    rawDirEvals.forEach(ev => {
+      const pid = ev.period_id || `${ev.period?.year}-${ev.period?.month}`;
+      if (!periodGroups.has(pid)) periodGroups.set(pid, []);
+      periodGroups.get(pid)!.push(ev);
+    });
+
+    const dirEvals: Evaluation[] = [];
+    periodGroups.forEach(group => {
+      if (group.length === 1) {
+        dirEvals.push({ ...group[0], source: 'director' as const });
+        return;
+      }
+      const avg = (k: string) => group.reduce((s, r) => s + (r[k] || 0), 0) / group.length;
+      const percentage = avg('percentage');
+      const final_score_5 = group.every(r => r.final_score_5 != null)
+        ? percentageToScore5(percentage)
+        : null;
+      const status = pickCombinedStatus(group.map(r => r.status));
+      // Employee reply: take the first non-empty (we keep underlying rows in
+      // sync when the employee submits, so any value is representative).
+      const employee_note = group.find(r => r.employee_note)?.employee_note || null;
+      const newest = group.reduce((a, b) =>
+        new Date(a.created_at).getTime() > new Date(b.created_at).getTime() ? a : b
+      );
+      dirEvals.push({
+        id: `combined-${newest.period?.year}-${newest.period?.month}`,
+        status,
+        percentage,
+        final_score_5,
+        general_rating: percentageToRating(percentage),
+        manager_note: null,
+        employee_note,
+        created_at: newest.created_at,
+        period: newest.period,
+        manager: { full_name: 'الإدارة العليا' },
+        source: 'director',
+        is_combined: true,
+        underlying_ids: group.map(r => r.id),
+        manager_notes_breakdown: group
+          .map(r => ({ name: r.manager?.full_name || '', note: r.manager_note || '' }))
+          .filter(m => m.note),
+      });
+    });
 
     // Fetch supervisor evaluations
     const { data: supData } = await supabase
@@ -180,16 +243,42 @@ export const MyEvaluations: React.FC = () => {
           }));
           setScores(prev => ({ ...prev, [evalId]: mapped }));
         } else {
+          const idsToFetch = ev?.is_combined ? ev.underlying_ids! : [evalId];
           const { data } = await supabase
             .from('evaluation_scores')
             .select(`
               id, score_1_to_5, weighted_result, criterion_type,
+              criterion_id, department_criterion_id,
               criterion:evaluation_criteria(title, weight),
               dept_criterion:department_criteria(title, weight)
             `)
-            .eq('evaluation_id', evalId);
+            .in('evaluation_id', idsToFetch);
 
-          setScores(prev => ({ ...prev, [evalId]: (data || []) as unknown as ScoreDetail[] }));
+          let mapped: ScoreDetail[];
+          if (ev?.is_combined && idsToFetch.length > 1) {
+            // Average score_1_to_5 and weighted_result across rows per criterion
+            const groups = new Map<string, any[]>();
+            (data || []).forEach((s: any) => {
+              const key = `${s.criterion_type}:${s.criterion_id || s.department_criterion_id}`;
+              if (!groups.has(key)) groups.set(key, []);
+              groups.get(key)!.push(s);
+            });
+            mapped = Array.from(groups.values()).map(rows => {
+              const first = rows[0];
+              const avg = (k: string) => rows.reduce((s, r) => s + (r[k] || 0), 0) / rows.length;
+              return {
+                id: first.id,
+                score_1_to_5: avg('score_1_to_5'),
+                weighted_result: avg('weighted_result'),
+                criterion_type: first.criterion_type,
+                criterion: first.criterion,
+                dept_criterion: first.dept_criterion,
+              };
+            });
+          } else {
+            mapped = (data || []) as unknown as ScoreDetail[];
+          }
+          setScores(prev => ({ ...prev, [evalId]: mapped }));
         }
       } catch (error) {
         console.error('Error fetching scores:', error);
@@ -206,11 +295,12 @@ export const MyEvaluations: React.FC = () => {
     setReplySaving(evaluationId);
     const ev = evaluations.find(e => e.id === evaluationId);
     const table = ev?.source === 'supervisor' ? 'supervisor_evaluations' : 'evaluations';
+    const targetIds = ev?.is_combined ? ev.underlying_ids! : [evaluationId];
     try {
       await supabase
         .from(table)
         .update({ employee_note: text })
-        .eq('id', evaluationId);
+        .in('id', targetIds);
 
       setEvaluations(prev =>
         prev.map(ev => ev.id === evaluationId ? { ...ev, employee_note: text } : ev)
@@ -459,15 +549,34 @@ export const MyEvaluations: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Manager Note */}
-                      {ev.manager_note && (
-                        <div className="mx-6 mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <MessageSquare className="h-4 w-4 text-blue-600" />
-                            <p className="text-sm font-bold text-blue-800">ملاحظات المقيّم</p>
+                      {/* Manager Note(s) — combined rows show each director separately */}
+                      {ev.is_combined ? (
+                        ev.manager_notes_breakdown && ev.manager_notes_breakdown.length > 0 && (
+                          <div className="mx-6 mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <MessageSquare className="h-4 w-4 text-blue-600" />
+                              <p className="text-sm font-bold text-blue-800">ملاحظات المقيّمين</p>
+                            </div>
+                            <div className="space-y-3">
+                              {ev.manager_notes_breakdown.map((m, i) => (
+                                <div key={i} className="bg-white/60 rounded-lg p-3 border border-blue-200">
+                                  <p className="text-xs font-semibold text-blue-700 mb-1">{m.name}</p>
+                                  <p className="text-sm text-blue-900 leading-relaxed">{m.note}</p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <p className="text-sm text-blue-900 leading-relaxed bg-white/60 rounded-lg p-3">{ev.manager_note}</p>
-                        </div>
+                        )
+                      ) : (
+                        ev.manager_note && (
+                          <div className="mx-6 mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MessageSquare className="h-4 w-4 text-blue-600" />
+                              <p className="text-sm font-bold text-blue-800">ملاحظات المقيّم</p>
+                            </div>
+                            <p className="text-sm text-blue-900 leading-relaxed bg-white/60 rounded-lg p-3">{ev.manager_note}</p>
+                          </div>
+                        )
                       )}
 
                       {/* Reply Section */}
