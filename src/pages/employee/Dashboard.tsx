@@ -132,8 +132,10 @@ export const EmployeeDashboard: React.FC = () => {
       .order('item_order');
     setDevelopmentPlans(devPlans || []);
 
-    // Mark "تم الإرسال" rows as viewed by employee.
-    const unseen = rows.filter((r: any) => r.status === 'تم الإرسال').map((r: any) => r.id);
+    // Mark approved-but-not-yet-viewed rows as viewed. Never promote an
+    // unapproved "تم الإرسال" — that previously bypassed CEO approval and
+    // mislabelled pending evaluations as "تم اعتماد التقييم".
+    const unseen = rows.filter((r: any) => r.status === 'موافقة').map((r: any) => r.id);
     if (unseen.length > 0) {
       await supabase
         .from('evaluations')
