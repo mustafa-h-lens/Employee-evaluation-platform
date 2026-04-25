@@ -120,6 +120,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
   const [myDirectorates, setMyDirectorates] = useState<{ id: string; name: string }[]>([]);
   const [selectedDirectorateId, setSelectedDirectorateId] = useState<string>('all');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Check if director has specific criteria (skip if general weight is 100%)
   useEffect(() => {
@@ -297,7 +298,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       setEmployeesLoading(false);
     };
     fetchAllEmployees();
-  }, [user, tablePeriodId]);
+  }, [user, tablePeriodId, refreshKey]);
 
   useEffect(() => {
     if (propEmployeeId) setSelectedEmployeeId(propEmployeeId);
@@ -802,6 +803,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             setEvaluationStatus('');
             setExistingEvaluationId(null);
             setEmployee(null);
+            setRefreshKey(k => k + 1);
           }}
           className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
         >
