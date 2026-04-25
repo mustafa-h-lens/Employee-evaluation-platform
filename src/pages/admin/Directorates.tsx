@@ -11,6 +11,7 @@ import {
   ChevronDown, ChevronUp, UserPlus, Crown, Users, ArrowLeftRight, Building2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 interface DirectorUser {
   id: string;
@@ -48,6 +49,7 @@ const CEO_EMAILS = ['ahmed@h-lens.co', 'saad@h-lens.co'];
 
 export const Directorates: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [allDirectors, setAllDirectors] = useState<DirectorUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,7 @@ export const Directorates: React.FC = () => {
       setNewDeptInput('');
       fetchData();
     } catch (error: any) {
-      alert('حدث خطأ: ' + (error?.message || ''));
+      toast.error('حدث خطأ: ' + (error?.message || ''));
     }
   };
 
@@ -212,7 +214,7 @@ export const Directorates: React.FC = () => {
       setDeptForm({ name: '', directorate_id: '' });
       fetchData();
     } catch (error: any) {
-      alert('حدث خطأ: ' + (error?.message || ''));
+      toast.error('حدث خطأ: ' + (error?.message || ''));
     }
   };
 

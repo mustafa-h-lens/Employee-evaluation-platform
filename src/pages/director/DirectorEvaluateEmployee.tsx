@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { computeFinalScores } from '../../lib/scoring';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -94,6 +95,7 @@ const getRatingBadgeVariant = (rating: string | null | undefined): 'success' | '
 
 export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ employeeId: propEmployeeId }) => {
   const { user } = useAuth();
+  const toast = useToast();
   const [allEmployees, setAllEmployees] = useState<EmployeeInfo[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(propEmployeeId);
   const employeeId = selectedEmployeeId;
@@ -470,7 +472,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       const allGeneralScored = criteria.every(c => scores[c.id] && scores[c.id] > 0);
       const allSpecificScored = specificCriteria.every(c => specificScores[c.id] && specificScores[c.id] > 0);
       if (!allGeneralScored || !allSpecificScored) {
-        alert('يرجى تقييم جميع المعايير قبل الإرسال');
+        toast.warning('يرجى تقييم جميع المعايير قبل الإرسال');
         return;
       }
     }
@@ -556,11 +558,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       }
 
       setEvaluationStatus(isDraft ? 'مسودة' : 'بانتظار الموافقة');
-      alert(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
+      toast.success(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
     } catch (error: any) {
       console.error('Error saving employee evaluation:', error);
-      const detail = error?.message ? `\n\nالتفاصيل: ${error.message}` : '';
-      alert(`حدث خطأ أثناء حفظ التقييم${detail}`);
+      const detail = error?.message ? `\nالتفاصيل: ${error.message}` : '';
+      toast.error(`حدث خطأ أثناء حفظ التقييم${detail}`);
     } finally {
       setLoading(false);
     }

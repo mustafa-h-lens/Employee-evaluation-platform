@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { computeFinalScores } from '../../lib/scoring';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -79,6 +80,7 @@ const getRatingBadgeVariant = (rating: string | null | undefined): 'success' | '
 
 export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ directorId: propDirectorId }) => {
   const { user } = useAuth();
+  const toast = useToast();
   const [allDirectors, setAllDirectors] = useState<Director[]>([]);
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | undefined>(propDirectorId);
   const directorId = selectedDirectorId;
@@ -392,7 +394,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       const allGeneralScored = criteria.every(c => scores[c.id] && scores[c.id] > 0);
       const allSpecificScored = specificCriteria.every(c => specificScores[c.id] && specificScores[c.id] > 0);
       if (!allGeneralScored || !allSpecificScored) {
-        alert('يرجى تقييم جميع المعايير قبل الإرسال');
+        toast.warning('يرجى تقييم جميع المعايير قبل الإرسال');
         return;
       }
     }
@@ -498,7 +500,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
           setEvaluationStatus('بانتظار الموافقة');
           setPartnerStatus('بانتظار الموافقة');
-          alert('تم إرسال التقييم بنجاح — كلا التقييمين الآن بانتظار الاعتماد');
+          toast.success('تم إرسال التقييم بنجاح — كلا التقييمين الآن بانتظار الاعتماد');
         } else if (!partnerEval) {
           // No partner evaluation exists — check if another CEO user exists
           const { count: otherCeoCount } = await supabase
@@ -514,26 +516,26 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
               .update({ status: 'بانتظار الموافقة' })
               .eq('id', evaluationId);
             setEvaluationStatus('بانتظار الموافقة');
-            alert('تم إرسال التقييم بنجاح — التقييم الآن بانتظار الاعتماد');
+            toast.success('تم إرسال التقييم بنجاح — التقييم الآن بانتظار الاعتماد');
           } else {
             // Partner CEO exists but hasn't evaluated yet
             setEvaluationStatus('تم الإرسال');
             setPartnerStatus(null);
-            alert('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
+            toast.success('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
           }
         } else {
           // Partner exists but is still a draft
           setEvaluationStatus('تم الإرسال');
           setPartnerStatus(partnerEval.status);
-          alert('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
+          toast.success('تم إرسال تقييمك بنجاح — بانتظار إرسال تقييم الشريك');
         }
       } else {
         setEvaluationStatus('مسودة');
-        alert('تم حفظ التقييم كمسودة بنجاح');
+        toast.success('تم حفظ التقييم كمسودة بنجاح');
       }
     } catch (error) {
       console.error('Error saving director evaluation:', error);
-      alert('حدث خطأ أثناء حفظ التقييم');
+      toast.error('حدث خطأ أثناء حفظ التقييم');
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronRight, User } from 'lucide-react';
 import { computeFinalScores } from '../../lib/scoring';
 
@@ -23,6 +24,7 @@ interface Period {
 
 export const AdminSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const toast = useToast();
   const [periods, setPeriods] = useState<Period[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
   const [generalWeight, setGeneralWeight] = useState(50);
@@ -289,7 +291,7 @@ export const AdminSettings: React.FC = () => {
 
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      alert('حدث خطأ أثناء حفظ الإعدادات:\n' + (error?.message || JSON.stringify(error)));
+      toast.error('حدث خطأ أثناء حفظ الإعدادات: ' + (error?.message || JSON.stringify(error)));
     } finally {
       setSaving(false);
     }

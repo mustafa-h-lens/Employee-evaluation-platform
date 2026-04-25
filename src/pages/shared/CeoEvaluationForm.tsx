@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { computeFinalScores } from '../../lib/scoring';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -39,6 +40,7 @@ const quarterLabels: Record<number, string> = {
 
 export const CeoEvaluationForm: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activePeriod, setActivePeriod] = useState<CeoEvalPeriod | null>(null);
@@ -197,7 +199,7 @@ export const CeoEvaluationForm: React.FC = () => {
     if (!isDraft) {
       const allScored = criteria.every((c) => scores[c.id] && scores[c.id] > 0);
       if (!allScored) {
-        alert('يرجى تقييم جميع المعايير قبل الإرسال');
+        toast.warning('يرجى تقييم جميع المعايير قبل الإرسال');
         return;
       }
     }
@@ -258,7 +260,7 @@ export const CeoEvaluationForm: React.FC = () => {
         });
         if (scoresError) {
           console.error('Error saving CEO evaluation scores:', scoresError);
-          alert('خطأ في حفظ درجات المعايير: ' + scoresError.message);
+          toast.error('خطأ في حفظ درجات المعايير: ' + scoresError.message);
           setLoading(false);
           return;
         }
@@ -266,10 +268,10 @@ export const CeoEvaluationForm: React.FC = () => {
 
       setEvaluationStatus(status);
       setCeoSubmitStatus((prev) => ({ ...prev, [selectedCeo.id]: status }));
-      alert(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
+      toast.success(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
     } catch (error) {
       console.error('Error saving CEO evaluation:', error);
-      alert('حدث خطأ أثناء حفظ التقييم');
+      toast.error('حدث خطأ أثناء حفظ التقييم');
     } finally {
       setLoading(false);
     }

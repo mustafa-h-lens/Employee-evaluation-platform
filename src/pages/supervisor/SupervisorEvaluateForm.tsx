@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { computeFinalScores } from '../../lib/scoring';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -89,6 +90,7 @@ const getRatingBadgeVariant = (rating: string | null | undefined): 'success' | '
 
 export const SupervisorEvaluateForm: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [allEmployees, setAllEmployees] = useState<EmployeeInfo[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
@@ -428,7 +430,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
       const allGeneralScored = criteria.every(c => scores[c.id] && scores[c.id] > 0);
       const allSpecificScored = specificCriteria.every(c => specificScores[c.id] && specificScores[c.id] > 0);
       if (!allGeneralScored || !allSpecificScored) {
-        alert('يرجى تقييم جميع المعايير قبل الإرسال');
+        toast.warning('يرجى تقييم جميع المعايير قبل الإرسال');
         return;
       }
     }
@@ -443,7 +445,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
         (a.members || []).some(m => m.employee_id === employeeId)
       );
       if (!assignment) {
-        alert('لم يتم العثور على تعيين مشرف مطابق');
+        toast.warning('لم يتم العثور على تعيين مشرف مطابق');
         setLoading(false);
         return;
       }
@@ -521,10 +523,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
       }
 
       setEvaluationStatus(isDraft ? 'مسودة' : 'تم الإرسال');
-      alert(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
+      toast.success(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
     } catch (error) {
       console.error('Error saving supervisor evaluation:', error);
-      alert('حدث خطأ أثناء حفظ التقييم');
+      toast.error('حدث خطأ أثناء حفظ التقييم');
     } finally {
       setLoading(false);
     }
