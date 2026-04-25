@@ -233,6 +233,9 @@ export const PendingApprovals: React.FC = () => {
   // Reject modal
   const [rejectModal, setRejectModal] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<{ id: string; type: 'employee' | 'director' | 'supervisor' } | null>(null);
+  // For combined employee evaluations: which underlying rows the user wants
+  // to reject. Empty list = single eval (skip the picker).
+  const [rejectEvaluators, setRejectEvaluators] = useState<{ id: string; name: string; selected: boolean }[]>([]);
   const [rejectComment, setRejectComment] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -571,6 +574,18 @@ export const PendingApprovals: React.FC = () => {
   const openRejectModal = (id: string, type: 'employee' | 'director' | 'supervisor') => {
     setRejectTarget({ id, type });
     setRejectComment('');
+    // Populate the evaluator picker only for combined employee rejections.
+    // We map each underlying eval id to its evaluator name from the
+    // already-loaded `evaluations` array.
+    if (type === 'employee' && id.includes(',')) {
+      const ids = id.split(',');
+      setRejectEvaluators(ids.map(i => {
+        const ev = evaluations.find(e => e.id === i);
+        return { id: i, name: ev?.manager?.full_name || '—', selected: true };
+      }));
+    } else {
+      setRejectEvaluators([]);
+    }
     setRejectModal(true);
   };
 
@@ -580,8 +595,16 @@ export const PendingApprovals: React.FC = () => {
 
     const table = rejectTarget.type === 'employee' ? 'evaluations' : rejectTarget.type === 'director' ? 'director_evaluations' : 'supervisor_evaluations';
 
-    // For director type, the id may be comma-separated (combined rejection)
-    const ids = rejectTarget.id.split(',');
+    // Combined rejection: only reject the IDs the user picked. Outside of
+    // the combined-employee case `rejectEvaluators` is empty and we fall
+    // through to the legacy comma-split.
+    const ids = rejectEvaluators.length > 0
+      ? rejectEvaluators.filter(e => e.selected).map(e => e.id)
+      : rejectTarget.id.split(',');
+    if (ids.length === 0) {
+      setActionLoading(false);
+      return;
+    }
     for (const id of ids) {
       await supabase
         .from(table)
@@ -604,6 +627,7 @@ export const PendingApprovals: React.FC = () => {
     setActionLoading(false);
     setRejectModal(false);
     setRejectTarget(null);
+    setRejectEvaluators([]);
     setDetailModal(false);
     setDetailEval(null);
     setDetailDirEval(null);
@@ -1360,7 +1384,7 @@ export const PendingApprovals: React.FC = () => {
       {/* Reject Modal */}
       <Modal
         isOpen={rejectModal}
-        onClose={() => setRejectModal(false)}
+        onClose={() => { setRejectModal(false); setRejectEvaluators([]); }}
         title="رفض التقييم"
         size="md"
       >
@@ -1368,6 +1392,34 @@ export const PendingApprovals: React.FC = () => {
           <p className="text-sm text-gray-600">
             يرجى كتابة سبب الرفض ليتمكن المقيّم من تعديل التقييم وإعادة إرساله.
           </p>
+
+          {rejectEvaluators.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm font-bold text-amber-900 mb-1">اختر التقييم المراد رفضه</p>
+              <p className="text-xs text-amber-700 mb-3">
+                هذا التقييم مكوّن من تقييمي مديرين. اختر من تريد إعادة تقييمه — التقييم الآخر سيبقى كما هو.
+              </p>
+              <div className="space-y-2">
+                {rejectEvaluators.map(ev => (
+                  <label
+                    key={ev.id}
+                    className="flex items-center gap-3 bg-white border border-amber-200 rounded-lg px-3 py-2.5 cursor-pointer hover:border-amber-300 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={ev.selected}
+                      onChange={(e) => setRejectEvaluators(prev =>
+                        prev.map(p => p.id === ev.id ? { ...p, selected: e.target.checked } : p)
+                      )}
+                      className="h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-gray-800 font-medium">{ev.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <TextArea
             label="سبب الرفض"
             value={rejectComment}
@@ -1377,13 +1429,13 @@ export const PendingApprovals: React.FC = () => {
             required
           />
           <ModalFooter>
-            <Button type="button" variant="secondary" onClick={() => setRejectModal(false)}>
+            <Button type="button" variant="secondary" onClick={() => { setRejectModal(false); setRejectEvaluators([]); }}>
               إلغاء
             </Button>
             <Button
               onClick={handleReject}
               loading={actionLoading}
-              disabled={!rejectComment.trim()}
+              disabled={!rejectComment.trim() || (rejectEvaluators.length > 0 && !rejectEvaluators.some(e => e.selected))}
               className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
             >
               <XCircle className="h-4 w-4" />
