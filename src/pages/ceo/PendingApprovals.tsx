@@ -45,6 +45,8 @@ const getStatusLabel = (status: string): string => {
 
 interface EvalItem {
   id: string;
+  employee_id?: string;
+  period_id?: string;
   employee: { full_name: string; job_title: string; employee_number: string } | null;
   manager: { full_name: string } | null;
   department: { name: string } | null;
@@ -59,6 +61,28 @@ interface EvalItem {
   ceo_comment: string | null;
   submitted_at: string | null;
 }
+
+interface CombinedEmployeeEval {
+  // Stable composite key for React rendering / detail open state
+  groupKey: string;
+  ids: string[];
+  primary: EvalItem; // representative row (latest submitted_at)
+  manager_label: string;
+  percentage: number;
+  final_score_500: number;
+  final_score_5: number;
+  general_rating: string | null;
+  status: string;
+}
+
+const COMBINED_EMP_STATUS_PRIORITY = [
+  'موافقة', 'بانتظار الموافقة', 'تم الإرسال', 'مرفوض',
+];
+
+const pickEmpCombinedStatus = (statuses: string[]): string => {
+  for (const s of COMBINED_EMP_STATUS_PRIORITY) if (statuses.includes(s)) return s;
+  return statuses[0];
+};
 
 interface DirectorEvalItem {
   id: string;
@@ -135,6 +159,59 @@ export const PendingApprovals: React.FC = () => {
   const [supervisorEvals, setSupervisorEvals] = useState<SupervisorEvalItem[]>([]);
   const [supLoading, setSupLoading] = useState(true);
 
+  // Group employee evaluations by (employee_id, period_id) so the two rows
+  // produced by co-directors of the same directorate collapse into one
+  // "الإدارة العليا" entry with averaged scores.
+  const combinedEmployeeEvals = useMemo<CombinedEmployeeEval[]>(() => {
+    const groups = new Map<string, EvalItem[]>();
+    evaluations.forEach(ev => {
+      const key = `${ev.employee_id || ev.id}::${ev.period_id || ''}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(ev);
+    });
+    const out: CombinedEmployeeEval[] = [];
+    groups.forEach((rows, key) => {
+      if (rows.length === 1) {
+        const r = rows[0];
+        out.push({
+          groupKey: key,
+          ids: [r.id],
+          primary: r,
+          manager_label: r.manager?.full_name || '-',
+          percentage: r.percentage,
+          final_score_500: r.final_score_500,
+          final_score_5: r.final_score_5,
+          general_rating: r.general_rating,
+          status: r.status,
+        });
+        return;
+      }
+      const avg = (k: 'percentage' | 'final_score_500' | 'final_score_5') =>
+        rows.reduce((s, r) => s + (r[k] || 0), 0) / rows.length;
+      const newest = rows.reduce((a, b) =>
+        (a.submitted_at && b.submitted_at && new Date(a.submitted_at).getTime() > new Date(b.submitted_at).getTime()) ? a : b
+      );
+      const status = pickEmpCombinedStatus(rows.map(r => r.status));
+      out.push({
+        groupKey: key,
+        ids: rows.map(r => r.id),
+        primary: newest,
+        manager_label: 'الإدارة العليا',
+        percentage: avg('percentage'),
+        final_score_500: avg('final_score_500'),
+        final_score_5: avg('final_score_5'),
+        general_rating: newest.general_rating,
+        status,
+      });
+    });
+    // Preserve original order: most-recent submission first
+    return out.sort((a, b) => {
+      const ta = a.primary.submitted_at ? new Date(a.primary.submitted_at).getTime() : 0;
+      const tb = b.primary.submitted_at ? new Date(b.primary.submitted_at).getTime() : 0;
+      return tb - ta;
+    });
+  }, [evaluations]);
+
   // Detail modal
   const [detailModal, setDetailModal] = useState(false);
   const [detailEval, setDetailEval] = useState<EvalItem | null>(null);
@@ -159,7 +236,7 @@ export const PendingApprovals: React.FC = () => {
     let query = supabase
       .from('evaluations')
       .select(`
-        id, status, final_score_500, final_score_5, percentage, general_rating,
+        id, employee_id, period_id, status, final_score_500, final_score_5, percentage, general_rating,
         manager_note, employee_note, ceo_comment, submitted_at,
         employee:employees(full_name, job_title, employee_number),
         manager:users!evaluations_manager_id_fkey(full_name),
@@ -623,7 +700,7 @@ export const PendingApprovals: React.FC = () => {
         ) : (
           <Card>
             <CardBody className="p-0">
-              {evaluations.length === 0 ? (
+              {combinedEmployeeEvals.length === 0 ? (
                 <EmptyState
                   message={activeFilter === 'pending' ? 'لا توجد تقييمات بانتظار المراجعة' : 'لا توجد تقييمات'}
                   icon={<FileText className="h-12 w-12 text-gray-400" />}
@@ -642,8 +719,11 @@ export const PendingApprovals: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {evaluations.map(ev => (
-                      <TableRow key={ev.id}>
+                    {combinedEmployeeEvals.map(group => {
+                      const ev = group.primary;
+                      const isCombined = group.ids.length > 1;
+                      return (
+                      <TableRow key={group.groupKey}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
@@ -659,7 +739,7 @@ export const PendingApprovals: React.FC = () => {
                           <span className="text-sm text-gray-700">{ev.department?.name || '-'}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-700">{ev.manager?.full_name || '-'}</span>
+                          <span className={`text-sm ${isCombined ? 'font-semibold text-indigo-700' : 'text-gray-700'}`}>{group.manager_label}</span>
                         </TableCell>
                         <TableCell>
                           {ev.period && (
@@ -668,16 +748,16 @@ export const PendingApprovals: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{ev.percentage?.toFixed(0)}%</span>
-                            {ev.general_rating && (
-                              <Badge variant={getRatingVariant(ev.general_rating)} size="sm">
-                                {ev.general_rating}
+                            <span className="font-bold text-gray-900">{group.percentage?.toFixed(0)}%</span>
+                            {group.general_rating && (
+                              <Badge variant={getRatingVariant(group.general_rating)} size="sm">
+                                {group.general_rating}
                               </Badge>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
+                          <Badge variant={getStatusVariant(group.status)} size="sm">{getStatusLabel(group.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -685,11 +765,11 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {ev.status === 'بانتظار الموافقة' && (
+                            {(group.status === 'بانتظار الموافقة' || group.status === 'تم الإرسال') && (
                               <>
                                 <Button
                                   size="sm"
-                                  onClick={() => handleApprove(ev.id, 'employee')}
+                                  onClick={() => handleApprove(group.ids[0], 'employee')}
                                   loading={actionLoading}
                                   className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
                                 >
@@ -699,7 +779,7 @@ export const PendingApprovals: React.FC = () => {
                                 <Button
                                   size="sm"
                                   variant="danger"
-                                  onClick={() => openRejectModal(ev.id, 'employee')}
+                                  onClick={() => openRejectModal(group.ids.join(','), 'employee')}
                                   className="flex items-center gap-1"
                                 >
                                   <XCircle className="h-4 w-4" />
@@ -710,7 +790,8 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
