@@ -218,6 +218,17 @@ export const PendingApprovals: React.FC = () => {
   const [detailDirEval, setDetailDirEval] = useState<DirectorEvalItem | null>(null);
   const [detailScores, setDetailScores] = useState<ScoreDetail[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  // When opening a combined employee evaluation, the modal displays an
+  // averaged view but each director's note is shown separately.
+  const [detailEmpCombined, setDetailEmpCombined] = useState<{
+    ids: string[];
+    avg_percentage: number;
+    avg_score_500: number;
+    avg_score_5: number;
+    notes: { name: string; note: string }[];
+    employee_note: string | null;
+    ceo_comment: string | null;
+  } | null>(null);
 
   // Reject modal
   const [rejectModal, setRejectModal] = useState(false);
@@ -335,6 +346,7 @@ export const PendingApprovals: React.FC = () => {
     setDetailModal(true);
     setDetailEval(ev);
     setDetailDirEval(null);
+    setDetailEmpCombined(null);
 
     const { data: scores } = await supabase
       .from('evaluation_scores')
@@ -353,6 +365,87 @@ export const PendingApprovals: React.FC = () => {
       weighted_result: s.weighted_result,
       type: s.criterion_type || 'general',
     }));
+
+    setDetailScores(scoreDetails);
+    setDetailLoading(false);
+  };
+
+  // Open the combined "الإدارة العليا" view for an employee that two
+  // co-directors evaluated. Averages criterion scores across all underlying
+  // rows and lists each director's note separately.
+  const viewCombinedEmpDetail = async (group: CombinedEmployeeEval) => {
+    setDetailLoading(true);
+    setDetailModal(true);
+    setDetailDirEval(null);
+
+    // Pull every underlying eval row in full so we have manager names + notes
+    const { data: fullRows } = await supabase
+      .from('evaluations')
+      .select(`
+        id, status, final_score_500, final_score_5, percentage, general_rating,
+        manager_note, employee_note, ceo_comment, submitted_at,
+        employee:employees(full_name, job_title, employee_number),
+        manager:users!evaluations_manager_id_fkey(full_name),
+        department:departments(name),
+        period:evaluation_periods(year, month)
+      `)
+      .in('id', group.ids);
+
+    const rows = (fullRows as unknown as EvalItem[]) || [];
+    const primary = rows.find(r => r.id === group.primary.id) || rows[0] || group.primary;
+
+    setDetailEval({
+      ...primary,
+      manager: { full_name: 'الإدارة العليا' },
+      percentage: group.percentage,
+      final_score_500: group.final_score_500,
+      final_score_5: group.final_score_5,
+      general_rating: group.general_rating,
+      manager_note: null,
+      status: group.status,
+    });
+
+    setDetailEmpCombined({
+      ids: group.ids,
+      avg_percentage: group.percentage,
+      avg_score_500: group.final_score_500,
+      avg_score_5: group.final_score_5,
+      notes: rows
+        .map(r => ({ name: r.manager?.full_name || '', note: r.manager_note || '' }))
+        .filter(n => n.note),
+      employee_note: rows.find(r => r.employee_note)?.employee_note || null,
+      ceo_comment: rows.find(r => r.ceo_comment)?.ceo_comment || null,
+    });
+
+    // Average criterion scores across all underlying eval rows
+    const { data: scores } = await supabase
+      .from('evaluation_scores')
+      .select(`
+        score_1_to_5, weighted_result, criterion_type,
+        criterion_id, department_criterion_id,
+        criterion:evaluation_criteria(title, description, weight),
+        dept_criterion:department_criteria(title, description, weight)
+      `)
+      .in('evaluation_id', group.ids);
+
+    const groupsByCrit = new Map<string, any[]>();
+    (scores || []).forEach((s: any) => {
+      const key = `${s.criterion_type}:${s.criterion_id || s.department_criterion_id}`;
+      if (!groupsByCrit.has(key)) groupsByCrit.set(key, []);
+      groupsByCrit.get(key)!.push(s);
+    });
+    const scoreDetails: ScoreDetail[] = Array.from(groupsByCrit.values()).map(items => {
+      const first = items[0];
+      const avg = (k: string) => items.reduce((sum, x) => sum + (x[k] || 0), 0) / items.length;
+      return {
+        criterion_title: first.criterion_type === 'specific' ? (first.dept_criterion?.title || '') : (first.criterion?.title || ''),
+        criterion_description: first.criterion_type === 'specific' ? (first.dept_criterion?.description || '') : (first.criterion?.description || ''),
+        criterion_weight: first.criterion_type === 'specific' ? (first.dept_criterion?.weight || 0) : (first.criterion?.weight || 0),
+        score: avg('score_1_to_5'),
+        weighted_result: avg('weighted_result'),
+        type: first.criterion_type || 'general',
+      };
+    });
 
     setDetailScores(scoreDetails);
     setDetailLoading(false);
@@ -761,7 +854,7 @@ export const PendingApprovals: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={() => viewEmpDetail(ev)} className="flex items-center gap-1">
+                            <Button size="sm" variant="outline" onClick={() => isCombined ? viewCombinedEmpDetail(group) : viewEmpDetail(ev)} className="flex items-center gap-1">
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
@@ -1009,7 +1102,7 @@ export const PendingApprovals: React.FC = () => {
       {/* Detail Modal */}
       <Modal
         isOpen={detailModal}
-        onClose={() => { setDetailModal(false); setDetailEval(null); setDetailDirEval(null); setDetailSupEval(null); setDetailCombined(null); }}
+        onClose={() => { setDetailModal(false); setDetailEval(null); setDetailDirEval(null); setDetailSupEval(null); setDetailCombined(null); setDetailEmpCombined(null); }}
         title={
           detailEval
             ? `تفاصيل تقييم: ${detailEval.employee?.full_name}`
@@ -1181,6 +1274,16 @@ export const PendingApprovals: React.FC = () => {
                   ))}
                 </div>
               )
+            ) : detailEmpCombined && detailEmpCombined.notes.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-blue-700 px-1">ملاحظات المقيّمين</p>
+                {detailEmpCombined.notes.map((n, i) => (
+                  <div key={i} className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-xs font-semibold text-blue-700 mb-1">{n.name}</p>
+                    <p className="text-sm text-gray-800">{n.note}</p>
+                  </div>
+                ))}
+              </div>
             ) : (detailEval?.manager_note || detailDirEval?.evaluator_note || detailSupEval?.supervisor_note) ? (
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
@@ -1237,6 +1340,8 @@ export const PendingApprovals: React.FC = () => {
                     setDetailModal(false);
                     if (detailCombined) {
                       openRejectCombinedModal(detailCombined);
+                    } else if (detailEmpCombined) {
+                      openRejectModal(detailEmpCombined.ids.join(','), 'employee');
                     } else {
                       openRejectModal(currentDetailId, currentDetailType);
                     }
