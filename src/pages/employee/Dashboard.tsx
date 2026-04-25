@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { FileText, TrendingUp, Target } from 'lucide-react';
+import { percentageToRating } from '../../lib/scoring';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -68,40 +69,79 @@ export const EmployeeDashboard: React.FC = () => {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (employee) {
-      const { data: evaluation } = await supabase
+    if (!employee) return;
+
+    // Find the most recent period that has any visible evaluation, then load
+    // ALL evaluations for that period (one per director). When there are two
+    // directors, we combine them into a single "الإدارة العليا" card.
+    const { data: latestRow } = await supabase
+      .from('evaluations')
+      .select('period_id')
+      .eq('employee_id', employee.id)
+      .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!latestRow) return;
+
+    const { data: rows } = await supabase
+      .from('evaluations')
+      .select(`
+        *,
+        period:evaluation_periods(year, month),
+        manager:users!evaluations_manager_id_fkey(full_name)
+      `)
+      .eq('employee_id', employee.id)
+      .eq('period_id', latestRow.period_id)
+      .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']);
+
+    if (!rows || rows.length === 0) return;
+
+    let combined: any;
+    if (rows.length === 1) {
+      combined = rows[0];
+    } else {
+      const avg = (key: string) =>
+        rows.reduce((s, r: any) => s + (r[key] || 0), 0) / rows.length;
+      const percentage = avg('percentage');
+      combined = {
+        ...rows[0],
+        final_score_500: avg('final_score_500'),
+        final_score_5: avg('final_score_5'),
+        percentage,
+        general_rating: percentageToRating(percentage),
+        manager_note: null,
+        is_combined: true,
+        managers: rows.map((r: any) => ({
+          id: r.id,
+          name: r.manager?.full_name || '',
+          note: r.manager_note || '',
+        })),
+      };
+    }
+
+    setLatestEvaluation(combined);
+
+    // Load development plans tied to any of the underlying rows.
+    const evalIds = rows.map((r: any) => r.id);
+    const { data: devPlans } = await supabase
+      .from('development_plans')
+      .select('*')
+      .in('evaluation_id', evalIds)
+      .order('item_order');
+    setDevelopmentPlans(devPlans || []);
+
+    // Mark "تم الإرسال" rows as viewed by employee.
+    const unseen = rows.filter((r: any) => r.status === 'تم الإرسال').map((r: any) => r.id);
+    if (unseen.length > 0) {
+      await supabase
         .from('evaluations')
-        .select(`
-          *,
-          period:evaluation_periods(year, month)
-        `)
-        .eq('employee_id', employee.id)
-        .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (evaluation) {
-        setLatestEvaluation(evaluation);
-
-        const { data: devPlans } = await supabase
-          .from('development_plans')
-          .select('*')
-          .eq('evaluation_id', evaluation.id)
-          .order('item_order');
-
-        setDevelopmentPlans(devPlans || []);
-
-        if (evaluation.status === 'تم الإرسال') {
-          await supabase
-            .from('evaluations')
-            .update({
-              status: 'اطلع الموظف',
-              viewed_by_employee_at: new Date().toISOString()
-            })
-            .eq('id', evaluation.id);
-        }
-      }
+        .update({
+          status: 'اطلع الموظف',
+          viewed_by_employee_at: new Date().toISOString(),
+        })
+        .in('id', unseen);
     }
   };
 
@@ -142,7 +182,12 @@ export const EmployeeDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">آخر تقييم</h2>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">آخر تقييم</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    من: <span className="font-medium text-gray-700">{latestEvaluation.is_combined ? 'الإدارة العليا' : (latestEvaluation.manager?.full_name || '')}</span>
+                  </p>
+                </div>
                 <Badge variant="info">
                   {monthLabels[latestEvaluation.period?.month || 1]} {latestEvaluation.period?.year}
                 </Badge>
@@ -178,15 +223,37 @@ export const EmployeeDashboard: React.FC = () => {
             </CardBody>
           </Card>
 
-          {latestEvaluation.manager_note && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-lg font-semibold text-gray-900">ملاحظات المدير المباشر</h2>
-              </CardHeader>
-              <CardBody>
-                <p className="text-gray-700 leading-relaxed">{latestEvaluation.manager_note}</p>
-              </CardBody>
-            </Card>
+          {latestEvaluation.is_combined ? (
+            (latestEvaluation.managers || []).some((m: any) => m.note) && (
+              <Card>
+                <CardHeader>
+                  <h2 className="text-lg font-semibold text-gray-900">ملاحظات المدير المباشر</h2>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-4">
+                    {(latestEvaluation.managers || [])
+                      .filter((m: any) => m.note)
+                      .map((m: any) => (
+                        <div key={m.id} className="border-r-4 border-blue-400 pr-4">
+                          <p className="text-sm font-semibold text-blue-700 mb-1">{m.name}</p>
+                          <p className="text-gray-700 leading-relaxed">{m.note}</p>
+                        </div>
+                      ))}
+                  </div>
+                </CardBody>
+              </Card>
+            )
+          ) : (
+            latestEvaluation.manager_note && (
+              <Card>
+                <CardHeader>
+                  <h2 className="text-lg font-semibold text-gray-900">ملاحظات المدير المباشر</h2>
+                </CardHeader>
+                <CardBody>
+                  <p className="text-gray-700 leading-relaxed">{latestEvaluation.manager_note}</p>
+                </CardBody>
+              </Card>
+            )
           )}
 
           {developmentPlans.length > 0 && (

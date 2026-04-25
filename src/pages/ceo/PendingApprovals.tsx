@@ -349,13 +349,35 @@ export const PendingApprovals: React.FC = () => {
     const table = type === 'employee' ? 'evaluations' : type === 'director' ? 'director_evaluations' : 'supervisor_evaluations';
     const approvedStatus = type === 'supervisor' ? 'اطلع الموظف' : 'موافقة';
 
+    // Co-director directorates produce two evaluation rows for the same
+    // (employee, period). Either director's approval covers both — flip
+    // every sibling row to "موافقة" in one shot.
+    let idsToApprove: string[] = [id];
+    if (type === 'employee') {
+      const { data: target } = await supabase
+        .from('evaluations')
+        .select('employee_id, period_id')
+        .eq('id', id)
+        .maybeSingle();
+      if (target) {
+        const { data: siblings } = await supabase
+          .from('evaluations')
+          .select('id')
+          .eq('employee_id', target.employee_id)
+          .eq('period_id', target.period_id)
+          .in('status', ['تم الإرسال', 'بانتظار الموافقة']);
+        idsToApprove = (siblings || []).map(s => s.id);
+        if (idsToApprove.length === 0) idsToApprove = [id];
+      }
+    }
+
     await supabase
       .from(table)
       .update({
         status: approvedStatus,
         ...(type !== 'supervisor' ? { ceo_comment: null, ceo_reviewed_at: new Date().toISOString(), ceo_reviewer_id: user.id } : {}),
       })
-      .eq('id', id);
+      .in('id', idsToApprove);
 
     const actionLabel = type === 'employee' ? 'موافقة على تقييم موظف' : type === 'director' ? 'موافقة على تقييم مدير' : 'موافقة على تقييم مشرف';
     await supabase.from('audit_logs').insert({
@@ -363,6 +385,7 @@ export const PendingApprovals: React.FC = () => {
       action: actionLabel,
       entity_type: table,
       entity_id: id,
+      ...(idsToApprove.length > 1 ? { details: { all_ids: idsToApprove } } : {}),
     });
 
     setActionLoading(false);

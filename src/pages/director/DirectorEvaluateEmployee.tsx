@@ -22,6 +22,8 @@ interface EmployeeInfo {
   eval_status?: string | null;
   eval_rating?: string | null;
   eval_percentage?: number | null;
+  peer_name?: string | null;
+  peer_status?: string | null;
 }
 
 interface Criterion {
@@ -45,9 +47,21 @@ const monthLabels: Record<number, string> = {
   9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
 };
 
-const getEvalStatusLabel = (status: string | null | undefined): string => {
+const getEvalStatusLabel = (
+  status: string | null | undefined,
+  peerName?: string | null,
+  peerStatus?: string | null,
+): string => {
   if (!status || status === 'مسودة') return 'بانتظار التقييم';
-  if (status === 'تم الإرسال') return 'تم الإرسال — بانتظار الاعتماد';
+  if (status === 'تم الإرسال') {
+    // Co-director directorate: my eval is in, but peer hasn't submitted →
+    // show "بانتظار <peer name>"; once both submit, show "بانتظار الاعتماد".
+    if (peerName) {
+      const peerSubmitted = peerStatus && peerStatus !== 'مسودة';
+      if (!peerSubmitted) return `بانتظار ${peerName}`;
+    }
+    return 'بانتظار الاعتماد';
+  }
   if (status === 'بانتظار الموافقة') return 'بانتظار الاعتماد';
   if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'التقييم معتمد';
   if (status === 'مرفوض') return 'التقييم مرفوض — يجب إعادة الإرسال';
@@ -153,7 +167,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
       const { data: dirs } = await supabase
         .from('directorates')
-        .select('id, name')
+        .select('id, name, director_id, secondary_director_id, director:users!directorates_director_id_fkey(full_name), secondary_director:users!directorates_secondary_director_id_fkey(full_name)')
         .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`);
 
       if (!dirs || dirs.length === 0) {
@@ -161,9 +175,23 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         return;
       }
 
-      setMyDirectorates(dirs);
-      const dirIds = dirs.map(d => d.id);
-      const dirNameMap = new Map(dirs.map(d => [d.id, d.name]));
+      setMyDirectorates(dirs.map((d: any) => ({ id: d.id, name: d.name })));
+      const dirIds = dirs.map((d: any) => d.id);
+      const dirNameMap = new Map(dirs.map((d: any) => [d.id, d.name]));
+      // Per-directorate: who is my peer (the *other* director, if any)?
+      const dirPeerMap = new Map<string, { id: string; name: string } | null>();
+      dirs.forEach((d: any) => {
+        let peerId: string | null = null;
+        let peerName = '';
+        if (d.director_id === user.id) {
+          peerId = d.secondary_director_id || null;
+          peerName = d.secondary_director?.full_name || '';
+        } else {
+          peerId = d.director_id || null;
+          peerName = d.director?.full_name || '';
+        }
+        dirPeerMap.set(d.id, peerId ? { id: peerId, name: peerName } : null);
+      });
 
       // Find employees assigned to ALL directorates (via junction table + legacy)
       const { data: assignmentData } = await supabase
@@ -230,32 +258,40 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         return;
       }
 
-      // Get eval statuses for selected period
+      // Get eval statuses for the period — both mine AND any peer director's
       const empIds = employees.map(e => e.id);
-      let evalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
-      const { data: evals } = await supabase
+      const { data: allEvals } = await supabase
         .from('evaluations')
-        .select('employee_id, status, general_rating, percentage')
-        .eq('manager_id', user.id)
+        .select('employee_id, manager_id, status, general_rating, percentage')
         .eq('period_id', tablePeriodId)
         .in('employee_id', empIds);
 
-      if (evals) {
-        evalMap = new Map(evals.map(ev => [ev.employee_id, {
-          status: ev.status,
-          rating: ev.general_rating,
-          percentage: ev.percentage,
-        }]));
-      }
+      const myEvalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
+      const peerEvalMap = new Map<string, { status: string; manager_id: string }>();
+      (allEvals || []).forEach((ev: any) => {
+        if (ev.manager_id === user.id) {
+          myEvalMap.set(ev.employee_id, {
+            status: ev.status,
+            rating: ev.general_rating,
+            percentage: ev.percentage,
+          });
+        } else {
+          peerEvalMap.set(ev.employee_id, { status: ev.status, manager_id: ev.manager_id });
+        }
+      });
 
       setAllEmployees(employees.map(e => {
         const dId = empDirMap.get(e.id) || e.directorate_id;
+        const peer = dId ? dirPeerMap.get(dId) : null;
+        const peerEval = peerEvalMap.get(e.id);
         return {
           ...e,
           department_name: dId ? (dirNameMap.get(dId) || '') : '',
-          eval_status: evalMap.get(e.id)?.status || null,
-          eval_rating: evalMap.get(e.id)?.rating || null,
-          eval_percentage: evalMap.get(e.id)?.percentage || null,
+          eval_status: myEvalMap.get(e.id)?.status || null,
+          eval_rating: myEvalMap.get(e.id)?.rating || null,
+          eval_percentage: myEvalMap.get(e.id)?.percentage || null,
+          peer_name: peer?.name || null,
+          peer_status: peer && peerEval && peerEval.manager_id === peer.id ? peerEval.status : null,
         };
       }));
       setEmployeesLoading(false);
@@ -706,7 +742,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Badge variant={getEvalStatusVariant(emp.eval_status)} size="sm">
-                            {getEvalStatusLabel(emp.eval_status)}
+                            {getEvalStatusLabel(emp.eval_status, emp.peer_name, emp.peer_status)}
                           </Badge>
                         </div>
                       </TableCell>
