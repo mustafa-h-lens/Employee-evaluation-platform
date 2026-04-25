@@ -75,13 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
     }
 
-    // Show password change reminder until user dismisses it
-    if (data.user) {
-      const dismissed = localStorage.getItem(`password_banner_dismissed_${data.user.id}`);
-      if (!dismissed) {
-        setIsFirstLogin(true);
-      }
-    }
+    // Show the security banner on every login while the password is still
+    // the default ("12345678"). Once the user changes their password and
+    // logs in with the new one, the banner stops appearing automatically.
+    setIsFirstLogin(password === '12345678');
   };
 
   const logout = async () => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { supabase } from './lib/supabase';
 import { Login } from './pages/Login';
 import { Landing } from './pages/Landing';
 import { PageLayout } from './components/layout/PageLayout';
@@ -299,13 +298,10 @@ function AppContent() {
   };
 
   const dismissBanner = () => {
+    // Hide for this session only — the banner will reappear next login while
+    // the password is still the default. AuthContext.login decides whether
+    // to set isFirstLogin based on the typed password, not on persistence.
     setShowPasswordBanner(false);
-    if (user) {
-      // Get auth user id to store dismissal
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) localStorage.setItem(`password_banner_dismissed_${session.user.id}`, '1');
-      });
-    }
   };
 
   return (
