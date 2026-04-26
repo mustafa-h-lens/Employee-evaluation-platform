@@ -43,6 +43,33 @@ export const EmployeeDashboard: React.FC = () => {
       .eq('user_id', user.id)
       .maybeSingle();
 
+    if (!data) { setEmployeeData(null); return; }
+
+    // The legacy employees.department_id / directorate_id columns are often
+    // stale; the source of truth is employee_directorates. Hydrate the
+    // directorate/department on the employee record from there if missing.
+    const { data: assignments } = await supabase
+      .from('employee_directorates')
+      .select(`
+        is_primary,
+        directorate:directorates(name),
+        department:departments(name)
+      `)
+      .eq('employee_id', data.id)
+      .order('is_primary', { ascending: false });
+
+    const primary = (assignments || [])[0] as any;
+    if (primary) {
+      if (!data.directorate?.name && primary.directorate?.name) {
+        data.directorate = { ...(data.directorate || {}), name: primary.directorate.name };
+      }
+      if (!data.department?.name && primary.department?.name) {
+        data.department = { ...(data.department || {}), name: primary.department.name };
+      }
+      data.assignment_directorate_name = primary.directorate?.name || null;
+      data.assignment_department_name = primary.department?.name || null;
+    }
+
     setEmployeeData(data);
   };
 
@@ -164,7 +191,14 @@ export const EmployeeDashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-blue-600">الإدارة</p>
-                <p className="font-semibold text-blue-900">{employeeData.department?.name}</p>
+                <p className="font-semibold text-blue-900">
+                  {(() => {
+                    const dirName = employeeData.assignment_directorate_name || employeeData.directorate?.name || '';
+                    const deptName = employeeData.assignment_department_name || employeeData.department?.name || '';
+                    if (dirName && deptName) return `${dirName} — ${deptName}`;
+                    return dirName || deptName || '—';
+                  })()}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-blue-600">المدير المباشر</p>
