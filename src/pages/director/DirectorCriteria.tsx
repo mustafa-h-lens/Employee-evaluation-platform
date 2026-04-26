@@ -20,6 +20,7 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
+  Copy,
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -78,6 +79,14 @@ export const DirectorSpecificCriteria: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Clone criteria from another department in the same directorate.
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+  const [cloneSourceDeptId, setCloneSourceDeptId] = useState<string>('');
+  const [cloneMode, setCloneMode] = useState<'replace' | 'append'>('replace');
+  const [cloning, setCloning] = useState(false);
+  const [cloneError, setCloneError] = useState('');
+  const [sourceCriteriaCount, setSourceCriteriaCount] = useState<Record<string, number>>({});
 
   // Director may manage multiple directorates (and co-manage with a peer).
   const [myDirectorates, setMyDirectorates] = useState<DirectorateOption[]>([]);
@@ -182,6 +191,86 @@ export const DirectorSpecificCriteria: React.FC = () => {
   const totalWeight = criteria
     .filter(c => c.is_active)
     .reduce((sum, c) => sum + c.weight, 0);
+
+  const openCloneModal = async () => {
+    setCloneSourceDeptId('');
+    setCloneMode(criteria.length > 0 ? 'replace' : 'append');
+    setCloneError('');
+    setIsCloneModalOpen(true);
+
+    // Fetch criteria counts for the other departments so the supervisor can
+    // see at a glance which sources are worth cloning from.
+    const otherDeptIds = departments.filter(d => d.id !== selectedDepartmentId).map(d => d.id);
+    if (otherDeptIds.length === 0) return;
+    const { data } = await supabase
+      .from('department_criteria')
+      .select('department_id')
+      .in('department_id', otherDeptIds);
+    const counts: Record<string, number> = {};
+    (data || []).forEach((row: any) => {
+      counts[row.department_id] = (counts[row.department_id] || 0) + 1;
+    });
+    setSourceCriteriaCount(counts);
+  };
+
+  const handleClone = async () => {
+    setCloneError('');
+    if (!cloneSourceDeptId) { setCloneError('يرجى اختيار القسم المصدر'); return; }
+    if (!selectedDepartmentId) { setCloneError('لم يتم تحديد القسم الهدف'); return; }
+    if (cloneSourceDeptId === selectedDepartmentId) { setCloneError('لا يمكن النسخ إلى نفس القسم'); return; }
+
+    setCloning(true);
+    try {
+      const { data: sourceList, error: srcError } = await supabase
+        .from('department_criteria')
+        .select('title, description, weight, order, is_active')
+        .eq('department_id', cloneSourceDeptId)
+        .order('order');
+      if (srcError) { setCloneError(srcError.message); setCloning(false); return; }
+      if (!sourceList || sourceList.length === 0) {
+        setCloneError('القسم المصدر لا يحتوي على أي معايير');
+        setCloning(false);
+        return;
+      }
+
+      // Replace mode: wipe existing target criteria first.
+      if (cloneMode === 'replace' && criteria.length > 0) {
+        const { error: delError } = await supabase
+          .from('department_criteria')
+          .delete()
+          .eq('department_id', selectedDepartmentId);
+        if (delError) { setCloneError(delError.message); setCloning(false); return; }
+      }
+
+      // Append mode: continue numbering from the existing max order.
+      const baseOrder = cloneMode === 'append' && criteria.length > 0
+        ? Math.max(...criteria.map(c => c.order))
+        : 0;
+
+      const rows = sourceList.map((c: any, idx: number) => ({
+        department_id: selectedDepartmentId,
+        directorate_id: selectedDirectorateId || null,
+        title: c.title,
+        description: c.description,
+        weight: c.weight,
+        order: baseOrder + idx + 1,
+        is_active: c.is_active,
+        created_by: user?.id || null,
+      }));
+
+      const { error: insError } = await supabase.from('department_criteria').insert(rows);
+      if (insError) { setCloneError(insError.message); setCloning(false); return; }
+
+      toast.success(`تم نسخ ${rows.length} معيار إلى القسم الحالي`);
+      setIsCloneModalOpen(false);
+      fetchCriteria();
+    } catch (e) {
+      console.error(e);
+      setCloneError('حدث خطأ أثناء النسخ');
+    } finally {
+      setCloning(false);
+    }
+  };
 
   const openAddModal = () => {
     setEditingCriterion(null);
@@ -394,10 +483,23 @@ export const DirectorSpecificCriteria: React.FC = () => {
             {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
           </p>
         </div>
-        <Button onClick={openAddModal} disabled={!selectedDirectorateId || (isMultiDept && !selectedDepartmentId)} className="flex items-center gap-2">
-          <span>إضافة معيار</span>
-          <Plus className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {isMultiDept && (
+            <Button
+              variant="outline"
+              onClick={openCloneModal}
+              disabled={!selectedDepartmentId || departments.length < 2}
+              className="flex items-center gap-2"
+            >
+              <span>نسخ من قسم آخر</span>
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
+          <Button onClick={openAddModal} disabled={!selectedDirectorateId || (isMultiDept && !selectedDepartmentId)} className="flex items-center gap-2">
+            <span>إضافة معيار</span>
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Directorate selector — only when the user manages more than one */}
@@ -734,6 +836,101 @@ export const DirectorSpecificCriteria: React.FC = () => {
             <span className="flex items-center gap-1">
               <Trash2 className="h-4 w-4" />
               <span>حذف المعيار</span>
+            </span>
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={isCloneModalOpen}
+        onClose={() => setIsCloneModalOpen(false)}
+        title="نسخ المعايير من قسم آخر"
+      >
+        <div className="space-y-4">
+          {cloneError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              {cloneError}
+            </div>
+          )}
+
+          <p className="text-sm text-gray-600">
+            اختر قسماً مصدراً لنسخ معاييره إلى القسم الحالي:{' '}
+            <span className="font-semibold text-gray-900">
+              {departments.find(d => d.id === selectedDepartmentId)?.name}
+            </span>
+          </p>
+
+          <div className="space-y-2">
+            {departments.filter(d => d.id !== selectedDepartmentId).map(d => {
+              const count = sourceCriteriaCount[d.id] || 0;
+              const disabled = count === 0;
+              return (
+                <label
+                  key={d.id}
+                  className={`flex items-center justify-between gap-3 p-3 border rounded-lg ${
+                    disabled
+                      ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                      : cloneSourceDeptId === d.id
+                      ? 'border-blue-400 bg-blue-50 cursor-pointer'
+                      : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="cloneSource"
+                      checked={cloneSourceDeptId === d.id}
+                      onChange={() => setCloneSourceDeptId(d.id)}
+                      disabled={disabled}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{d.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {count > 0 ? `${count} معيار متاح` : 'لا توجد معايير في هذا القسم'}
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+
+          {criteria.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+              <p className="text-sm font-semibold text-amber-900">
+                القسم الحالي يحتوي على {criteria.length} معيار. كيف تريد التعامل معها؟
+              </p>
+              <label className="flex items-center gap-2 text-sm text-amber-900 cursor-pointer">
+                <input
+                  type="radio"
+                  name="cloneMode"
+                  value="replace"
+                  checked={cloneMode === 'replace'}
+                  onChange={() => setCloneMode('replace')}
+                />
+                <span><span className="font-semibold">استبدال</span> — حذف جميع المعايير الحالية ثم نسخ معايير القسم المصدر</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-amber-900 cursor-pointer">
+                <input
+                  type="radio"
+                  name="cloneMode"
+                  value="append"
+                  checked={cloneMode === 'append'}
+                  onChange={() => setCloneMode('append')}
+                />
+                <span><span className="font-semibold">إضافة</span> — الإبقاء على المعايير الحالية وإضافة معايير القسم المصدر إليها (قد يتجاوز الحد المسموح)</span>
+              </label>
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={() => setIsCloneModalOpen(false)}>
+            إلغاء
+          </Button>
+          <Button type="button" onClick={handleClone} loading={cloning} disabled={!cloneSourceDeptId}>
+            <span className="flex items-center gap-1">
+              <Copy className="h-4 w-4" />
+              <span>نسخ المعايير</span>
             </span>
           </Button>
         </ModalFooter>
