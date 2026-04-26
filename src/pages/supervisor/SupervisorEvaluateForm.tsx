@@ -293,11 +293,25 @@ export const SupervisorEvaluateForm: React.FC = () => {
       (a.members || []).some(m => m.employee_id === employeeId)
     );
 
+    // Look up which criteria group (if any) this employee belongs to
+    // within the assignment. Employees not in any group simply receive no
+    // specific criteria — they're scored on general criteria only.
+    let groupId: string | null = null;
+    if (assignment) {
+      const { data: membership } = await supabase
+        .from('supervisor_criteria_group_members')
+        .select('group_id')
+        .eq('assignment_id', assignment.id)
+        .eq('employee_id', employeeId)
+        .maybeSingle();
+      groupId = membership?.group_id || null;
+    }
+
     const [{ data: general }, { data: specific }] = await Promise.all([
       supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
-      assignment
+      groupId
         ? supabase.from('supervisor_criteria').select('*')
-            .eq('assignment_id', assignment.id)
+            .eq('group_id', groupId)
             .eq('is_active', true)
             .order('order')
         : Promise.resolve({ data: [] }),

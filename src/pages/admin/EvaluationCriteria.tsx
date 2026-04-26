@@ -67,12 +67,27 @@ interface SupervisorAssignment {
 interface SupervisorCriterion {
   id: string;
   assignment_id: string;
+  group_id: string | null;
   title: string;
   description: string;
   weight: number;
   order: number;
   is_active: boolean;
   created_by: string | null;
+}
+
+interface SupCriteriaGroup {
+  id: string;
+  assignment_id: string;
+  name: string;
+  order: number;
+  is_default: boolean;
+}
+
+interface SupGroupMember {
+  group_id: string;
+  employee_id: string;
+  employee?: { full_name: string };
 }
 
 interface FormData {
@@ -129,6 +144,8 @@ export const EvaluationCriteria: React.FC = () => {
   const [supAssignments, setSupAssignments] = useState<SupervisorAssignment[]>([]);
   const [selectedSupAssignment, setSelectedSupAssignment] = useState('');
   const [supCriteria, setSupCriteria] = useState<SupervisorCriterion[]>([]);
+  const [supGroups, setSupGroups] = useState<SupCriteriaGroup[]>([]);
+  const [supGroupMembers, setSupGroupMembers] = useState<SupGroupMember[]>([]);
 
   // CEO criteria CRUD state
   const [isCeoModalOpen, setIsCeoModalOpen] = useState(false);
@@ -229,13 +246,19 @@ export const EvaluationCriteria: React.FC = () => {
   }, []);
 
   const fetchSupCriteria = useCallback(async () => {
-    if (!selectedSupAssignment) { setSupCriteria([]); return; }
-    const { data } = await supabase
-      .from('supervisor_criteria')
-      .select('*')
-      .eq('assignment_id', selectedSupAssignment)
-      .order('order', { ascending: true });
-    setSupCriteria((data || []) as SupervisorCriterion[]);
+    if (!selectedSupAssignment) { setSupCriteria([]); setSupGroups([]); setSupGroupMembers([]); return; }
+    const [criteriaRes, groupsRes, memberRes] = await Promise.all([
+      supabase.from('supervisor_criteria').select('*')
+        .eq('assignment_id', selectedSupAssignment).order('order'),
+      supabase.from('supervisor_criteria_groups').select('*')
+        .eq('assignment_id', selectedSupAssignment).order('order'),
+      supabase.from('supervisor_criteria_group_members')
+        .select('group_id, employee_id, employee:employees(full_name)')
+        .eq('assignment_id', selectedSupAssignment),
+    ]);
+    setSupCriteria((criteriaRes.data || []) as SupervisorCriterion[]);
+    setSupGroups((groupsRes.data || []) as SupCriteriaGroup[]);
+    setSupGroupMembers((memberRes.data || []) as unknown as SupGroupMember[]);
   }, [selectedSupAssignment]);
 
   useEffect(() => {
@@ -1333,78 +1356,107 @@ export const EvaluationCriteria: React.FC = () => {
                 />
               </CardBody>
             </Card>
-          ) : (
+          ) : supGroups.length === 0 ? (
             <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-teal-500" />
-                  <h2 className="text-lg font-bold text-gray-900">المعايير الخاصة بالمشرفين</h2>
-                  <Badge variant="info" size="sm">
-                    {supCriteria.filter(c => c.is_active).length} معيار نشط
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardBody className="p-0">
-                {supCriteria.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500 text-sm">
-                    لم يتم تحديد معايير خاصة لهذا المشرف بعد
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-8"> </TableHead>
-                        <TableHead>المعيار</TableHead>
-                        <TableHead>الوصف</TableHead>
-                        <TableHead>الحالة</TableHead>
-                        <TableHead>الوزن</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {supCriteria.map(c => {
-                        const isExpanded = expandedCriterionId === c.id;
-                        return (
-                          <React.Fragment key={c.id}>
-                            <TableRow
-                              className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-teal-50/40' : ''}`}
-                              onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
-                            >
-                              <TableCell className="text-gray-400">
-                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                              </TableCell>
-                              <TableCell>
-                                <span className="font-bold text-gray-900">{c.title}</span>
-                              </TableCell>
-                              <TableCell>
-                                <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
-                                  {c.is_active ? 'نشط' : 'معطل'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <span className="font-bold text-teal-600">{c.weight}%</span>
-                              </TableCell>
-                            </TableRow>
-                            {isExpanded && (
-                              <TableRow className="bg-teal-50/40">
-                                <TableCell colSpan={5} className="!whitespace-normal">
-                                  <div className="px-2 py-1">
-                                    <p className="text-xs font-semibold text-teal-700 mb-1">الوصف الكامل</p>
-                                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
+              <CardBody>
+                <EmptyState
+                  message="لم يقم المشرف بإنشاء أي مجموعة معايير بعد"
+                  icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+                />
               </CardBody>
             </Card>
+          ) : (
+            supGroups.map(group => {
+              const list = supCriteria.filter(c => c.group_id === group.id);
+              const groupMembers = supGroupMembers.filter(m => m.group_id === group.id);
+              const total = list.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+              return (
+                <Card key={group.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="w-3 h-3 rounded-full bg-teal-500" />
+                        <h2 className="text-lg font-bold text-gray-900">{group.name}</h2>
+                        {group.is_default && <Badge variant="info" size="sm">افتراضية</Badge>}
+                        <span className="text-sm text-gray-600">
+                          {groupMembers.length === 0
+                            ? 'بدون موظفين'
+                            : `${groupMembers.length} موظف: ${groupMembers.map(m => m.employee?.full_name || '').join('، ')}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={total === specificWeightLimit ? 'success' : 'warning'} size="sm">
+                          المجموع: {total}% / {specificWeightLimit}%
+                        </Badge>
+                        <Badge variant="info" size="sm">
+                          {list.filter(c => c.is_active).length} معيار نشط
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="p-0">
+                    {list.length === 0 ? (
+                      <div className="p-6 text-center text-gray-500 text-sm">
+                        لا توجد معايير في هذه المجموعة
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-8"> </TableHead>
+                            <TableHead>المعيار</TableHead>
+                            <TableHead>الوصف</TableHead>
+                            <TableHead>الحالة</TableHead>
+                            <TableHead>الوزن</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {list.map(c => {
+                            const isExpanded = expandedCriterionId === c.id;
+                            return (
+                              <React.Fragment key={c.id}>
+                                <TableRow
+                                  className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-teal-50/40' : ''}`}
+                                  onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
+                                >
+                                  <TableCell className="text-gray-400">
+                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="font-bold text-gray-900">{c.title}</span>
+                                  </TableCell>
+                                  <TableCell>
+                                    <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
+                                      {c.is_active ? 'نشط' : 'معطل'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="font-bold text-teal-600">{c.weight}%</span>
+                                  </TableCell>
+                                </TableRow>
+                                {isExpanded && (
+                                  <TableRow className="bg-teal-50/40">
+                                    <TableCell colSpan={5} className="!whitespace-normal">
+                                      <div className="px-2 py-1">
+                                        <p className="text-xs font-semibold text-teal-700 mb-1">الوصف الكامل</p>
+                                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardBody>
+                </Card>
+              );
+            })
           )}
         </>
       )}
