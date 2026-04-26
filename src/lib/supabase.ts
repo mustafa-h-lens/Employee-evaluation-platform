@@ -137,7 +137,8 @@ export type Database = {
   };
   department_criteria: {
     id: string;
-    department_id: string;
+    department_id: string | null;
+    directorate_id: string | null;
     title: string;
     description: string;
     weight: number;

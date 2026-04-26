@@ -7,6 +7,7 @@ import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { CreditCard as Edit, Trash2, Users, AlertTriangle, UserPlus, Plus, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { RegisterUserModal } from '../../components/ui/RegisterUserModal';
 
 interface DirAssignment {
@@ -64,6 +65,7 @@ export const Employees: React.FC = () => {
     { directorate_id: '', department_id: '', is_primary: true, job_title: '' }
   ]);
   const { user } = useAuth();
+  const toast = useToast();
 
   useEffect(() => {
     fetchEmployees();
@@ -145,6 +147,18 @@ export const Employees: React.FC = () => {
     const validAssignments = dirAssignments.filter(a => a.directorate_id);
     // Use primary assignment's job_title as the main job_title
     const effectiveJobTitle = primary?.job_title || formData.job_title;
+
+    // Enforce: when a chosen directorate has any departments, the assignment
+    // must include a department. Without this, criteria lookup during
+    // evaluation would not know which department's list to use.
+    for (const a of validAssignments) {
+      const dirDepts = getFilteredDepts(a.directorate_id);
+      if (dirDepts.length > 0 && !a.department_id) {
+        const dir = directoratesList.find(d => d.id === a.directorate_id);
+        toast.error(`الإدارة "${dir?.name || ''}" تحتوي على أقسام — يجب اختيار قسم للموظف.`);
+        return;
+      }
+    }
 
     try {
       if (editingEmployee) {

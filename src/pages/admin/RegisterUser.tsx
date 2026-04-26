@@ -106,6 +106,18 @@ export const RegisterUser: React.FC = () => {
       const primary = dirAssignments.find(a => a.is_primary) || dirAssignments[0];
       const validAssignments = dirAssignments.filter(a => a.directorate_id);
 
+      // Enforce: when a chosen directorate has any departments, the assignment
+      // must include a department.
+      for (const a of validAssignments) {
+        const dirDepts = getFilteredDepts(a.directorate_id);
+        if (dirDepts.length > 0 && !a.department_id) {
+          const dir = directorates.find(d => d.id === a.directorate_id);
+          setFeedback({ type: 'error', message: `الإدارة "${dir?.name || ''}" تحتوي على أقسام — يجب اختيار قسم للموظف.` });
+          setLoading(false);
+          return;
+        }
+      }
+
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=create-user`;
 
       const response = await fetch(apiUrl, {

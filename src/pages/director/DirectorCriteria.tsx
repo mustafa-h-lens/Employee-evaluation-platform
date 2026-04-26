@@ -42,6 +42,12 @@ interface DirectorateOption {
   name: string;
 }
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+  directorate_id: string;
+}
+
 interface FormData {
   title: string;
   description: string;
@@ -76,7 +82,12 @@ export const DirectorSpecificCriteria: React.FC = () => {
   // Director may manage multiple directorates (and co-manage with a peer).
   const [myDirectorates, setMyDirectorates] = useState<DirectorateOption[]>([]);
   const [selectedDirectorateId, setSelectedDirectorateId] = useState<string>('');
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const isMultiDept = departments.length >= 2;
+  const activeScope: 'directorate' | 'department' = isMultiDept ? 'department' : 'directorate';
 
   const fetchSettings = useCallback(async () => {
     // Prefer the active period's weight, since HR sets weights per period.
@@ -110,18 +121,39 @@ export const DirectorSpecificCriteria: React.FC = () => {
     if (list.length === 0) setLoading(false);
   }, [user]);
 
+  const fetchDepartments = useCallback(async () => {
+    if (!selectedDirectorateId) { setDepartments([]); return; }
+    const { data } = await supabase
+      .from('departments')
+      .select('id, name, directorate_id')
+      .eq('directorate_id', selectedDirectorateId)
+      .eq('status', 'active')
+      .order('name');
+    const list = (data || []) as DepartmentOption[];
+    setDepartments(list);
+    // When directorate changes, default to first department (only matters in multi-dept mode)
+    if (list.length >= 2) {
+      setSelectedDepartmentId(prev => list.some(d => d.id === prev) ? prev : list[0].id);
+    } else {
+      setSelectedDepartmentId('');
+    }
+  }, [selectedDirectorateId]);
+
   const fetchCriteria = useCallback(async () => {
     if (!selectedDirectorateId) { setLoading(false); return; }
+    if (activeScope === 'department' && !selectedDepartmentId) { setCriteria([]); setLoading(false); return; }
     try {
-      // Scoped by directorate so co-directors share the same criteria list
-      // for a directorate they jointly manage. Each director can still keep
-      // distinct criteria per directorate they alone run.
-      const { data, error } = await supabase
+      // Multi-department directorates: criteria are scoped per department (each
+      // department has its own list, summing to the specific-weight cap).
+      // Single-department / no-department directorates: directorate-level list.
+      const query = supabase
         .from('department_criteria')
         .select('*')
-        .is('department_id', null)
-        .eq('directorate_id', selectedDirectorateId)
         .order('order', { ascending: true });
+
+      const { data, error } = activeScope === 'department'
+        ? await query.eq('department_id', selectedDepartmentId)
+        : await query.is('department_id', null).eq('directorate_id', selectedDirectorateId);
 
       if (!error && data) setCriteria(data);
     } catch (error) {
@@ -129,7 +161,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDirectorateId]);
+  }, [selectedDirectorateId, selectedDepartmentId, activeScope]);
 
   useEffect(() => {
     fetchSettings();
@@ -140,8 +172,12 @@ export const DirectorSpecificCriteria: React.FC = () => {
   }, [user, fetchDirectorates]);
 
   useEffect(() => {
+    if (selectedDirectorateId) fetchDepartments();
+  }, [selectedDirectorateId, fetchDepartments]);
+
+  useEffect(() => {
     if (selectedDirectorateId) fetchCriteria();
-  }, [selectedDirectorateId, fetchCriteria]);
+  }, [selectedDirectorateId, selectedDepartmentId, activeScope, fetchCriteria]);
 
   const totalWeight = criteria
     .filter(c => c.is_active)
@@ -228,7 +264,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
         const { error } = await supabase
           .from('department_criteria')
           .insert({
-            department_id: null,
+            department_id: activeScope === 'department' ? selectedDepartmentId : null,
             directorate_id: selectedDirectorateId || null,
             title: formData.title.trim(),
             description: formData.description.trim(),
@@ -358,7 +394,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
             {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
           </p>
         </div>
-        <Button onClick={openAddModal} disabled={!selectedDirectorateId} className="flex items-center gap-2">
+        <Button onClick={openAddModal} disabled={!selectedDirectorateId || (isMultiDept && !selectedDepartmentId)} className="flex items-center gap-2">
           <span>إضافة معيار</span>
           <Plus className="h-5 w-5" />
         </Button>
@@ -389,6 +425,26 @@ export const DirectorSpecificCriteria: React.FC = () => {
             <span className="text-sm text-blue-900 font-medium">{currentDirectorate.name}</span>
           </div>
         )
+      )}
+
+      {/* Department selector — only for directorates with 2+ departments */}
+      {isMultiDept && (
+        <Card>
+          <CardBody className="flex items-center gap-3 flex-wrap py-3">
+            <ClipboardList className="h-5 w-5 text-emerald-600" />
+            <label className="text-sm font-medium text-gray-700">القسم:</label>
+            <select
+              value={selectedDepartmentId}
+              onChange={(e) => setSelectedDepartmentId(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+            <span className="text-xs text-gray-500">— هذه الإدارة تحتوي على عدة أقسام، ولكل قسم قائمة معاييره الخاصة.</span>
+          </CardBody>
+        </Card>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

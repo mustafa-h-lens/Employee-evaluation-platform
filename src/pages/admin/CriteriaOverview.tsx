@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { ClipboardList, Building2, Scale, Filter } from 'lucide-react';
+import { ClipboardList, Building2, Scale, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface GeneralCriterion {
   id: string;
@@ -16,7 +16,8 @@ interface GeneralCriterion {
 
 interface DeptCriterion {
   id: string;
-  department_id: string;
+  department_id: string | null;
+  directorate_id: string | null;
   title: string;
   description: string;
   weight: number;
@@ -24,29 +25,37 @@ interface DeptCriterion {
   is_active: boolean;
 }
 
-interface Department {
+interface Directorate {
   id: string;
   name: string;
 }
 
+interface Department {
+  id: string;
+  name: string;
+  directorate_id: string;
+}
+
 export const CriteriaOverview: React.FC = () => {
   const [generalCriteria, setGeneralCriteria] = useState<GeneralCriterion[]>([]);
+  const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [directoratesCount, setDirectoratesCount] = useState(0);
+  const [dirCriteriaMap, setDirCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
   const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
-  const [selectedDeptId, setSelectedDeptId] = useState<string>('all');
+  const [selectedDirId, setSelectedDirId] = useState<string>('all');
   const [generalWeight, setGeneralWeight] = useState(50);
   const [specificWeight, setSpecificWeight] = useState(50);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [settingsRes, criteriaRes, deptsRes, deptCriteriaRes, dirCountRes] = await Promise.all([
+      const [settingsRes, criteriaRes, dirsRes, deptsRes, deptCriteriaRes] = await Promise.all([
         supabase.from('evaluation_settings').select('*').limit(1).single(),
         supabase.from('evaluation_criteria').select('*').order('order'),
-        supabase.from('departments').select('id, name').eq('status', 'active').order('name'),
+        supabase.from('directorates').select('id, name').order('name'),
+        supabase.from('departments').select('id, name, directorate_id').eq('status', 'active').order('name'),
         supabase.from('department_criteria').select('*').order('order'),
-        supabase.from('directorates').select('*', { count: 'exact', head: true }),
       ]);
 
       if (settingsRes.data) {
@@ -55,15 +64,20 @@ export const CriteriaOverview: React.FC = () => {
       }
 
       setGeneralCriteria(criteriaRes.data || []);
+      setDirectorates((dirsRes.data as unknown as Directorate[]) || []);
       setDepartments((deptsRes.data as unknown as Department[]) || []);
-      setDirectoratesCount(dirCountRes.count || 0);
 
-      const map: Record<string, DeptCriterion[]> = {};
+      const dirMap: Record<string, DeptCriterion[]> = {};
+      const deptMap: Record<string, DeptCriterion[]> = {};
       (deptCriteriaRes.data || []).forEach((c: DeptCriterion) => {
-        if (!map[c.department_id]) map[c.department_id] = [];
-        map[c.department_id].push(c);
+        if (c.department_id) {
+          (deptMap[c.department_id] ||= []).push(c);
+        } else if (c.directorate_id) {
+          (dirMap[c.directorate_id] ||= []).push(c);
+        }
       });
-      setDeptCriteriaMap(map);
+      setDirCriteriaMap(dirMap);
+      setDeptCriteriaMap(deptMap);
     } catch (error) {
       console.error('Error fetching criteria overview:', error);
     } finally {
@@ -80,7 +94,7 @@ export const CriteriaOverview: React.FC = () => {
   }
 
   const generalTotal = generalCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
-  const filteredDepts = selectedDeptId === 'all' ? departments : departments.filter(d => d.id === selectedDeptId);
+  const filteredDirs = selectedDirId === 'all' ? directorates : directorates.filter(d => d.id === selectedDirId);
 
   return (
     <div className="space-y-6">
@@ -121,7 +135,7 @@ export const CriteriaOverview: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">عدد الإدارات</p>
-                <p className="text-xl font-bold text-gray-900">{directoratesCount}</p>
+                <p className="text-xl font-bold text-gray-900">{directorates.length}</p>
               </div>
               <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
                 <Building2 className="h-6 w-6" />
@@ -152,6 +166,7 @@ export const CriteriaOverview: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8"> </TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>الوزن</TableHead>
                   <TableHead>الوصف</TableHead>
@@ -159,97 +174,24 @@ export const CriteriaOverview: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {generalCriteria.map(c => (
-                  <TableRow key={c.id} className={!c.is_active ? 'opacity-60 bg-gray-50' : ''}>
-                    <TableCell>
-                      <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
-                        {c.is_active ? 'نشط' : 'معطل'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-bold text-blue-600">{c.weight}%</span>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-bold text-gray-900">{c.title}</span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* Department Filter */}
-      <div className="flex items-center gap-3">
-        <Filter className="h-5 w-5 text-gray-500" />
-        <label className="text-sm font-medium text-gray-700">عرض المعايير الخاصة لـ:</label>
-        <select
-          value={selectedDeptId}
-          onChange={(e) => setSelectedDeptId(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
-        >
-          <option value="all">جميع الإدارات</option>
-          {departments.map(dept => (
-            <option key={dept.id} value={dept.id}>{dept.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Specific Criteria Per Department */}
-      {filteredDepts.map(dept => {
-        const deptCriteria = deptCriteriaMap[dept.id] || [];
-        const activeCriteria = deptCriteria.filter(c => c.is_active);
-        const deptTotal = activeCriteria.reduce((s, c) => s + c.weight, 0);
-
-        return (
-          <Card key={dept.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">{dept.name}</h2>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={deptTotal === specificWeight ? 'success' : 'warning'} size="sm">
-                    المجموع: {deptTotal}% / {specificWeight}%
-                  </Badge>
-                  <Badge variant="info" size="sm">
-                    {activeCriteria.length} معيار
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody className="p-0">
-              {deptCriteria.length === 0 ? (
-                <div className="p-6 text-center text-gray-500 text-sm">
-                  لم يتم تحديد معايير خاصة لهذه الإدارة بعد
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead>الوزن</TableHead>
-                      <TableHead>الوصف</TableHead>
-                      <TableHead>المعيار</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {deptCriteria.map(c => (
-                      <TableRow key={c.id} className={!c.is_active ? 'opacity-60 bg-gray-50' : ''}>
+                {generalCriteria.map(c => {
+                  const isExpanded = expandedId === c.id;
+                  return (
+                    <React.Fragment key={c.id}>
+                      <TableRow
+                        className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
+                        onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                      >
+                        <TableCell className="text-gray-400">
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
                             {c.is_active ? 'نشط' : 'معطل'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="font-bold text-emerald-600">{c.weight}%</span>
+                          <span className="font-bold text-blue-600">{c.weight}%</span>
                         </TableCell>
                         <TableCell>
                           <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
@@ -258,13 +200,147 @@ export const CriteriaOverview: React.FC = () => {
                           <span className="font-bold text-gray-900">{c.title}</span>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
-        );
+                      {isExpanded && (
+                        <TableRow className="bg-blue-50/40">
+                          <TableCell colSpan={5} className="!whitespace-normal">
+                            <div className="px-2 py-1">
+                              <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
+                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Directorate Filter */}
+      <div className="flex items-center gap-3">
+        <Filter className="h-5 w-5 text-gray-500" />
+        <label className="text-sm font-medium text-gray-700">عرض المعايير الخاصة لـ:</label>
+        <select
+          value={selectedDirId}
+          onChange={(e) => setSelectedDirId(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+        >
+          <option value="all">جميع الإدارات</option>
+          {directorates.map(dir => (
+            <option key={dir.id} value={dir.id}>{dir.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Specific Criteria — per department for multi-dept directorates, per directorate otherwise */}
+      {filteredDirs.flatMap(dir => {
+        const dirDepts = departments.filter(d => d.directorate_id === dir.id);
+        const groups: Array<{ key: string; title: string; subtitle?: string; list: DeptCriterion[] }> =
+          dirDepts.length >= 2
+            ? dirDepts.map(dep => ({
+                key: `dep-${dep.id}`,
+                title: dir.name,
+                subtitle: dep.name,
+                list: deptCriteriaMap[dep.id] || [],
+              }))
+            : [{
+                key: `dir-${dir.id}`,
+                title: dir.name,
+                list: dirCriteriaMap[dir.id] || [],
+              }];
+
+        return groups.map(group => {
+          const active = group.list.filter(c => c.is_active);
+          const total = active.reduce((s, c) => s + c.weight, 0);
+          return (
+            <Card key={group.key}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">{group.title}</h2>
+                      {group.subtitle && (
+                        <p className="text-sm text-gray-500 mt-0.5">قسم: {group.subtitle}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={total === specificWeight ? 'success' : 'warning'} size="sm">
+                      المجموع: {total}% / {specificWeight}%
+                    </Badge>
+                    <Badge variant="info" size="sm">
+                      {active.length} معيار
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody className="p-0">
+                {group.list.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 text-sm">
+                    لم يتم تحديد معايير خاصة بعد
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8"> </TableHead>
+                        <TableHead>الحالة</TableHead>
+                        <TableHead>الوزن</TableHead>
+                        <TableHead>الوصف</TableHead>
+                        <TableHead>المعيار</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {group.list.map(c => {
+                        const isExpanded = expandedId === c.id;
+                        return (
+                          <React.Fragment key={c.id}>
+                            <TableRow
+                              className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                              onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                            >
+                              <TableCell className="text-gray-400">
+                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
+                                  {c.is_active ? 'نشط' : 'معطل'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-bold text-emerald-600">{c.weight}%</span>
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-bold text-gray-900">{c.title}</span>
+                              </TableCell>
+                            </TableRow>
+                            {isExpanded && (
+                              <TableRow className="bg-emerald-50/40">
+                                <TableCell colSpan={5} className="!whitespace-normal">
+                                  <div className="px-2 py-1">
+                                    <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardBody>
+            </Card>
+          );
+        });
       })}
     </div>
   );

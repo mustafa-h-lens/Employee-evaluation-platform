@@ -16,7 +16,9 @@ import {
   ArrowDown,
   Scale,
   GripVertical,
-  EyeOff
+  EyeOff,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -61,6 +63,7 @@ export const DirectorCriteria: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchSettings = useCallback(async () => {
     const { data: period } = await supabase
@@ -391,6 +394,7 @@ export const DirectorCriteria: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8"> </TableHead>
                   <TableHead>المعيار</TableHead>
                   <TableHead>الوصف</TableHead>
                   <TableHead>الحالة</TableHead>
@@ -400,82 +404,104 @@ export const DirectorCriteria: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {criteria.map((criterion, index) => (
-                  <TableRow key={criterion.id} className={!criterion.is_active ? 'opacity-60 bg-gray-50' : ''}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <GripVertical className="h-4 w-4" />
-                        </div>
-                        <span className="font-bold text-gray-900">{criterion.title}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={criterion.is_active ? 'success' : 'default'}>
-                        {criterion.is_active ? 'نشط' : 'معطل'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleReorder(criterion, 'up')}
-                          disabled={index === 0}
-                          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </button>
-                        <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
-                        <button
-                          onClick={() => handleReorder(criterion, 'down')}
-                          disabled={index === criteria.length - 1}
-                          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-purple-600 h-2 rounded-full transition-all"
-                            style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
-                          />
-                        </div>
-                        <span className="font-bold text-purple-600">{criterion.weight}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEditModal(criterion)}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span>تعديل</span>
-                        </Button>
-                        <Toggle
-                          checked={criterion.is_active}
-                          onChange={() => handleToggleActive(criterion)}
-                          size="sm"
-                        />
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => confirmDelete(criterion)}
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {criteria.map((criterion, index) => {
+                  const isExpanded = expandedId === criterion.id;
+                  const stop = (e: React.MouseEvent) => e.stopPropagation();
+                  return (
+                    <React.Fragment key={criterion.id}>
+                      <TableRow
+                        className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
+                        onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
+                      >
+                        <TableCell className="text-gray-400">
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <GripVertical className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-gray-900">{criterion.title}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={criterion.is_active ? 'success' : 'default'}>
+                            {criterion.is_active ? 'نشط' : 'معطل'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1" onClick={stop}>
+                            <button
+                              onClick={() => handleReorder(criterion, 'up')}
+                              disabled={index === 0}
+                              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </button>
+                            <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                            <button
+                              onClick={() => handleReorder(criterion, 'down')}
+                              disabled={index === criteria.length - 1}
+                              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-purple-600 h-2 rounded-full transition-all"
+                                style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
+                              />
+                            </div>
+                            <span className="font-bold text-purple-600">{criterion.weight}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2" onClick={stop}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditModal(criterion)}
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span>تعديل</span>
+                            </Button>
+                            <Toggle
+                              checked={criterion.is_active}
+                              onChange={() => handleToggleActive(criterion)}
+                              size="sm"
+                            />
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => confirmDelete(criterion)}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow className="bg-purple-50/40">
+                          <TableCell colSpan={7} className="!whitespace-normal">
+                            <div className="px-2 py-1">
+                              <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
+                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

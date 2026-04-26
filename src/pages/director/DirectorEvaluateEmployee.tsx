@@ -17,7 +17,7 @@ interface EmployeeInfo {
   full_name: string;
   job_title: string;
   email: string;
-  department_id: string;
+  department_id: string | null;
   directorate_id?: string | null;
   department_name?: string;
   employee_number?: string;
@@ -210,24 +210,24 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       // Find employees assigned to ALL directorates (via junction table + legacy)
       const { data: assignmentData } = await supabase
         .from('employee_directorates')
-        .select('employee_id, directorate_id')
+        .select('employee_id, directorate_id, department_id')
         .in('directorate_id', dirIds);
 
-      const empDirMap = new Map<string, string>();
+      const empDirMap = new Map<string, { directorate_id: string; department_id: string | null }>();
       (assignmentData || []).forEach((a: any) => {
         if (!empDirMap.has(a.employee_id)) {
-          empDirMap.set(a.employee_id, a.directorate_id);
+          empDirMap.set(a.employee_id, { directorate_id: a.directorate_id, department_id: a.department_id || null });
         }
       });
 
       const { data: legacyEmps } = await supabase
         .from('employees')
-        .select('id, directorate_id')
+        .select('id, directorate_id, department_id')
         .in('directorate_id', dirIds);
 
       (legacyEmps || []).forEach((e: any) => {
         if (!empDirMap.has(e.id) && e.directorate_id) {
-          empDirMap.set(e.id, e.directorate_id);
+          empDirMap.set(e.id, { directorate_id: e.directorate_id, department_id: e.department_id || null });
         }
       });
 
@@ -295,11 +295,15 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       });
 
       setAllEmployees(employees.map(e => {
-        const dId = empDirMap.get(e.id) || e.directorate_id;
+        const assign = empDirMap.get(e.id);
+        const dId = assign?.directorate_id || e.directorate_id;
+        const deptId = assign?.department_id || e.department_id || null;
         const peer = dId ? dirPeerMap.get(dId) : null;
         const peerEval = peerEvalMap.get(e.id);
         return {
           ...e,
+          directorate_id: dId,
+          department_id: deptId,
           department_name: dId ? (dirNameMap.get(dId) || '') : '',
           eval_status: myEvalMap.get(e.id)?.status || null,
           eval_rating: myEvalMap.get(e.id)?.rating || null,
@@ -346,17 +350,38 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
   const fetchCriteria = useCallback(async () => {
     if (!user) return;
-    // Specific criteria are scoped to the employee's directorate, so both
-    // co-directors evaluate against the same set.
-    const employeeDirectorateId = employee?.directorate_id || allEmployees.find(e => e.id === employeeId)?.directorate_id;
+    // Multi-department directorates: criteria scoped per the employee's department.
+    // Single-department / no-department directorates: directorate-level list.
+    const empRef = employee || allEmployees.find(e => e.id === employeeId);
+    const employeeDirectorateId = empRef?.directorate_id || null;
+    const employeeDepartmentId = empRef?.department_id || null;
+
+    let specificQuery: any = null;
+    if (employeeDirectorateId) {
+      const { count } = await supabase
+        .from('departments')
+        .select('id', { count: 'exact', head: true })
+        .eq('directorate_id', employeeDirectorateId)
+        .eq('status', 'active');
+      const deptCount = count || 0;
+      if (deptCount >= 2 && employeeDepartmentId) {
+        specificQuery = supabase.from('department_criteria').select('*')
+          .eq('department_id', employeeDepartmentId)
+          .eq('is_active', true)
+          .order('order');
+      } else if (deptCount <= 1) {
+        specificQuery = supabase.from('department_criteria').select('*')
+          .is('department_id', null)
+          .eq('directorate_id', employeeDirectorateId)
+          .eq('is_active', true)
+          .order('order');
+      }
+    }
+
     const [{ data: general }, { data: specific }] = await Promise.all([
       supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
-      employeeDirectorateId
-        ? supabase.from('department_criteria').select('*')
-            .is('department_id', null)
-            .eq('directorate_id', employeeDirectorateId)
-            .eq('is_active', true)
-            .order('order')
+      specificQuery
+        ? specificQuery
         : Promise.resolve({ data: [] }),
     ]);
     setCriteria(general || []);
