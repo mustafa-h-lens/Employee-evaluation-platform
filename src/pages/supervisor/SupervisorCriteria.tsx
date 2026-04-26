@@ -244,6 +244,15 @@ export const SupervisorCriteria: React.FC = () => {
           .update({ name: groupForm.name.trim() })
           .eq('id', editingGroup.id);
         if (error) { setGroupError(error.message); setSavingGroup(false); return; }
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'تحديث مجموعة معايير مشرف',
+            entity_type: 'supervisor_criteria_groups',
+            entity_id: editingGroup.id,
+            details: { name: groupForm.name.trim(), assignment_id: selectedAssignment },
+          });
+        }
       } else {
         const maxOrder = groups.length > 0 ? Math.max(...groups.map(g => g.order)) : 0;
         const { data, error } = await supabase
@@ -258,6 +267,15 @@ export const SupervisorCriteria: React.FC = () => {
           .select().single();
         if (error || !data) { setGroupError(error?.message || 'فشل إنشاء المجموعة'); setSavingGroup(false); return; }
         groupId = data.id;
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'إنشاء مجموعة معايير مشرف',
+            entity_type: 'supervisor_criteria_groups',
+            entity_id: data.id,
+            details: { name: groupForm.name.trim(), assignment_id: selectedAssignment },
+          });
+        }
       }
 
       // Diff member set: each toggled employee must move from old group → new (or unassigned).
@@ -291,6 +309,16 @@ export const SupervisorCriteria: React.FC = () => {
           })));
       }
 
+      if (user && (toAdd.length > 0 || toRemove.length > 0)) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'تحديث أعضاء مجموعة معايير مشرف',
+          entity_type: 'supervisor_criteria_group_members',
+          entity_id: groupId!,
+          details: { added: toAdd, removed: toRemove, assignment_id: selectedAssignment },
+        });
+      }
+
       setIsGroupModalOpen(false);
       setEditingGroup(null);
       fetchData();
@@ -316,6 +344,15 @@ export const SupervisorCriteria: React.FC = () => {
       const { error } = await supabase
         .from('supervisor_criteria_groups').delete().eq('id', deleteGroupTarget.id);
       if (error) { toast.error(error.message); return; }
+      if (user) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'حذف مجموعة معايير مشرف',
+          entity_type: 'supervisor_criteria_groups',
+          entity_id: deleteGroupTarget.id,
+          details: { name: deleteGroupTarget.name, assignment_id: selectedAssignment },
+        });
+      }
       toast.success('تم حذف المجموعة');
       setIsDeleteGroupModalOpen(false);
       setDeleteGroupTarget(null);
@@ -377,10 +414,19 @@ export const SupervisorCriteria: React.FC = () => {
           is_active: criterionForm.is_active,
         }).eq('id', editingCriterion.id);
         if (error) { setCriterionError(error.message); return; }
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'تحديث معيار خاص بالمشرف',
+            entity_type: 'supervisor_criteria',
+            entity_id: editingCriterion.id,
+            details: { title: criterionForm.title, weight, group_id: criterionGroupId, assignment_id: selectedAssignment },
+          });
+        }
       } else {
         const groupList = criteriaByGroup[criterionGroupId] || [];
         const maxOrder = groupList.length > 0 ? Math.max(...groupList.map(c => c.order)) : 0;
-        const { error } = await supabase.from('supervisor_criteria').insert({
+        const { data, error } = await supabase.from('supervisor_criteria').insert({
           assignment_id: selectedAssignment,
           group_id: criterionGroupId,
           title: criterionForm.title.trim(),
@@ -389,8 +435,17 @@ export const SupervisorCriteria: React.FC = () => {
           order: maxOrder + 1,
           is_active: criterionForm.is_active,
           created_by: user?.id || null,
-        });
+        }).select().single();
         if (error) { setCriterionError(error.message); return; }
+        if (user && data) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'إضافة معيار خاص بالمشرف',
+            entity_type: 'supervisor_criteria',
+            entity_id: data.id,
+            details: { title: criterionForm.title, weight, group_id: criterionGroupId, assignment_id: selectedAssignment },
+          });
+        }
       }
       setIsCriterionModalOpen(false);
       setEditingCriterion(null);
@@ -413,7 +468,18 @@ export const SupervisorCriteria: React.FC = () => {
     }
     const { error } = await supabase.from('supervisor_criteria')
       .update({ is_active: newActive }).eq('id', criterion.id);
-    if (!error) fetchData();
+    if (!error) {
+      if (user) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: newActive ? 'تفعيل معيار مشرف' : 'تعطيل معيار مشرف',
+          entity_type: 'supervisor_criteria',
+          entity_id: criterion.id,
+          details: { title: criterion.title, is_active: newActive },
+        });
+      }
+      fetchData();
+    }
   };
 
   const handleReorderCriterion = async (criterion: SupervisorCriterion, direction: 'up' | 'down') => {
@@ -441,6 +507,15 @@ export const SupervisorCriteria: React.FC = () => {
       const { error } = await supabase.from('supervisor_criteria')
         .delete().eq('id', deleteCriterionTarget.id);
       if (!error) {
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'حذف معيار خاص بالمشرف',
+            entity_type: 'supervisor_criteria',
+            entity_id: deleteCriterionTarget.id,
+            details: { title: deleteCriterionTarget.title, group_id: deleteCriterionTarget.group_id },
+          });
+        }
         setIsDeleteCriterionModalOpen(false);
         setDeleteCriterionTarget(null);
         fetchData();

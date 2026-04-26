@@ -324,6 +324,20 @@ export const SupervisorAssignments: React.FC = () => {
         if (membersError) throw membersError;
       }
 
+      // Orphan-cleanup: criteria group memberships for employees no longer in
+      // the assignment must be removed; there is no FK between
+      // supervisor_assignment_members and supervisor_criteria_group_members,
+      // so the cascade-delete doesn't reach them.
+      const newIds = Array.from(form.selected_employee_ids);
+      const orphanQuery = supabase
+        .from('supervisor_criteria_group_members')
+        .delete()
+        .eq('assignment_id', assignmentId);
+      const { error: orphanError } = await (newIds.length > 0
+        ? orphanQuery.not('employee_id', 'in', `(${newIds.join(',')})`)
+        : orphanQuery);
+      if (orphanError) throw orphanError;
+
       setFeedback({ type: 'success', message: editingAssignment ? 'تم تحديث التعيين بنجاح' : 'تم إنشاء التعيين بنجاح' });
       setTimeout(() => {
         setIsModalOpen(false);
