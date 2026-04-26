@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 interface SupervisorCriterion {
   id: string;
@@ -54,6 +55,7 @@ const defaultFormData: FormData = {
 
 export const SupervisorCriteria: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [criteria, setCriteria] = useState<SupervisorCriterion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -160,6 +162,23 @@ export const SupervisorCriteria: React.FC = () => {
     if (!weight || weight < 1 || weight > 100) { setFormError('يرجى إدخال وزن صحيح (1-100)'); setSaving(false); return; }
     if (!selectedAssignment) { setFormError('لم يتم العثور على مهمة الإشراف'); setSaving(false); return; }
 
+    // Enforce per-supervisor weight cap. Sum the weights of every other
+    // active criterion (exclude the row currently being edited) plus the
+    // proposed weight; if it exceeds the limit, reject before hitting the
+    // database.
+    const willBeActive = formData.is_active;
+    if (willBeActive) {
+      const othersActive = criteria
+        .filter(c => c.is_active && c.id !== editingCriterion?.id)
+        .reduce((sum, c) => sum + c.weight, 0);
+      const projected = othersActive + weight;
+      if (projected > specificWeightLimit) {
+        setFormError(`لا يمكن تجاوز الحد المسموح (${specificWeightLimit}%). المجموع بعد الإضافة سيصبح ${projected}% — قلّل الوزن أو عطّل أحد المعايير النشطة.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       if (editingCriterion) {
         const { error } = await supabase
@@ -255,6 +274,17 @@ export const SupervisorCriteria: React.FC = () => {
 
   const handleToggleActive = async (criterion: SupervisorCriterion) => {
     const newActive = !criterion.is_active;
+    // Block re-activating if the resulting sum would exceed the limit.
+    if (newActive) {
+      const othersActive = criteria
+        .filter(c => c.is_active && c.id !== criterion.id)
+        .reduce((sum, c) => sum + c.weight, 0);
+      const projected = othersActive + criterion.weight;
+      if (projected > specificWeightLimit) {
+        toast.error(`لا يمكن تفعيل هذا المعيار — المجموع سيصبح ${projected}% ويتجاوز الحد المسموح (${specificWeightLimit}%).`);
+        return;
+      }
+    }
     const { error } = await supabase.from('supervisor_criteria').update({ is_active: newActive }).eq('id', criterion.id);
     if (!error) {
       if (user) {

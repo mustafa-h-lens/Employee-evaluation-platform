@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 interface DeptCriterion {
   id: string;
@@ -55,6 +56,7 @@ const defaultFormData: FormData = {
 
 export const DirectorSpecificCriteria: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [criteria, setCriteria] = useState<DeptCriterion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -186,6 +188,18 @@ export const DirectorSpecificCriteria: React.FC = () => {
       return;
     }
 
+    if (formData.is_active) {
+      const othersActive = criteria
+        .filter(c => c.is_active && c.id !== editingCriterion?.id)
+        .reduce((sum, c) => sum + c.weight, 0);
+      const projected = othersActive + weight;
+      if (projected > specificWeightLimit) {
+        setFormError(`لا يمكن تجاوز الحد المسموح (${specificWeightLimit}%). المجموع بعد الإضافة سيصبح ${projected}% — قلّل الوزن أو عطّل أحد المعايير النشطة.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       if (editingCriterion) {
         const { error } = await supabase
@@ -275,6 +289,16 @@ export const DirectorSpecificCriteria: React.FC = () => {
 
   const handleToggleActive = async (criterion: DeptCriterion) => {
     const newActive = !criterion.is_active;
+    if (newActive) {
+      const othersActive = criteria
+        .filter(c => c.is_active && c.id !== criterion.id)
+        .reduce((sum, c) => sum + c.weight, 0);
+      const projected = othersActive + criterion.weight;
+      if (projected > specificWeightLimit) {
+        toast.error(`لا يمكن تفعيل هذا المعيار — المجموع سيصبح ${projected}% ويتجاوز الحد المسموح (${specificWeightLimit}%).`);
+        return;
+      }
+    }
     const { error } = await supabase
       .from('department_criteria')
       .update({ is_active: newActive })
