@@ -26,7 +26,14 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  Pencil,
+  Plus,
+  Trash2,
+  ChevronUp,
+  Check,
+  Palette,
 } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 /* ═══════════════════════════════════════════════════════════════════════
    Types
@@ -750,147 +757,395 @@ const OrgTree: React.FC<OrgTreeProps> = ({
    Job Titles Tab Component
    ═══════════════════════════════════════════════════════════════════════ */
 
-const JOB_TITLE_DEPARTMENTS = [
-  {
-    name: 'إدارة المشاريع',
-    colors: { dot: '#2dd4bf', line: '#99f6e4', badgeBg: '#f0fdfa', badgeText: '#0f766e', hoverBg: 'rgba(20,184,166,0.06)', gradFrom: '#14b8a6', gradTo: '#0891b2' },
-    titles: ['مدير إدارة المشاريع', 'مدير حساب', 'مدير مشروع أول', 'مدير مشروع', 'مساعد مدير مشروع'],
-  },
-  {
-    name: 'إدارة المحتوى الإبداعي',
-    colors: { dot: '#a78bfa', line: '#c4b5fd', badgeBg: '#f5f3ff', badgeText: '#6d28d9', hoverBg: 'rgba(139,92,246,0.06)', gradFrom: '#8b5cf6', gradTo: '#7c3aed' },
-    titles: ['مدير إدارة المحتوى الإبداعي', 'مشرف قسم', 'كاتب محتوى إبداعي أول', 'كاتب محتوى إبداعي'],
-  },
-  {
-    name: 'إدارة تطوير الأعمال',
-    colors: { dot: '#60a5fa', line: '#93c5fd', badgeBg: '#eff6ff', badgeText: '#1d4ed8', hoverBg: 'rgba(59,130,246,0.06)', gradFrom: '#3b82f6', gradTo: '#4f46e5' },
-    titles: ['مدير إدارة تطوير الأعمال', 'مشرف قسم', 'أخصائي أول تطوير أعمال', 'أخصائي أول تسويق', 'أخصائي أول مبيعات', 'أخصائي أول تواصل', 'أخصائي تطوير أعمال', 'أخصائي تسويق', 'أخصائي مبيعات', 'أخصائي تواصل داخلي'],
-  },
-  {
-    name: 'إدارة المالية والشؤون الإدارية',
-    colors: { dot: '#34d399', line: '#6ee7b7', badgeBg: '#ecfdf5', badgeText: '#047857', hoverBg: 'rgba(16,185,129,0.06)', gradFrom: '#10b981', gradTo: '#059669' },
-    titles: ['مدير إدارة المالية والشؤون الإدارية', 'مشرف قسم', 'محاسب عام', 'محاسب', 'أخصائي موارد بشرية أول', 'أخصائي موارد بشرية', 'أخصائي لوجستي أول', 'أخصائي لوجستي'],
-  },
-  {
-    name: 'إدارة الإنتاج',
-    colors: { dot: '#fbbf24', line: '#fcd34d', badgeBg: '#fffbeb', badgeText: '#b45309', hoverBg: 'rgba(245,158,11,0.06)', gradFrom: '#f59e0b', gradTo: '#ea580c' },
-    titles: ['مدير إدارة الإنتاج', 'مشرف قسم', 'مصور فيديو', 'مصور سينمائي', 'مصور فوتوغرافي', 'مصمم جرافيك أول', 'مصمم جرافيك', 'محرر فيديو أول', 'محرر فيديو', 'مصمم رسوم متحركة أول', 'مصمم رسوم متحركة', 'رسام أول', 'رسام'],
-  },
-];
+interface JobLadderPalette {
+  dot: string; line: string; badgeBg: string; badgeText: string;
+  hoverBg: string; gradFrom: string; gradTo: string; label: string;
+}
+const JOB_LADDER_PALETTES: Record<string, JobLadderPalette> = {
+  teal:   { dot: '#2dd4bf', line: '#99f6e4', badgeBg: '#f0fdfa', badgeText: '#0f766e', hoverBg: 'rgba(20,184,166,0.06)', gradFrom: '#14b8a6', gradTo: '#0891b2', label: 'تركوازي' },
+  purple: { dot: '#a78bfa', line: '#c4b5fd', badgeBg: '#f5f3ff', badgeText: '#6d28d9', hoverBg: 'rgba(139,92,246,0.06)', gradFrom: '#8b5cf6', gradTo: '#7c3aed', label: 'بنفسجي' },
+  blue:   { dot: '#60a5fa', line: '#93c5fd', badgeBg: '#eff6ff', badgeText: '#1d4ed8', hoverBg: 'rgba(59,130,246,0.06)', gradFrom: '#3b82f6', gradTo: '#4f46e5', label: 'أزرق' },
+  green:  { dot: '#34d399', line: '#6ee7b7', badgeBg: '#ecfdf5', badgeText: '#047857', hoverBg: 'rgba(16,185,129,0.06)', gradFrom: '#10b981', gradTo: '#059669', label: 'أخضر' },
+  amber:  { dot: '#fbbf24', line: '#fcd34d', badgeBg: '#fffbeb', badgeText: '#b45309', hoverBg: 'rgba(245,158,11,0.06)', gradFrom: '#f59e0b', gradTo: '#ea580c', label: 'برتقالي' },
+  rose:   { dot: '#fb7185', line: '#fda4af', badgeBg: '#fff1f2', badgeText: '#be123c', hoverBg: 'rgba(244,63,94,0.06)', gradFrom: '#f43f5e', gradTo: '#e11d48', label: 'وردي' },
+  cyan:   { dot: '#22d3ee', line: '#67e8f9', badgeBg: '#ecfeff', badgeText: '#0e7490', hoverBg: 'rgba(6,182,212,0.06)', gradFrom: '#06b6d4', gradTo: '#0891b2', label: 'سماوي' },
+  indigo: { dot: '#818cf8', line: '#a5b4fc', badgeBg: '#eef2ff', badgeText: '#4338ca', hoverBg: 'rgba(99,102,241,0.06)', gradFrom: '#6366f1', gradTo: '#4f46e5', label: 'نيلي' },
+};
+const getLadderPalette = (key: string): JobLadderPalette =>
+  JOB_LADDER_PALETTES[key] || JOB_LADDER_PALETTES.teal;
 
-const JobTitlesTab: React.FC = () => (
-  <div className="space-y-6">
-    {/* Hero Banner */}
-    <div className="relative overflow-hidden rounded-2xl p-8 md:p-10" style={{ background: 'linear-gradient(to bottom left, #0f172a, #1e293b, #0f172a)' }}>
-      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(20,184,166,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(56,189,248,0.3) 0%, transparent 50%)' }} />
-      <div className="absolute top-0 left-0 w-40 h-40 rounded-full blur-3xl" style={{ background: 'rgba(20,184,166,0.1)' }} />
-      <div className="absolute bottom-0 right-0 w-60 h-60 rounded-full blur-3xl" style={{ background: 'rgba(6,182,212,0.1)' }} />
-      <div className="relative text-right">
-        <p className="text-sm font-medium mb-2 tracking-wide" style={{ color: '#2dd4bf' }}>السلّم الوظيفي</p>
-        <h2 className="text-3xl md:text-4xl font-black text-white mb-2">المسميات الوظيفية</h2>
-        <h3 className="text-2xl md:text-3xl font-bold" style={{ background: 'linear-gradient(to left, #5eead4, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>في الإدارات</h3>
-        <p className="text-sm mt-4 max-w-md mr-0 ml-auto leading-relaxed" style={{ color: '#94a3b8' }}>
-          اكتشف مسارك المهني وتعرّف على الفرص المتاحة في كل إدارة. كل خطوة تقرّبك من تحقيق طموحاتك.
-        </p>
+interface LadderDept { id: string; name: string; palette: string; order: number; }
+interface LadderTitle { id: string; department_id: string; title: string; order: number; }
+
+const JobTitlesTab: React.FC = () => {
+  const { user } = useAuth();
+  const toast = useToast();
+  const isAdmin = user?.role === 'admin';
+
+  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [depts, setDepts] = useState<LadderDept[]>([]);
+  const [titles, setTitles] = useState<LadderTitle[]>([]);
+  const [palettePickerFor, setPalettePickerFor] = useState<string | null>(null);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    const [{ data: dd }, { data: tt }] = await Promise.all([
+      supabase.from('job_ladder_departments').select('id, name, palette, order').order('order', { ascending: true }),
+      supabase.from('job_ladder_titles').select('id, department_id, title, order').order('order', { ascending: true }),
+    ]);
+    setDepts((dd as LadderDept[] | null) || []);
+    setTitles((tt as LadderTitle[] | null) || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const titlesByDept = useMemo(() => {
+    const map: Record<string, LadderTitle[]> = {};
+    titles.forEach(t => { (map[t.department_id] ||= []).push(t); });
+    Object.values(map).forEach(arr => arr.sort((a, b) => a.order - b.order));
+    return map;
+  }, [titles]);
+
+  const handleAddDept = async () => {
+    const maxOrder = depts.length ? Math.max(...depts.map(d => d.order)) : 0;
+    const { data, error } = await supabase
+      .from('job_ladder_departments')
+      .insert({ name: 'إدارة جديدة', palette: 'teal', order: maxOrder + 1 })
+      .select().single();
+    if (error) { toast.error(error.message); return; }
+    setDepts(prev => [...prev, data as LadderDept]);
+    toast.success('تمت إضافة الإدارة');
+  };
+
+  const handleUpdateDept = async (id: string, patch: Partial<LadderDept>) => {
+    setDepts(prev => prev.map(d => d.id === id ? { ...d, ...patch } : d));
+    const { error } = await supabase.from('job_ladder_departments').update(patch).eq('id', id);
+    if (error) { toast.error(error.message); fetchAll(); }
+  };
+
+  const handleDeleteDept = async (id: string) => {
+    if (!confirm('سيتم حذف الإدارة وجميع مسمياتها. هل أنت متأكد؟')) return;
+    const { error } = await supabase.from('job_ladder_departments').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    setDepts(prev => prev.filter(d => d.id !== id));
+    setTitles(prev => prev.filter(t => t.department_id !== id));
+    toast.success('تم حذف الإدارة');
+  };
+
+  const handleMoveDept = async (id: string, dir: -1 | 1) => {
+    const idx = depts.findIndex(d => d.id === id);
+    const swapIdx = idx + dir;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= depts.length) return;
+    const a = depts[idx], b = depts[swapIdx];
+    const newDepts = [...depts];
+    newDepts[idx] = { ...a, order: b.order };
+    newDepts[swapIdx] = { ...b, order: a.order };
+    newDepts.sort((x, y) => x.order - y.order);
+    setDepts(newDepts);
+    await Promise.all([
+      supabase.from('job_ladder_departments').update({ order: b.order }).eq('id', a.id),
+      supabase.from('job_ladder_departments').update({ order: a.order }).eq('id', b.id),
+    ]);
+  };
+
+  const handleAddTitle = async (deptId: string) => {
+    const list = titlesByDept[deptId] || [];
+    const maxOrder = list.length ? Math.max(...list.map(t => t.order)) : 0;
+    const { data, error } = await supabase
+      .from('job_ladder_titles')
+      .insert({ department_id: deptId, title: 'مسمى جديد', order: maxOrder + 1 })
+      .select().single();
+    if (error) { toast.error(error.message); return; }
+    setTitles(prev => [...prev, data as LadderTitle]);
+  };
+
+  const handleUpdateTitle = async (id: string, title: string) => {
+    setTitles(prev => prev.map(t => t.id === id ? { ...t, title } : t));
+    const { error } = await supabase.from('job_ladder_titles').update({ title }).eq('id', id);
+    if (error) { toast.error(error.message); fetchAll(); }
+  };
+
+  const handleDeleteTitle = async (id: string) => {
+    const { error } = await supabase.from('job_ladder_titles').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    setTitles(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleMoveTitle = async (deptId: string, id: string, dir: -1 | 1) => {
+    const list = (titlesByDept[deptId] || []).slice();
+    const idx = list.findIndex(t => t.id === id);
+    const swapIdx = idx + dir;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= list.length) return;
+    const a = list[idx], b = list[swapIdx];
+    setTitles(prev => prev.map(t =>
+      t.id === a.id ? { ...t, order: b.order } :
+      t.id === b.id ? { ...t, order: a.order } : t
+    ));
+    await Promise.all([
+      supabase.from('job_ladder_titles').update({ order: b.order }).eq('id', a.id),
+      supabase.from('job_ladder_titles').update({ order: a.order }).eq('id', b.id),
+    ]);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-100 rounded-full" />
+          <div className="absolute inset-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+        <p className="text-gray-600 font-medium">جاري التحميل...</p>
       </div>
-      <div className="absolute left-8 top-1/2 -translate-y-1/2" style={{ opacity: 0.07 }}>
-        <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#5eead4" strokeWidth="0.5">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-    </div>
+    );
+  }
 
-    {/* Department Cards Grid */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-      {JOB_TITLE_DEPARTMENTS.map((dept) => {
-        const c = dept.colors;
-        return (
-          <div
-            key={dept.name}
-            className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col"
-          >
-            <div className="p-4 relative overflow-hidden" style={{ background: `linear-gradient(to left, ${c.gradFrom}, ${c.gradTo})` }}>
-              <div className="relative">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Landmark className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.8)' }} />
-                </div>
-                <h3 className="text-white font-bold text-sm text-center leading-relaxed">{dept.name}</h3>
-                <div className="flex justify-center mt-2">
-                  <span className="backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                    {dept.titles.length} مسمى وظيفي
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 flex-1">
-              <div className="relative">
-                {dept.titles.map((title, idx) => {
-                  const isDir = idx === 0;
-                  const isSup = title === 'مشرف قسم';
-                  const isLast = idx === dept.titles.length - 1;
-                  return (
-                    <div key={idx} className="relative flex items-start gap-3">
-                      {!isLast && (
-                        <div className="absolute right-[9px] top-5 bottom-0 w-[2px]" style={{ background: c.line, borderRadius: '1px' }} />
-                      )}
-                      <div className="relative z-10 flex-shrink-0 mt-1.5">
-                        {isDir ? (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-md ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})` }}>
-                            <Crown className="h-2.5 w-2.5 text-white" />
-                          </div>
-                        ) : isSup ? (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})`, opacity: 0.8 }}>
-                            <Shield className="h-2.5 w-2.5 text-white" />
-                          </div>
-                        ) : (
-                          <div className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center" style={{ background: c.dot, boxShadow: `0 0 0 1px ${c.line}` }}>
-                            <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 pb-3 rounded-lg px-2 py-1.5 -my-0.5 transition-colors cursor-default title-row" style={{ '--hover-bg': c.hoverBg } as React.CSSProperties}>
-                        <p className={`text-sm font-medium text-right leading-relaxed ${isDir ? 'text-gray-900 font-bold' : isSup ? 'text-gray-800 font-semibold' : 'text-gray-600'}`}>
-                          {title}
-                        </p>
-                        {isDir && (
-                          <span className="inline-block text-[9px] font-bold mt-0.5 px-2 py-0.5 rounded-full" style={{ background: c.badgeBg, color: c.badgeText, boxShadow: `0 0 0 1px ${c.line}` }}>
-                            قائد الإدارة
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="px-4 py-2.5 border-t border-gray-50" style={{ background: 'rgba(249,250,251,0.5)' }}>
-              <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400">
-                <Target className="h-3 w-3" />
-                <span>ارتقِ بمسيرتك المهنية</span>
-              </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl p-8 md:p-10" style={{ background: 'linear-gradient(to bottom left, #0f172a, #1e293b, #0f172a)' }}>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(20,184,166,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(56,189,248,0.3) 0%, transparent 50%)' }} />
+        <div className="absolute top-0 left-0 w-40 h-40 rounded-full blur-3xl" style={{ background: 'rgba(20,184,166,0.1)' }} />
+        <div className="absolute bottom-0 right-0 w-60 h-60 rounded-full blur-3xl" style={{ background: 'rgba(6,182,212,0.1)' }} />
+        <div className="relative text-right">
+          <p className="text-sm font-medium mb-2 tracking-wide" style={{ color: '#2dd4bf' }}>السلّم الوظيفي</p>
+          <h2 className="text-3xl md:text-4xl font-black text-white mb-2">المسميات الوظيفية</h2>
+          <h3 className="text-2xl md:text-3xl font-bold" style={{ background: 'linear-gradient(to left, #5eead4, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>في الإدارات</h3>
+          <p className="text-sm mt-4 max-w-md mr-0 ml-auto leading-relaxed" style={{ color: '#94a3b8' }}>
+            اكتشف مسارك المهني وتعرّف على الفرص المتاحة في كل إدارة. كل خطوة تقرّبك من تحقيق طموحاتك.
+          </p>
+        </div>
+        <div className="absolute left-8 top-1/2 -translate-y-1/2" style={{ opacity: 0.07 }}>
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#5eead4" strokeWidth="0.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        {isAdmin && (
+          <div className="absolute top-4 left-4 flex gap-2">
+            <button
+              onClick={() => setEditMode(m => !m)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all backdrop-blur-sm ${
+                editMode ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+              }`}
+            >
+              {editMode ? <><Check className="h-4 w-4" />تم</> : <><Pencil className="h-4 w-4" />تعديل</>}
+            </button>
           </div>
-        );
-      })}
-    </div>
+        )}
+      </div>
 
-    {/* Motivational Footer */}
-    <div className="relative overflow-hidden rounded-2xl border p-6" style={{ background: 'linear-gradient(to left, #f0fdfa, #ecfeff)', borderColor: '#99f6e4' }}>
-      <div className="absolute left-0 top-0 w-32 h-32 rounded-full blur-2xl" style={{ background: 'rgba(153,246,228,0.2)' }} />
-      <div className="relative flex items-center gap-4 justify-center flex-wrap">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #14b8a6, #0891b2)', boxShadow: '0 10px 15px -3px rgba(20,184,166,0.3)' }}>
-          <Target className="h-5 w-5 text-white" />
-        </div>
-        <div className="text-right">
-          <p className="text-sm font-bold" style={{ color: '#134e4a' }}>طموحك هو بداية رحلتك</p>
-          <p className="text-xs mt-0.5" style={{ color: '#0d9488' }}>كل مسمى وظيفي هو فرصة جديدة للنمو والتطور — ابدأ اليوم واصنع مستقبلك.</p>
+      {/* Department Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        {depts.map((dept, deptIdx) => {
+          const c = getLadderPalette(dept.palette);
+          const list = titlesByDept[dept.id] || [];
+          return (
+            <div
+              key={dept.id}
+              className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col"
+            >
+              <div className="p-4 relative overflow-hidden" style={{ background: `linear-gradient(to left, ${c.gradFrom}, ${c.gradTo})` }}>
+                {editMode && (
+                  <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 z-10">
+                    <button
+                      onClick={() => handleDeleteDept(dept.id)}
+                      title="حذف الإدارة"
+                      className="bg-white/20 hover:bg-red-500/80 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPalettePickerFor(palettePickerFor === dept.id ? null : dept.id)}
+                        title="تغيير اللون"
+                        className="bg-white/20 hover:bg-white/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm"
+                      >
+                        <Palette className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveDept(dept.id, -1)}
+                        disabled={deptIdx === 0}
+                        title="نقل لليمين"
+                        className="bg-white/20 hover:bg-white/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm disabled:opacity-30"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5 -rotate-90" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveDept(dept.id, 1)}
+                        disabled={deptIdx === depts.length - 1}
+                        title="نقل لليسار"
+                        className="bg-white/20 hover:bg-white/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm disabled:opacity-30"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div className="relative">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Landmark className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </div>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      defaultValue={dept.name}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v && v !== dept.name) handleUpdateDept(dept.id, { name: v });
+                      }}
+                      className="w-full bg-white/10 border border-white/30 text-white font-bold text-sm text-center leading-relaxed rounded-lg px-2 py-1 backdrop-blur-sm placeholder-white/60 focus:bg-white/20 focus:border-white/60 focus:outline-none"
+                    />
+                  ) : (
+                    <h3 className="text-white font-bold text-sm text-center leading-relaxed">{dept.name}</h3>
+                  )}
+                  <div className="flex justify-center mt-2">
+                    <span className="backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                      {list.length} مسمى وظيفي
+                    </span>
+                  </div>
+                  {editMode && palettePickerFor === dept.id && (
+                    <div className="mt-3 grid grid-cols-4 gap-1.5 p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
+                      {Object.entries(JOB_LADDER_PALETTES).map(([key, p]) => (
+                        <button
+                          key={key}
+                          onClick={() => { handleUpdateDept(dept.id, { palette: key }); setPalettePickerFor(null); }}
+                          title={p.label}
+                          className={`h-7 rounded-md ring-1 ring-white/40 hover:ring-white transition-all ${dept.palette === key ? 'ring-2 ring-white scale-105' : ''}`}
+                          style={{ background: `linear-gradient(135deg, ${p.gradFrom}, ${p.gradTo})` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 flex-1">
+                <div className="relative">
+                  {list.map((titleRow, idx) => {
+                    const isDir = idx === 0;
+                    const isSup = titleRow.title === 'مشرف قسم';
+                    const isLast = idx === list.length - 1;
+                    return (
+                      <div key={titleRow.id} className="relative flex items-start gap-3">
+                        {!isLast && (
+                          <div className="absolute right-[9px] top-5 bottom-0 w-[2px]" style={{ background: c.line, borderRadius: '1px' }} />
+                        )}
+                        <div className="relative z-10 flex-shrink-0 mt-1.5">
+                          {isDir ? (
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-md ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})` }}>
+                              <Crown className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          ) : isSup ? (
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})`, opacity: 0.8 }}>
+                              <Shield className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center" style={{ background: c.dot, boxShadow: `0 0 0 1px ${c.line}` }}>
+                              <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 pb-3 rounded-lg px-2 py-1.5 -my-0.5 transition-colors title-row" style={{ '--hover-bg': c.hoverBg } as React.CSSProperties}>
+                          {editMode ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                defaultValue={titleRow.title}
+                                onBlur={(e) => {
+                                  const v = e.target.value.trim();
+                                  if (v && v !== titleRow.title) handleUpdateTitle(titleRow.id, v);
+                                }}
+                                className={`flex-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm text-right ${isDir ? 'font-bold' : isSup ? 'font-semibold' : ''} focus:bg-white focus:border-blue-400 focus:outline-none`}
+                              />
+                              <button
+                                onClick={() => handleMoveTitle(dept.id, titleRow.id, -1)}
+                                disabled={idx === 0}
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500"
+                              >
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveTitle(dept.id, titleRow.id, 1)}
+                                disabled={idx === list.length - 1}
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500"
+                              >
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTitle(titleRow.id)}
+                                className="p-1 rounded hover:bg-red-50 text-red-500"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <p className={`text-sm font-medium text-right leading-relaxed ${isDir ? 'text-gray-900 font-bold' : isSup ? 'text-gray-800 font-semibold' : 'text-gray-600'}`}>
+                                {titleRow.title}
+                              </p>
+                              {isDir && (
+                                <span className="inline-block text-[9px] font-bold mt-0.5 px-2 py-0.5 rounded-full" style={{ background: c.badgeBg, color: c.badgeText, boxShadow: `0 0 0 1px ${c.line}` }}>
+                                  قائد الإدارة
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {editMode && (
+                    <button
+                      onClick={() => handleAddTitle(dept.id)}
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-3 border-2 border-dashed border-gray-200 rounded-lg text-xs text-gray-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      إضافة مسمى
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="px-4 py-2.5 border-t border-gray-50" style={{ background: 'rgba(249,250,251,0.5)' }}>
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400">
+                  <Target className="h-3 w-3" />
+                  <span>ارتقِ بمسيرتك المهنية</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {editMode && (
+          <button
+            onClick={handleAddDept}
+            className="bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center min-h-[300px] gap-3 text-gray-400 hover:text-blue-600"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
+              <Plus className="h-6 w-6" />
+            </div>
+            <span className="text-sm font-medium">إضافة إدارة جديدة</span>
+          </button>
+        )}
+      </div>
+
+      {/* Motivational Footer */}
+      <div className="relative overflow-hidden rounded-2xl border p-6" style={{ background: 'linear-gradient(to left, #f0fdfa, #ecfeff)', borderColor: '#99f6e4' }}>
+        <div className="absolute left-0 top-0 w-32 h-32 rounded-full blur-2xl" style={{ background: 'rgba(153,246,228,0.2)' }} />
+        <div className="relative flex items-center gap-4 justify-center flex-wrap">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #14b8a6, #0891b2)', boxShadow: '0 10px 15px -3px rgba(20,184,166,0.3)' }}>
+            <Target className="h-5 w-5 text-white" />
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold" style={{ color: '#134e4a' }}>طموحك هو بداية رحلتك</p>
+            <p className="text-xs mt-0.5" style={{ color: '#0d9488' }}>كل مسمى وظيفي هو فرصة جديدة للنمو والتطور — ابدأ اليوم واصنع مستقبلك.</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const OrgStructure: React.FC = () => {
   const { user } = useAuth();
