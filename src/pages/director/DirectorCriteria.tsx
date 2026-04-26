@@ -16,7 +16,8 @@ import {
   ArrowDown,
   Scale,
   GripVertical,
-  EyeOff
+  EyeOff,
+  Building2,
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,12 +25,18 @@ import { useAuth } from '../../contexts/AuthContext';
 interface DeptCriterion {
   id: string;
   department_id: string | null;
+  directorate_id: string | null;
   title: string;
   description: string;
   weight: number;
   order: number;
   is_active: boolean;
   created_by: string | null;
+}
+
+interface DirectorateOption {
+  id: string;
+  name: string;
 }
 
 interface FormData {
@@ -62,6 +69,10 @@ export const DirectorSpecificCriteria: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // Director may manage multiple directorates (and co-manage with a peer).
+  const [myDirectorates, setMyDirectorates] = useState<DirectorateOption[]>([]);
+  const [selectedDirectorateId, setSelectedDirectorateId] = useState<string>('');
+
   const fetchSettings = useCallback(async () => {
     // Prefer the active period's weight, since HR sets weights per period.
     const { data: period } = await supabase
@@ -81,35 +92,51 @@ export const DirectorSpecificCriteria: React.FC = () => {
     if (data) setSpecificWeightLimit(data.specific_weight);
   }, []);
 
-  const fetchCriteria = useCallback(async () => {
+  const fetchDirectorates = useCallback(async () => {
     if (!user) return;
+    const { data } = await supabase
+      .from('directorates')
+      .select('id, name')
+      .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`)
+      .order('name');
+    const list = (data || []) as DirectorateOption[];
+    setMyDirectorates(list);
+    if (list.length > 0) setSelectedDirectorateId(prev => prev || list[0].id);
+    if (list.length === 0) setLoading(false);
+  }, [user]);
+
+  const fetchCriteria = useCallback(async () => {
+    if (!selectedDirectorateId) { setLoading(false); return; }
     try {
+      // Scoped by directorate so co-directors share the same criteria list
+      // for a directorate they jointly manage. Each director can still keep
+      // distinct criteria per directorate they alone run.
       const { data, error } = await supabase
         .from('department_criteria')
         .select('*')
         .is('department_id', null)
-        .eq('created_by', user.id)
+        .eq('directorate_id', selectedDirectorateId)
         .order('order', { ascending: true });
 
-      if (!error && data) {
-        setCriteria(data);
-      }
+      if (!error && data) setCriteria(data);
     } catch (error) {
       console.error('Error fetching criteria:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [selectedDirectorateId]);
 
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
 
   useEffect(() => {
-    if (user) {
-      fetchCriteria();
-    }
-  }, [user, fetchCriteria]);
+    if (user) fetchDirectorates();
+  }, [user, fetchDirectorates]);
+
+  useEffect(() => {
+    if (selectedDirectorateId) fetchCriteria();
+  }, [selectedDirectorateId, fetchCriteria]);
 
   const totalWeight = criteria
     .filter(c => c.is_active)
@@ -185,6 +212,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
           .from('department_criteria')
           .insert({
             department_id: null,
+            directorate_id: selectedDirectorateId || null,
             title: formData.title.trim(),
             description: formData.description.trim(),
             weight,
@@ -280,9 +308,22 @@ export const DirectorSpecificCriteria: React.FC = () => {
   const activeCount = criteria.filter(c => c.is_active).length;
   const inactiveCount = criteria.filter(c => !c.is_active).length;
 
+  if (myDirectorates.length === 0) {
+    return (
+      <Card>
+        <CardBody className="text-center py-16">
+          <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">لم يتم تعيينك كمدير لأي إدارة بعد.</p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  const currentDirectorate = myDirectorates.find(d => d.id === selectedDirectorateId);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة</h1>
           <p className="text-gray-600 mt-2">
@@ -290,11 +331,38 @@ export const DirectorSpecificCriteria: React.FC = () => {
             {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
           </p>
         </div>
-        <Button onClick={openAddModal} className="flex items-center gap-2">
+        <Button onClick={openAddModal} disabled={!selectedDirectorateId} className="flex items-center gap-2">
           <span>إضافة معيار</span>
           <Plus className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Directorate selector — only when the user manages more than one */}
+      {myDirectorates.length > 1 ? (
+        <Card>
+          <CardBody className="flex items-center gap-3 flex-wrap py-3">
+            <Building2 className="h-5 w-5 text-blue-600" />
+            <label className="text-sm font-medium text-gray-700">الإدارة:</label>
+            <select
+              value={selectedDirectorateId}
+              onChange={(e) => setSelectedDirectorateId(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {myDirectorates.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+            <span className="text-xs text-gray-500">— كل إدارة لها قائمة معاييرها الخاصة، ويتشاركها مدراؤها.</span>
+          </CardBody>
+        </Card>
+      ) : (
+        currentDirectorate && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5 flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-blue-600" />
+            <span className="text-sm text-blue-900 font-medium">{currentDirectorate.name}</span>
+          </div>
+        )
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>

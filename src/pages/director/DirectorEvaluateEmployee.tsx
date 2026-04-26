@@ -18,6 +18,7 @@ interface EmployeeInfo {
   job_title: string;
   email: string;
   department_id: string;
+  directorate_id?: string | null;
   department_name?: string;
   employee_number?: string;
   eval_status?: string | null;
@@ -128,13 +129,23 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   useEffect(() => {
     const checkCriteria = async () => {
       if (!user) return;
+      // Count criteria across every directorate the user manages —
+      // criteria are now per-directorate, shared between co-directors.
+      const { data: dirs } = await supabase
+        .from('directorates')
+        .select('id')
+        .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`);
+      const dirIds = (dirs || []).map((d: any) => d.id);
+
       const [{ count }, { data: weightSettings }] = await Promise.all([
-        supabase
-          .from('department_criteria')
-          .select('id', { count: 'exact', head: true })
-          .is('department_id', null)
-          .eq('created_by', user.id)
-          .eq('is_active', true),
+        dirIds.length === 0
+          ? Promise.resolve({ count: 0 })
+          : supabase
+              .from('department_criteria')
+              .select('id', { count: 'exact', head: true })
+              .is('department_id', null)
+              .in('directorate_id', dirIds)
+              .eq('is_active', true),
         supabase
           .from('evaluation_settings')
           .select('specific_weight')
@@ -315,7 +326,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     }
     const { data } = await supabase
       .from('employees')
-      .select('id, user_id, full_name, email, job_title, department_id, employee_number')
+      .select('id, user_id, full_name, email, job_title, department_id, directorate_id, employee_number')
       .eq('id', employeeId)
       .single();
     if (data) setEmployee({ ...data, department_name: '' });
@@ -335,13 +346,18 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
   const fetchCriteria = useCallback(async () => {
     if (!user) return;
+    // Specific criteria are scoped to the employee's directorate, so both
+    // co-directors evaluate against the same set.
+    const employeeDirectorateId = employee?.directorate_id || allEmployees.find(e => e.id === employeeId)?.directorate_id;
     const [{ data: general }, { data: specific }] = await Promise.all([
       supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
-      supabase.from('department_criteria').select('*')
-        .is('department_id', null)
-        .eq('created_by', user.id)
-        .eq('is_active', true)
-        .order('order'),
+      employeeDirectorateId
+        ? supabase.from('department_criteria').select('*')
+            .is('department_id', null)
+            .eq('directorate_id', employeeDirectorateId)
+            .eq('is_active', true)
+            .order('order')
+        : Promise.resolve({ data: [] }),
     ]);
     setCriteria(general || []);
     setSpecificCriteria((specific || []).map((s: any) => ({
@@ -351,7 +367,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       weight: s.weight,
       order: s.order,
     })));
-  }, [user]);
+  }, [user, employee, allEmployees, employeeId]);
 
   const fetchSettings = useCallback(async () => {
     const { data: period } = await supabase
@@ -421,12 +437,15 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       setEvaluationStatus('');
       setExistingEvaluationId(null);
       setEmployee(null);
-      Promise.all([
-        fetchEmployee(),
-        fetchActivePeriod(),
-        fetchCriteria(),
-        fetchSettings(),
-      ]).finally(() => setDataLoading(false));
+      // Fetch employee first so fetchCriteria knows the directorate_id.
+      (async () => {
+        await fetchEmployee();
+        await Promise.all([
+          fetchActivePeriod(),
+          fetchCriteria(),
+          fetchSettings(),
+        ]);
+      })().finally(() => setDataLoading(false));
     }
   }, [user, employeeId]);
 
