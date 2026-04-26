@@ -18,6 +18,8 @@ import {
   GripVertical,
   EyeOff,
   Building2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -74,6 +76,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
   // Director may manage multiple directorates (and co-manage with a peer).
   const [myDirectorates, setMyDirectorates] = useState<DirectorateOption[]>([]);
   const [selectedDirectorateId, setSelectedDirectorateId] = useState<string>('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchSettings = useCallback(async () => {
     // Prefer the active period's weight, since HR sets weights per period.
@@ -461,12 +464,19 @@ export const DirectorSpecificCriteria: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {criteria.map((criterion, index) => (
-                  <TableRow key={criterion.id} className={!criterion.is_active ? 'opacity-60 bg-gray-50' : ''}>
+                {criteria.map((criterion, index) => {
+                  const isExpanded = expandedId === criterion.id;
+                  const stop = (e: React.MouseEvent) => e.stopPropagation();
+                  return (
+                  <React.Fragment key={criterion.id}>
+                  <TableRow
+                    className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                    onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <GripVertical className="h-4 w-4" />
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </div>
                         <span className="font-bold text-gray-900">{criterion.title}</span>
                       </div>
@@ -480,7 +490,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={stop}>
                         <button
                           onClick={() => handleReorder(criterion, 'up')}
                           disabled={index === 0}
@@ -510,7 +520,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={stop}>
                         <Button
                           size="sm"
                           variant="outline"
@@ -536,7 +546,32 @@ export const DirectorSpecificCriteria: React.FC = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  {isExpanded && (
+                    <tr className="bg-emerald-50/40 border-b border-emerald-100">
+                      <td colSpan={6} className="px-6 py-4">
+                        <div className="bg-white rounded-lg border border-emerald-100 p-4 space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 mb-1">العنوان</p>
+                            <p className="text-sm font-bold text-gray-900">{criterion.title}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                              {criterion.description || <span className="text-gray-400 italic">لا يوجد وصف</span>}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                            <span><span className="font-semibold">الوزن:</span> {criterion.weight}%</span>
+                            <span><span className="font-semibold">الترتيب:</span> {criterion.order}</span>
+                            <span><span className="font-semibold">الحالة:</span> {criterion.is_active ? 'نشط' : 'معطل'}</span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
