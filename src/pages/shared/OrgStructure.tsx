@@ -1314,7 +1314,8 @@ export const OrgStructure: React.FC = () => {
         }
       }
       setSupervisorMap(sMap);
-      setExpandedSupervisors(new Set(Object.keys(sMap)));
+      // Supervisors collapsed by default — user clicks the chevron to expand.
+      setExpandedSupervisors(new Set());
 
       setStats({
         directors: dirs.filter(d => d.director).length,
