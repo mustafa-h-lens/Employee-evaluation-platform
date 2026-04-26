@@ -261,6 +261,22 @@ export const DirectorSpecificCriteria: React.FC = () => {
       const { error: insError } = await supabase.from('department_criteria').insert(rows);
       if (insError) { setCloneError(insError.message); setCloning(false); return; }
 
+      if (user) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: cloneMode === 'replace' ? 'استبدال معايير قسم بنسخ من قسم آخر' : 'نسخ معايير من قسم آخر',
+          entity_type: 'department_criteria',
+          entity_id: selectedDepartmentId,
+          details: {
+            source_department_id: cloneSourceDeptId,
+            target_department_id: selectedDepartmentId,
+            directorate_id: selectedDirectorateId,
+            mode: cloneMode,
+            count: rows.length,
+          },
+        });
+      }
+
       toast.success(`تم نسخ ${rows.length} معيار إلى القسم الحالي`);
       setIsCloneModalOpen(false);
       fetchCriteria();
