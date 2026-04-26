@@ -88,11 +88,22 @@ export const SupervisorCriteria: React.FC = () => {
   }, [user]);
 
   const fetchSettings = useCallback(async () => {
+    // Prefer the active period's weight, since HR sets weights per period.
+    // Fall back to the legacy global evaluation_settings row.
+    const { data: period } = await supabase
+      .from('evaluation_periods')
+      .select('specific_weight')
+      .eq('status', 'نشطة')
+      .maybeSingle();
+    if (period && period.specific_weight != null) {
+      setSpecificWeightLimit(period.specific_weight);
+      return;
+    }
     const { data } = await supabase
       .from('evaluation_settings')
-      .select('*')
+      .select('specific_weight')
       .limit(1)
-      .single();
+      .maybeSingle();
     if (data) setSpecificWeightLimit(data.specific_weight);
   }, []);
 

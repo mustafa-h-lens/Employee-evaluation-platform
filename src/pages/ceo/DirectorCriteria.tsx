@@ -63,14 +63,21 @@ export const DirectorCriteria: React.FC = () => {
   const [deleteError, setDeleteError] = useState('');
 
   const fetchSettings = useCallback(async () => {
+    const { data: period } = await supabase
+      .from('evaluation_periods')
+      .select('specific_weight')
+      .eq('status', 'نشطة')
+      .maybeSingle();
+    if (period && period.specific_weight != null) {
+      setSpecificWeightLimit(period.specific_weight);
+      return;
+    }
     const { data } = await supabase
       .from('evaluation_settings')
-      .select('*')
+      .select('specific_weight')
       .limit(1)
-      .single();
-    if (data) {
-      setSpecificWeightLimit(data.specific_weight);
-    }
+      .maybeSingle();
+    if (data) setSpecificWeightLimit(data.specific_weight);
   }, []);
 
   const fetchCriteria = useCallback(async () => {
