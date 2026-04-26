@@ -46,14 +46,8 @@ interface CeoPeriod {
   status: string;
 }
 
-interface CeoUser {
-  id: string;
-  full_name: string;
-}
-
 interface CeoEvaluation {
   id: string;
-  ceo_id: string;
   evaluator_id: string;
   period_id: string;
   status: string;
@@ -63,7 +57,6 @@ interface CeoEvaluation {
   general_rating: string | null;
   evaluator_note: string | null;
   submitted_at: string | null;
-  ceo: { full_name: string } | null;
   evaluator: { full_name: string } | null;
   period: { year: number; quarter: number } | null;
 }
@@ -80,10 +73,8 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
   const [loading, setLoading] = useState(true);
   const [evaluations, setEvaluations] = useState<CeoEvaluation[]>([]);
   const [periods, setPeriods] = useState<CeoPeriod[]>([]);
-  const [ceoUsers, setCeoUsers] = useState<CeoUser[]>([]);
 
   // Filters
-  const [activeCeoId, setActiveCeoId] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('');
 
   // Expandable rows
@@ -93,16 +84,12 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
   const [expandLoading, setExpandLoading] = useState(false);
 
   const fetchFilters = useCallback(async () => {
-    const [{ data: periodsData }, { data: ceosData }] = await Promise.all([
-      supabase.from('ceo_evaluation_periods').select('*').order('year', { ascending: false }).order('quarter', { ascending: false }),
-      supabase.from('users').select('id, full_name').eq('role', 'ceo'),
-    ]);
+    const { data: periodsData } = await supabase
+      .from('ceo_evaluation_periods')
+      .select('*')
+      .order('year', { ascending: false })
+      .order('quarter', { ascending: false });
     setPeriods(periodsData || []);
-    setCeoUsers(ceosData || []);
-    // Auto-select first CEO tab
-    if (ceosData && ceosData.length > 0) {
-      setActiveCeoId(ceosData[0].id);
-    }
   }, []);
 
   const fetchEvaluations = useCallback(async () => {
@@ -111,12 +98,12 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
     let query = supabase
       .from('ceo_evaluations')
       .select(`
-        id, ceo_id, evaluator_id, period_id, status, final_score_500, final_score_5, percentage, general_rating,
+        id, evaluator_id, period_id, status, final_score_500, final_score_5, percentage, general_rating,
         evaluator_note, submitted_at,
-        ceo:users!ceo_evaluations_ceo_id_fkey(full_name),
         evaluator:users!ceo_evaluations_evaluator_id_fkey(full_name),
         period:ceo_evaluation_periods(year, quarter)
       `)
+      .is('ceo_id', null)
       .order('created_at', { ascending: false });
 
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
@@ -134,13 +121,8 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
     fetchEvaluations();
   }, [fetchEvaluations]);
 
-  // Filtered evaluations for active CEO tab
-  const filtered = useMemo(() => {
-    if (!activeCeoId) return evaluations;
-    return evaluations.filter(e => e.ceo_id === activeCeoId);
-  }, [evaluations, activeCeoId]);
-
-  // Stats for the active CEO
+  // Aggregate stats across the (period-filtered) collective evaluations.
+  const filtered = evaluations;
   const ceoStats = useMemo(() => {
     const submitted = filtered.filter(e => e.status === 'تم الإرسال');
     const total = filtered.length;
@@ -207,49 +189,7 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
       {!embedded && (
         <div>
           <h1 className="text-3xl font-bold text-gray-900">تقييمات الإدارة العليا</h1>
-          <p className="text-gray-600 mt-2">جميع تقييمات الموظفين للإدارة العليا</p>
-        </div>
-      )}
-
-      {/* CEO Tabs */}
-      {ceoUsers.length > 0 && (
-        <div className="border-b border-gray-200">
-          <nav className="flex gap-1 -mb-px">
-            {ceoUsers.map(ceo => {
-              const isActive = activeCeoId === ceo.id;
-              const ceoSubmitted = evaluations.filter(e => e.ceo_id === ceo.id && e.status === 'تم الإرسال');
-              const ceoAvg = ceoSubmitted.length > 0
-                ? ceoSubmitted.reduce((s, e) => s + (e.percentage || 0), 0) / ceoSubmitted.length
-                : 0;
-
-              return (
-                <button
-                  key={ceo.id}
-                  onClick={() => { setActiveCeoId(ceo.id); setExpandedRow(null); }}
-                  className={`
-                    relative flex items-center gap-3 px-6 py-3.5 text-sm font-semibold transition-all rounded-t-xl
-                    ${isActive
-                      ? 'bg-white text-blue-700 border border-gray-200 border-b-white shadow-sm -mb-px z-10'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <div className={`
-                    w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                    ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}
-                  `}>
-                    {getInitials(ceo.full_name)}
-                  </div>
-                  <span>{ceo.full_name}</span>
-                  {ceoAvg > 0 && (
-                    <Badge variant={getRatingVariant(percentageToRating(ceoAvg))} size="sm">
-                      {ceoAvg.toFixed(0)}%
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          <p className="text-gray-600 mt-2">تقييمات الموظفين للإدارة العليا كفريق واحد</p>
         </div>
       )}
 

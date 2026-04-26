@@ -54,10 +54,10 @@ const menuItems: MenuItem[] = [
   { label: 'موظفو الإدارات', icon: <Users className="h-5 w-5" />, path: '/director-evaluate', roles: ['director'] },
   { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/director-criteria', roles: ['director'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/director-evaluations', roles: ['director'] },
-  { label: 'تقييم الرؤساء', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['director'] },
+  { label: 'تقييم الإدارة العليا', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['director'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/director-org-structure', roles: ['director'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/my-evaluations', roles: ['employee'] },
-  { label: 'تقييم الرؤساء', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['employee'] },
+  { label: 'تقييم الإدارة العليا', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['employee'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/employee-org-structure', roles: ['employee'] },
 
   { label: 'الإعدادات', icon: <Settings className="h-5 w-5" />, path: '/settings', roles: ['admin', 'employee', 'ceo', 'director'] },

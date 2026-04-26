@@ -5,16 +5,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { TextArea } from '../../components/ui/Input';
-import { Save, Send, User, CheckCircle, AlertTriangle, Lock, MessageSquare, ArrowRight } from 'lucide-react';
+import { Save, Send, AlertTriangle, Lock, MessageSquare, Crown } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
-
-interface CeoUser {
-  id: string;
-  full_name: string;
-  job_title: string;
-}
 
 interface CeoEvalPeriod {
   id: string;
@@ -44,18 +37,14 @@ export const CeoEvaluationForm: React.FC = () => {
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activePeriod, setActivePeriod] = useState<CeoEvalPeriod | null>(null);
-  const [ceos, setCeos] = useState<CeoUser[]>([]);
-  const [selectedCeo, setSelectedCeo] = useState<CeoUser | null>(null);
   const [criteria, setCriteria] = useState<CeoCriterion[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [evaluatorNote, setEvaluatorNote] = useState('');
   const [evaluationStatus, setEvaluationStatus] = useState('');
   const [existingEvaluationId, setExistingEvaluationId] = useState<string | null>(null);
-  const [ceoSubmitStatus, setCeoSubmitStatus] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [formLoading, setFormLoading] = useState(false);
 
   // Get user id from users table
   useEffect(() => {
@@ -84,43 +73,6 @@ export const CeoEvaluationForm: React.FC = () => {
     fetchPeriod();
   }, []);
 
-  // Fetch CEO users
-  useEffect(() => {
-    const fetchCeos = async () => {
-      const { data } = await supabase
-        .from('users')
-        .select('id, full_name, job_title')
-        .eq('role', 'ceo');
-      setCeos(data || []);
-    };
-    fetchCeos();
-  }, []);
-
-  // Check submission status for each CEO
-  useEffect(() => {
-    const checkStatuses = async () => {
-      if (!currentUserId || !activePeriod || ceos.length === 0) {
-        setDataLoading(false);
-        return;
-      }
-
-      const statusMap: Record<string, string> = {};
-      for (const ceo of ceos) {
-        const { data } = await supabase
-          .from('ceo_evaluations')
-          .select('status')
-          .eq('evaluator_id', currentUserId)
-          .eq('ceo_id', ceo.id)
-          .eq('period_id', activePeriod.id)
-          .maybeSingle();
-        if (data) statusMap[ceo.id] = data.status;
-      }
-      setCeoSubmitStatus(statusMap);
-      setDataLoading(false);
-    };
-    checkStatuses();
-  }, [currentUserId, activePeriod, ceos]);
-
   // Fetch criteria
   const fetchCriteria = useCallback(async () => {
     const { data } = await supabase
@@ -131,16 +83,16 @@ export const CeoEvaluationForm: React.FC = () => {
     setCriteria(data || []);
   }, []);
 
-  // Load existing evaluation for selected CEO
-  const loadExistingEvaluation = useCallback(async () => {
-    if (!selectedCeo || !currentUserId || !activePeriod) return;
+  // Load existing collective evaluation for the active period
+  const loadExisting = useCallback(async () => {
+    if (!currentUserId || !activePeriod) return;
 
     const { data: evaluation } = await supabase
       .from('ceo_evaluations')
       .select('*')
       .eq('evaluator_id', currentUserId)
-      .eq('ceo_id', selectedCeo.id)
       .eq('period_id', activePeriod.id)
+      .is('ceo_id', null)
       .maybeSingle();
 
     if (evaluation) {
@@ -164,21 +116,16 @@ export const CeoEvaluationForm: React.FC = () => {
       setEvaluationStatus('');
       setScores({});
     }
-  }, [selectedCeo, currentUserId, activePeriod]);
+  }, [currentUserId, activePeriod]);
 
-  // When a CEO is selected, load form data
   useEffect(() => {
-    if (selectedCeo && currentUserId && activePeriod) {
-      setFormLoading(true);
-      setScores({});
-      setEvaluatorNote('');
-      setEvaluationStatus('');
-      setExistingEvaluationId(null);
-      Promise.all([fetchCriteria(), loadExistingEvaluation()]).finally(() =>
-        setFormLoading(false)
-      );
+    if (currentUserId && activePeriod) {
+      Promise.all([fetchCriteria(), loadExisting()]).finally(() => setDataLoading(false));
+    } else if (currentUserId) {
+      // No active period — stop the spinner so the empty-state renders.
+      setDataLoading(false);
     }
-  }, [selectedCeo, currentUserId, activePeriod, fetchCriteria, loadExistingEvaluation]);
+  }, [currentUserId, activePeriod, fetchCriteria, loadExisting]);
 
   const calculateResults = useCallback(() => {
     let rawTotal = 0;
@@ -194,7 +141,7 @@ export const CeoEvaluationForm: React.FC = () => {
   }, [criteria, scores]);
 
   const handleSubmit = async (isDraft: boolean) => {
-    if (!selectedCeo || !currentUserId || !activePeriod) return;
+    if (!currentUserId || !activePeriod) return;
 
     if (!isDraft) {
       const allScored = criteria.every((c) => scores[c.id] && scores[c.id] > 0);
@@ -210,9 +157,10 @@ export const CeoEvaluationForm: React.FC = () => {
       const results = calculateResults();
       const status = isDraft ? 'مسودة' : 'تم الإرسال';
 
+      // ceo_id is null — this row represents the leadership team as a unit.
       const evaluationData = {
         evaluator_id: currentUserId,
-        ceo_id: selectedCeo.id,
+        ceo_id: null,
         period_id: activePeriod.id,
         status,
         percentage: results.percentage,
@@ -232,16 +180,20 @@ export const CeoEvaluationForm: React.FC = () => {
           .eq('id', existingEvaluationId);
         evaluationId = existingEvaluationId;
       } else {
-        const { data: newEval } = await supabase
+        const { data: newEval, error } = await supabase
           .from('ceo_evaluations')
           .insert(evaluationData)
           .select()
           .single();
-        evaluationId = newEval!.id;
+        if (error || !newEval) {
+          toast.error('حدث خطأ أثناء حفظ التقييم: ' + (error?.message || ''));
+          setLoading(false);
+          return;
+        }
+        evaluationId = newEval.id;
         setExistingEvaluationId(evaluationId);
       }
 
-      // Save scores via RPC (bypasses RLS issues)
       const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
       const scoreData = criteria
         .filter((c) => scores[c.id] && scores[c.id] > 0)
@@ -267,7 +219,6 @@ export const CeoEvaluationForm: React.FC = () => {
       }
 
       setEvaluationStatus(status);
-      setCeoSubmitStatus((prev) => ({ ...prev, [selectedCeo.id]: status }));
       toast.success(isDraft ? 'تم حفظ التقييم كمسودة بنجاح' : 'تم إرسال التقييم بنجاح');
     } catch (error) {
       console.error('Error saving CEO evaluation:', error);
@@ -295,7 +246,7 @@ export const CeoEvaluationForm: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">تقييم الإدارة العليا</h1>
         <p className="text-gray-600 mt-2">
-          تقييم أداء أعضاء الإدارة العليا — يتم بشكل ربعي وبسرية تامة
+          تقييم أداء الإدارة العليا كفريق واحد — يتم بشكل ربعي وبسرية تامة
         </p>
       </div>
 
@@ -311,201 +262,136 @@ export const CeoEvaluationForm: React.FC = () => {
         </Card>
       )}
 
-      {/* CEO cards */}
       {activePeriod && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ceos.map((ceo) => {
-              const status = ceoSubmitStatus[ceo.id];
-              const isSubmitted = status === 'تم الإرسال';
-              const isSelected = selectedCeo?.id === ceo.id;
-
-              return (
-                <Card key={ceo.id}>
-                  <CardBody>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCeo(ceo)}
-                      className={`w-full text-right transition-all rounded-lg p-2 -m-2 ${
-                        isSelected
-                          ? 'ring-2 ring-blue-500 bg-blue-50'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xl font-bold">
-                            {ceo.full_name.charAt(0)}
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900">{ceo.full_name}</h3>
-                            <p className="text-sm text-gray-500">{ceo.job_title}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {isSubmitted ? (
-                            <Badge variant="success" size="sm">
-                              <span className="flex items-center gap-1">
-                                <CheckCircle className="h-4 w-4" />
-                                تم التقييم
-                              </span>
-                            </Badge>
-                          ) : status === 'مسودة' ? (
-                            <Badge variant="warning" size="sm">مسودة</Badge>
-                          ) : (
-                            <Badge variant="default" size="sm">بانتظار التقييم</Badge>
-                          )}
-                          <ArrowRight className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </div>
-                    </button>
-                  </CardBody>
-                </Card>
-              );
-            })}
+          {/* Period banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 flex items-center justify-between">
+            <span className="text-sm text-blue-800">
+              الفترة النشطة: {quarterLabels[activePeriod.quarter] || `الربع ${activePeriod.quarter}`} - {activePeriod.year}
+            </span>
+            {isReadOnly && (
+              <span className="flex items-center gap-2 text-amber-700 text-sm font-medium">
+                <Lock className="h-4 w-4" />
+                تم إرسال التقييم — للعرض فقط
+              </span>
+            )}
           </div>
 
-          {/* Period info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm text-blue-800">
-            الفترة النشطة: {quarterLabels[activePeriod.quarter] || `الربع ${activePeriod.quarter}`} - {activePeriod.year}
-          </div>
-        </>
-      )}
-
-      {/* Evaluation form */}
-      {selectedCeo && activePeriod && (
-        <>
-          {formLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Selected CEO header */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">
-                        {selectedCeo.full_name.charAt(0)}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900">تقييم: {selectedCeo.full_name}</h2>
-                        <p className="text-sm text-gray-500">{selectedCeo.job_title}</p>
-                      </div>
-                    </div>
-                    {isReadOnly && (
-                      <div className="flex items-center gap-2 text-amber-600">
-                        <Lock className="h-4 w-4" />
-                        <span className="text-sm font-medium">تم إرسال التقييم - للعرض فقط</span>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-              </Card>
-
-              {/* Score summary */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardBody>
-                    <p className="text-sm text-gray-600 mb-1">المعايير المقيّمة</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {scoredCount} / {criteria.length}
-                    </p>
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardBody>
-                    <p className="text-sm text-gray-600 mb-1">النسبة المئوية</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {results.percentage.toFixed(1)}%
-                    </p>
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardBody>
-                    <p className="text-sm text-gray-600 mb-1">التقدير العام</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {scoredCount > 0 ? results.generalRating : '-'}
-                    </p>
-                  </CardBody>
-                </Card>
+          {/* Header card explaining collective scope */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
+                  <Crown className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">الإدارة العليا</h2>
+                  <p className="text-sm text-gray-500">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
+                </div>
               </div>
+            </CardHeader>
+          </Card>
 
-              {/* Criteria */}
-              {criteria.map((criterion, index) => (
-                <Card key={criterion.id}>
-                  <CardBody>
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
-                              {index + 1}
-                            </span>
-                            <h3 className="font-bold text-gray-900">{criterion.title}</h3>
-                          </div>
-                          {criterion.description && (
-                            <p className="text-sm text-gray-500 mr-8">{criterion.description}</p>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500 whitespace-nowrap">
-                          الوزن: {criterion.weight}%
-                        </div>
+          {/* Score summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-1">المعايير المقيّمة</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {scoredCount} / {criteria.length}
+                </p>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-1">النسبة المئوية</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {results.percentage.toFixed(1)}%
+                </p>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-1">التقدير العام</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {scoredCount > 0 ? results.generalRating : '-'}
+                </p>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Criteria */}
+          {criteria.map((criterion, index) => (
+            <Card key={criterion.id}>
+              <CardBody>
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
+                          {index + 1}
+                        </span>
+                        <h3 className="font-bold text-gray-900">{criterion.title}</h3>
                       </div>
-                      <FractionalScoreSelector
-                        value={scores[criterion.id] || 0}
-                        onChange={(score) =>
-                          setScores((prev) => ({ ...prev, [criterion.id]: score }))
-                        }
-                        color="blue"
-                        disabled={isReadOnly}
-                      />
+                      {criterion.description && (
+                        <p className="text-sm text-gray-500 mr-8">{criterion.description}</p>
+                      )}
                     </div>
-                  </CardBody>
-                </Card>
-              ))}
-
-              {/* Evaluator note */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-gray-600" />
-                    <h3 className="font-bold text-gray-900">ملاحظات المقيّم</h3>
+                    <div className="text-sm text-gray-500 whitespace-nowrap">
+                      الوزن: {criterion.weight}%
+                    </div>
                   </div>
-                </CardHeader>
-                <CardBody>
-                  <TextArea
-                    value={evaluatorNote}
-                    onChange={(e) => setEvaluatorNote(e.target.value)}
-                    placeholder="أضف ملاحظاتك هنا (اختياري)..."
-                    rows={4}
+                  <FractionalScoreSelector
+                    value={scores[criterion.id] || 0}
+                    onChange={(score) =>
+                      setScores((prev) => ({ ...prev, [criterion.id]: score }))
+                    }
+                    color="blue"
                     disabled={isReadOnly}
                   />
-                </CardBody>
-              </Card>
-
-              {/* Action buttons */}
-              {!isReadOnly && (
-                <div className="flex items-center justify-end gap-3">
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleSubmit(true)}
-                    disabled={loading}
-                  >
-                    <Save className="h-4 w-4 ml-2" />
-                    حفظ كمسودة
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => handleSubmit(false)}
-                    disabled={loading}
-                  >
-                    <Send className="h-4 w-4 ml-2" />
-                    إرسال التقييم
-                  </Button>
                 </div>
-              )}
+              </CardBody>
+            </Card>
+          ))}
+
+          {/* Evaluator note */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-gray-600" />
+                <h3 className="font-bold text-gray-900">ملاحظات المقيّم</h3>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <TextArea
+                value={evaluatorNote}
+                onChange={(e) => setEvaluatorNote(e.target.value)}
+                placeholder="أضف ملاحظاتك هنا (اختياري)..."
+                rows={4}
+                disabled={isReadOnly}
+              />
+            </CardBody>
+          </Card>
+
+          {/* Action buttons */}
+          {!isReadOnly && (
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => handleSubmit(true)}
+                disabled={loading}
+              >
+                <Save className="h-4 w-4 ml-2" />
+                حفظ كمسودة
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => handleSubmit(false)}
+                disabled={loading}
+              >
+                <Send className="h-4 w-4 ml-2" />
+                إرسال التقييم
+              </Button>
             </div>
           )}
         </>
