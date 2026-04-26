@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { TextArea } from '../../components/ui/Input';
-import { Save, Send, AlertTriangle, Lock, MessageSquare, Crown } from 'lucide-react';
+import { Save, Send, AlertTriangle, Lock, MessageSquare, Crown, Play, Eye, ArrowRight } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 
 interface CeoEvalPeriod {
@@ -45,6 +45,8 @@ export const CeoEvaluationForm: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [started, setStarted] = useState(false);
+  const [leadershipTeam, setLeadershipTeam] = useState<{ id: string; full_name: string; job_title: string | null }[]>([]);
 
   // Get user id from users table
   useEffect(() => {
@@ -81,6 +83,20 @@ export const CeoEvaluationForm: React.FC = () => {
       .eq('is_active', true)
       .order('order');
     setCriteria(data || []);
+  }, []);
+
+  // Fetch leadership team — shown on the intro screen so the evaluator
+  // sees who is being rated as a unit before starting.
+  useEffect(() => {
+    const fetchTeam = async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('id, full_name, job_title')
+        .eq('role', 'ceo')
+        .order('full_name');
+      setLeadershipTeam(data || []);
+    };
+    fetchTeam();
   }, []);
 
   // Load existing collective evaluation for the active period
@@ -277,6 +293,99 @@ export const CeoEvaluationForm: React.FC = () => {
             )}
           </div>
 
+          {/* Intro screen: show details first, then a button to start the evaluation */}
+          {!started && (
+            <>
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
+                      <Crown className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">الإدارة العليا</h2>
+                      <p className="text-sm text-gray-500">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-5">
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-900 leading-relaxed">
+                    سيتم تقييم الإدارة العليا كفريق واحد بناءً على {criteria.length} معيار. تقييمك سرّي ولا يتم
+                    عرض اسمك على أعضاء الإدارة العليا. يمكنك حفظ التقييم كمسودة والعودة إليه قبل الإرسال النهائي.
+                  </div>
+
+                  {/* Leadership team chips */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2">أعضاء الإدارة العليا</p>
+                    {leadershipTeam.length === 0 ? (
+                      <p className="text-sm text-gray-500">لا يوجد أعضاء حاليًا</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {leadershipTeam.map(member => (
+                          <div key={member.id} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
+                            <div className="w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-xs font-bold">
+                              {member.full_name.charAt(0)}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-gray-900 leading-tight">{member.full_name}</p>
+                              {member.job_title && (
+                                <p className="text-[10px] text-gray-500 leading-tight">{member.job_title}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Criteria preview */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2">معايير التقييم ({criteria.length})</p>
+                    <div className="space-y-2">
+                      {criteria.map((c, idx) => (
+                        <div key={c.id} className="flex items-start justify-between gap-3 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                          <div className="flex items-start gap-2 min-w-0">
+                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded mt-0.5">{idx + 1}</span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900">{c.title}</p>
+                              {c.description && (
+                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{c.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-500 whitespace-nowrap mt-1">الوزن: {c.weight}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Status / start button */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      {isReadOnly
+                        ? 'تم إرسال التقييم لهذه الفترة'
+                        : evaluationStatus === 'مسودة'
+                          ? 'لديك مسودة محفوظة — يمكنك متابعتها'
+                          : 'لم تبدأ التقييم بعد'}
+                    </p>
+                    <Button onClick={() => setStarted(true)} disabled={criteria.length === 0}>
+                      <span className="flex items-center gap-2">
+                        {isReadOnly ? (
+                          <><Eye className="h-4 w-4" /> عرض التقييم</>
+                        ) : evaluationStatus === 'مسودة' ? (
+                          <><ArrowRight className="h-4 w-4" /> متابعة التقييم</>
+                        ) : (
+                          <><Play className="h-4 w-4" /> بدء التقييم</>
+                        )}
+                      </span>
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </>
+          )}
+
+          {started && (<>
           {/* Header card explaining collective scope */}
           <Card>
             <CardHeader>
@@ -374,26 +483,32 @@ export const CeoEvaluationForm: React.FC = () => {
           </Card>
 
           {/* Action buttons */}
-          {!isReadOnly && (
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => handleSubmit(true)}
-                disabled={loading}
-              >
-                <Save className="h-4 w-4 ml-2" />
-                حفظ كمسودة
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => handleSubmit(false)}
-                disabled={loading}
-              >
-                <Send className="h-4 w-4 ml-2" />
-                إرسال التقييم
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center justify-between gap-3">
+            <Button variant="secondary" onClick={() => setStarted(false)}>
+              العودة إلى التفاصيل
+            </Button>
+            {!isReadOnly && (
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => handleSubmit(true)}
+                  disabled={loading}
+                >
+                  <Save className="h-4 w-4 ml-2" />
+                  حفظ كمسودة
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => handleSubmit(false)}
+                  disabled={loading}
+                >
+                  <Send className="h-4 w-4 ml-2" />
+                  إرسال التقييم
+                </Button>
+              </div>
+            )}
+          </div>
+          </>)}
         </>
       )}
     </div>
