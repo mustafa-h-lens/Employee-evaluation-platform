@@ -10,6 +10,7 @@ import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Save, Send, User, Star, AlertTriangle, Lock, MessageSquare, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface Director {
   id: string;
@@ -17,6 +18,7 @@ interface Director {
   job_title: string;
   email: string;
   employee_number?: string;
+  avatar_url?: string | null;
   department?: { name: string } | null;
   eval_status?: string | null;
   eval_rating?: string | null;
@@ -275,7 +277,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       }
       const { data } = await supabase
         .from('users')
-        .select('id, full_name, job_title, email')
+        .select('id, full_name, job_title, email, avatar_url')
         .eq('role', 'director')
         .order('full_name');
 
@@ -685,9 +687,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                     <TableRow key={dir.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {dir.full_name.charAt(0)}
-                          </div>
+                          <UserAvatar name={dir.full_name} avatarUrl={dir.avatar_url} size="md" />
                           <span className="font-medium text-ds-text">{dir.full_name}</span>
                         </div>
                       </TableCell>

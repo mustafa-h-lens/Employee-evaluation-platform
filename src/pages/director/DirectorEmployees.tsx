@@ -5,6 +5,7 @@ import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Users, Search, Mail, Briefcase, FileCheck, FileClock, Clipboard as ClipboardEdit, Eye, Calendar, AlertTriangle, Building2 } from 'lucide-react';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface EmployeeInfo {
   id: string;
@@ -14,6 +15,7 @@ interface EmployeeInfo {
   job_title: string;
   department_name: string;
   employee_number?: string;
+  avatar_url?: string | null;
   evaluation_status?: string | null;
   general_rating?: string | null;
   percentage?: number | null;
@@ -175,7 +177,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
 
       const { data: empData } = await supabase
         .from('employees')
-        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id')
+        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id, user:users!employees_user_id_fkey(avatar_url)')
         .in('id', allEmpIds)
         .order('full_name');
 
@@ -205,8 +207,9 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
         });
       }
 
-      const enriched: EmployeeInfo[] = empData.map(emp => {
+      const enriched: EmployeeInfo[] = empData.map((emp: any) => {
         const dId = empDirMap.get(emp.id) || emp.directorate_id;
+        const userJoin = Array.isArray(emp.user) ? emp.user[0] : emp.user;
         return {
           id: emp.id,
           user_id: emp.user_id,
@@ -215,6 +218,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
           job_title: emp.job_title || '',
           department_name: dId ? (dirNameMap.get(dId) || '') : '',
           employee_number: emp.employee_number || '',
+          avatar_url: userJoin?.avatar_url || null,
           evaluation_status: evalMap.get(emp.id)?.status || null,
           general_rating: evalMap.get(emp.id)?.general_rating || null,
           percentage: evalMap.get(emp.id)?.percentage || null,
@@ -386,9 +390,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                     <TableRow key={emp.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {emp.full_name.charAt(0)}
-                          </div>
+                          <UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="md" />
                           <div>
                             <span className="font-medium text-ds-text">{emp.full_name}</span>
                             {emp.job_title && (

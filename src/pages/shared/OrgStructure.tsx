@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 import {
   Users,
   X,
@@ -75,6 +76,7 @@ interface SelectedPerson {
   employeeNumber?: string; isSupervisor?: boolean; supervisorTitle?: string;
   supervisorMemberCount?: number; teamSize?: number;
   dirAssignments?: DirAssignmentInfo[];
+  avatarUrl?: string | null;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -126,9 +128,22 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
             <X className="h-4 w-4" />
           </button>
           <div className="relative flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-2xl bg-ds-surface/20 backdrop-blur-sm flex items-center justify-center shadow-lg mb-3"
-              style={{ animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' }}>
-              <span className="text-white text-3xl font-bold">{initials(person.name)}</span>
+            <div
+              className="mb-3 shadow-lg"
+              style={{
+                animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
+                borderRadius: '50%',
+                padding: '3px',
+                background: 'rgba(255,255,255,0.25)',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              <UserAvatar
+                name={person.name}
+                avatarUrl={person.avatarUrl}
+                size="2xl"
+                initialsLength={2}
+              />
             </div>
             <h3 className="text-xl font-bold text-white">{person.name}</h3>
             <p className="text-white/80 text-sm mt-1">{person.jobTitle || roleLabel(person.role)}</p>
@@ -1158,6 +1173,7 @@ export const OrgStructure: React.FC = () => {
   const [empDirAssignments, setEmpDirAssignments] = useState<EmpDirAssignment[]>([]);
   const [supervisorMap, setSupervisorMap] = useState<Record<string, SupervisorAssignment[]>>({});
   const [supervisedEmpsMap, setSupervisedEmpsMap] = useState<Record<string, SupervisedEmployee[]>>({});
+  const [avatarMap, setAvatarMap] = useState<Record<string, string | null>>({});
   const [selectedPerson, setSelectedPerson] = useState<SelectedPerson | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'org' | 'titles'>('org');
@@ -1206,11 +1222,21 @@ export const OrgStructure: React.FC = () => {
       // Fetch CEO users first so we can tag directors who are CEOs
       const { data: ceoData } = await supabase
         .from('users')
-        .select('id, full_name, email, role, job_title')
+        .select('id, full_name, email, role, job_title, avatar_url')
         .eq('role', 'ceo');
       const ceoUsers_ = (ceoData || []) as OrgUser[];
       const ceoIdSet = new Set(ceoUsers_.map(c => c.id));
       setCeoUsers(ceoUsers_);
+
+      // Pull avatar URLs for every user once so the detail modal and any
+      // future avatar usage in the tree can resolve by user_id without an
+      // extra round-trip per click.
+      const { data: allUsers } = await supabase
+        .from('users')
+        .select('id, avatar_url');
+      const avMap: Record<string, string | null> = {};
+      (allUsers || []).forEach((u: any) => { avMap[u.id] = u.avatar_url || null; });
+      setAvatarMap(avMap);
 
       // Build director OrgUser from FK join + director_id
       // Note: phone is NOT on the users table — it comes from employees enrichment below
@@ -1336,6 +1362,7 @@ export const OrgStructure: React.FC = () => {
       isSupervisor: assignments.length > 0,
       supervisorTitle: assignments.length > 0 ? assignments.map((s: SupervisorAssignment) => s.title || 'مشرف').join('، ') : undefined,
       supervisorMemberCount: total || undefined,
+      avatarUrl: p.userId ? (avatarMap[p.userId] || null) : null,
     });
   };
 

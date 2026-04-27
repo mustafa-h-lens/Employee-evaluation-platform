@@ -5,6 +5,7 @@ import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Users, FileCheck, FileClock, Crown, Eye, ClipboardEdit } from 'lucide-react';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface Director {
   id: string;
@@ -12,6 +13,7 @@ interface Director {
   email: string;
   job_title: string;
   role: string;
+  avatar_url?: string | null;
 }
 
 interface DirectorEvaluation {
@@ -190,9 +192,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                     <TableRow key={director.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {director.full_name.charAt(0)}
-                          </div>
+                          <UserAvatar name={director.full_name} avatarUrl={director.avatar_url} size="md" />
                           <span className="font-medium text-ds-text">{director.full_name}</span>
                         </div>
                       </TableCell>

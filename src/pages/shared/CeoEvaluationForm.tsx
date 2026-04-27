@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { TextArea } from '../../components/ui/Input';
 import { Save, Send, AlertTriangle, Lock, MessageSquare, Crown, Play, Eye, ArrowRight } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface CeoEvalPeriod {
   id: string;
@@ -91,7 +92,7 @@ export const CeoEvaluationForm: React.FC = () => {
     const fetchTeam = async () => {
       const { data } = await supabase
         .from('users')
-        .select('id, full_name, job_title')
+        .select('id, full_name, job_title, avatar_url')
         .eq('role', 'ceo')
         .order('full_name');
       setLeadershipTeam(data || []);
@@ -330,9 +331,7 @@ export const CeoEvaluationForm: React.FC = () => {
                       <div className="flex flex-wrap gap-2">
                         {leadershipTeam.map(member => (
                           <div key={member.id} className="flex items-center gap-2 bg-ds-bg border border-ds-border rounded-full px-3 py-1.5">
-                            <div className="w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-xs font-bold">
-                              {member.full_name.charAt(0)}
-                            </div>
+                            <UserAvatar name={member.full_name} avatarUrl={(member as any).avatar_url} size="sm" />
                             <div className="text-right">
                               <p className="text-sm font-medium text-ds-text leading-tight">{member.full_name}</p>
                               {member.job_title && (

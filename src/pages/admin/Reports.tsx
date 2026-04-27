@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { BarChart3, Search, User, Building2, Calendar, Star, Target, MessageSquare, FileText, ChevronDown } from 'lucide-react';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -325,9 +326,7 @@ export const Reports: React.FC = () => {
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-right transition-colors border-b border-gray-50 last:border-0"
                       >
-                        <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                          {emp.full_name.charAt(0)}
-                        </div>
+                        <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ds-text truncate">{emp.full_name}</p>
                           <p className="text-xs text-ds-faint">{emp.job_title} — {emp.department_name}</p>

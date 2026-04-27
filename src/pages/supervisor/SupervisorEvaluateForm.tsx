@@ -10,6 +10,7 @@ import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar, Shield, Clock, MessageSquare } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface EmployeeInfo {
   id: string;
@@ -18,6 +19,7 @@ interface EmployeeInfo {
   employee_number: string;
   department_id: string;
   department_name?: string;
+  avatar_url?: string | null;
   eval_status?: string | null;
   eval_rating?: string | null;
   eval_percentage?: number | null;
@@ -219,7 +221,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
       const { data: employees } = await supabase
         .from('employees')
-        .select('id, full_name, job_title, employee_number, department_id, department:departments(name)')
+        .select('id, full_name, job_title, employee_number, department_id, department:departments(name), user:users!employees_user_id_fkey(avatar_url)')
         .in('id', uniqueIds);
 
       // Fetch existing supervisor evals for selected period
@@ -238,17 +240,21 @@ export const SupervisorEvaluateForm: React.FC = () => {
         }]));
       }
 
-      setAllEmployees((employees || []).map((e: any) => ({
-        id: e.id,
-        full_name: e.full_name,
-        job_title: e.job_title,
-        employee_number: e.employee_number,
-        department_id: e.department_id,
-        department_name: e.department?.name || '',
-        eval_status: evalMap.get(e.id)?.status || null,
-        eval_rating: evalMap.get(e.id)?.rating || null,
-        eval_percentage: evalMap.get(e.id)?.percentage || null,
-      })));
+      setAllEmployees((employees || []).map((e: any) => {
+        const userJoin = Array.isArray(e.user) ? e.user[0] : e.user;
+        return {
+          id: e.id,
+          full_name: e.full_name,
+          job_title: e.job_title,
+          employee_number: e.employee_number,
+          department_id: e.department_id,
+          department_name: e.department?.name || '',
+          avatar_url: userJoin?.avatar_url || null,
+          eval_status: evalMap.get(e.id)?.status || null,
+          eval_rating: evalMap.get(e.id)?.rating || null,
+          eval_percentage: evalMap.get(e.id)?.percentage || null,
+        };
+      }));
       setEmployeesLoading(false);
     };
     fetchEmployees();
@@ -740,9 +746,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                     <TableRow key={emp.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {emp.full_name.charAt(0)}
-                          </div>
+                          <UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="md" />
                           <div>
                             <span className="font-medium text-ds-text">{emp.full_name}</span>
                           </div>

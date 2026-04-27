@@ -9,6 +9,7 @@ import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { CheckCircle, XCircle, Eye, Clock, FileText, Star, Filter, Users, Crown, UserCog, Shield } from 'lucide-react';
 import { percentageToRating } from '../../lib/scoring';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -850,9 +851,7 @@ export const PendingApprovals: React.FC = () => {
                       <TableRow key={group.groupKey}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                              {ev.employee?.full_name?.charAt(0) || '?'}
-                            </div>
+                            <UserAvatar name={ev.employee?.full_name || ''} avatarUrl={ev.employee?.avatar_url} size="md" />
                             <div>
                               <span className="font-medium text-ds-text">{ev.employee?.full_name}</span>
                               <p className="text-xs text-ds-faint">{ev.employee?.job_title}</p>
@@ -955,9 +954,7 @@ export const PendingApprovals: React.FC = () => {
                       <TableRow key={`${combined.director_id}_${combined.period_id}`}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                              {combined.director?.full_name?.charAt(0) || '?'}
-                            </div>
+                            <UserAvatar name={combined.director?.full_name || ''} avatarUrl={combined.director?.avatar_url} size="md" />
                             <div>
                               <span className="font-medium text-ds-text">{combined.director?.full_name}</span>
                               <p className="text-xs text-ds-faint">{combined.director?.job_title}</p>
@@ -1060,9 +1057,7 @@ export const PendingApprovals: React.FC = () => {
                       <TableRow key={ev.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                              {ev.employee?.full_name?.charAt(0) || '?'}
-                            </div>
+                            <UserAvatar name={ev.employee?.full_name || ''} avatarUrl={ev.employee?.avatar_url} size="md" />
                             <div>
                               <span className="font-medium text-ds-text">{ev.employee?.full_name}</span>
                               <p className="text-xs text-ds-faint">{ev.employee?.job_title}</p>

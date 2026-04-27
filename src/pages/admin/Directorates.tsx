@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface DirectorUser {
   id: string;
@@ -419,17 +420,13 @@ export const Directorates: React.FC = () => {
                           <div className="flex flex-col gap-1">
                             {dir.director?.full_name && (
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-xs font-bold text-purple-700">{dir.director.full_name.charAt(0)}</span>
-                                </div>
+                                <UserAvatar name={dir.director.full_name} avatarUrl={(dir.director as any).avatar_url} size="sm" />
                                 <span className="font-medium">{dir.director.full_name}</span>
                               </div>
                             )}
                             {dir.secondary_director?.full_name && (
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-xs font-bold text-amber-700">{dir.secondary_director.full_name.charAt(0)}</span>
-                                </div>
+                                <UserAvatar name={dir.secondary_director.full_name} avatarUrl={(dir.secondary_director as any).avatar_url} size="sm" />
                                 <span className="font-medium text-ds-muted">{dir.secondary_director.full_name}</span>
                               </div>
                             )}
@@ -487,9 +484,7 @@ export const Directorates: React.FC = () => {
                                         <div className="p-2 space-y-1.5">
                                           {deptEmps.length > 0 ? deptEmps.map((emp) => (
                                             <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-ds-bg transition-colors">
-                                              <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-xs font-bold text-teal-700">{emp.full_name.charAt(0)}</span>
-                                              </div>
+                                              <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                                               <div>
                                                 <span className="text-sm font-medium text-ds-text">{emp.full_name}</span>
                                                 <span className="text-xs text-ds-faint block">{emp.job_title}</span>
@@ -525,9 +520,7 @@ export const Directorates: React.FC = () => {
                                     <div className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                                       {empsNoDept.map((emp) => (
                                         <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-ds-bg transition-colors">
-                                          <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                            <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
-                                          </div>
+                                          <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                                           <div>
                                             <span className="text-sm font-medium text-ds-text">{emp.full_name}</span>
                                             <span className="text-xs text-ds-faint block">{emp.job_title}</span>
@@ -582,9 +575,7 @@ export const Directorates: React.FC = () => {
                     <TableRow key={director.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isCeo ? 'bg-amber-100' : 'bg-purple-100'}`}>
-                            <span className={`text-sm font-bold ${isCeo ? 'text-amber-700' : 'text-purple-700'}`}>{director.full_name.charAt(0)}</span>
-                          </div>
+                          <UserAvatar name={director.full_name} avatarUrl={(director as any).avatar_url} size="sm" />
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{director.full_name}</span>
                             {isCeo && <Badge variant="warning" size="sm">إدارة عليا</Badge>}

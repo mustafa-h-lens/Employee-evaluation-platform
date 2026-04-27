@@ -12,6 +12,7 @@ import {
   CreditCard as Edit, AlertTriangle, Search,
   Trash2, CheckSquare, Square, Filter
 } from 'lucide-react';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -548,11 +549,7 @@ export const SupervisorAssignments: React.FC = () => {
                   <TableRow key={assignment.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-bold text-blue-700">
-                            {assignment.user?.full_name?.charAt(0) || '?'}
-                          </span>
-                        </div>
+                        <UserAvatar name={assignment.user?.full_name || ''} avatarUrl={assignment.user?.avatar_url} size="md" />
                         <div>
                           <p className="font-medium text-ds-text">{assignment.user?.full_name || '--'}</p>
                         </div>
@@ -804,9 +801,7 @@ export const SupervisorAssignments: React.FC = () => {
                           </td>
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
-                              </div>
+                              <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                               <span className="font-medium text-ds-text">{emp.full_name}</span>
                             </div>
                           </td>

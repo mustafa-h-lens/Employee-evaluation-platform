@@ -10,6 +10,7 @@ import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Save, Send, User, AlertTriangle, Lock, MessageSquare, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface EmployeeInfo {
   id: string;           // employees table id
@@ -21,6 +22,7 @@ interface EmployeeInfo {
   directorate_id?: string | null;
   department_name?: string;
   employee_number?: string;
+  avatar_url?: string | null;
   eval_status?: string | null;
   eval_rating?: string | null;
   eval_percentage?: number | null;
@@ -263,7 +265,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
       const { data: employees } = await supabase
         .from('employees')
-        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id, department_id')
+        .select('id, user_id, full_name, email, job_title, employee_number, directorate_id, department_id, user:users!employees_user_id_fkey(avatar_url)')
         .in('id', unsupervisedIds)
         .order('full_name');
 
@@ -294,14 +296,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         }
       });
 
-      setAllEmployees(employees.map(e => {
+      setAllEmployees(employees.map((e: any) => {
         const assign = empDirMap.get(e.id);
         const dId = assign?.directorate_id || e.directorate_id;
         const deptId = assign?.department_id || e.department_id || null;
         const peer = dId ? dirPeerMap.get(dId) : null;
         const peerEval = peerEvalMap.get(e.id);
+        const userJoin = Array.isArray(e.user) ? e.user[0] : e.user;
         return {
           ...e,
+          avatar_url: userJoin?.avatar_url || null,
           directorate_id: dId,
           department_id: deptId,
           department_name: dId ? (dirNameMap.get(dId) || '') : '',
@@ -773,9 +777,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                     <TableRow key={emp.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
-                            {emp.full_name.charAt(0)}
-                          </div>
+                          <UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="md" />
                           <div>
                             <span className="font-medium text-ds-text">{emp.full_name}</span>
                             {emp.job_title && (

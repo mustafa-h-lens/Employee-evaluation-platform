@@ -8,6 +8,7 @@ import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Users, UserPlus, CreditCard as Edit, Crown, FileCheck, FileClock, AlertTriangle, Trash2 } from 'lucide-react';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 interface Director {
   id: string;
@@ -355,11 +356,7 @@ export const DirectorManagement: React.FC = () => {
                     <TableRow key={director.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-purple-700">
-                              {director.full_name.charAt(0)}
-                            </span>
-                          </div>
+                          <UserAvatar name={director.full_name} avatarUrl={(director as any).avatar_url} size="sm" />
                           <span className="font-medium">{director.full_name}</span>
                         </div>
                       </TableCell>
