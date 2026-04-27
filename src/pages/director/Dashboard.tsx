@@ -158,19 +158,21 @@ export const DirectorDashboard: React.FC = () => {
         <div
           className="p-5 rounded-ds-lg flex items-center justify-between"
           style={{
-            background: 'var(--accent-glow)',
-            border: '1px solid var(--accent-glow-md)',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-soft)',
+            boxShadow: 'var(--shadow-card)',
+            borderRight: '4px solid var(--accent)',
           }}
         >
           <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--accent)' }}>فترة التقييم الحالية</p>
-            <p className="text-lg font-bold" style={{ color: 'var(--accent-lighter)' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>فترة التقييم الحالية</p>
+            <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
               {monthLabels[activePeriod.month]} - {activePeriod.year}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm" style={{ color: 'var(--accent)' }}>ينتهي في</p>
-            <p className="font-medium" style={{ color: 'var(--accent-lighter)' }}>{new Date(activePeriod.end_date).toLocaleDateString('ar-SA')}</p>
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>ينتهي في</p>
+            <p className="font-bold" style={{ color: 'var(--accent)' }}>{new Date(activePeriod.end_date).toLocaleDateString('ar-SA')}</p>
           </div>
         </div>
       )}

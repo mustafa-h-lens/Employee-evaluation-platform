@@ -190,20 +190,21 @@ export const EmployeeDashboard: React.FC = () => {
 
       {employeeData && (
         <div
-          className="p-5 rounded-ds-lg"
+          className="p-6 rounded-ds-lg"
           style={{
-            background: 'var(--accent-glow)',
-            border: '1px solid var(--accent-glow-md)',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-soft)',
+            boxShadow: 'var(--shadow-card)',
           }}
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-              <p className="text-sm" style={{ color: 'var(--accent)' }}>المسمى الوظيفي</p>
-              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>{employeeData.job_title}</p>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>المسمى الوظيفي</p>
+              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{employeeData.job_title}</p>
             </div>
             <div>
-              <p className="text-sm" style={{ color: 'var(--accent)' }}>الإدارة</p>
-              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>الإدارة</p>
+              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
                 {(() => {
                   const dirName = employeeData.assignment_directorate_name || employeeData.directorate?.name || '';
                   const deptName = employeeData.assignment_department_name || employeeData.department?.name || '';
@@ -213,12 +214,12 @@ export const EmployeeDashboard: React.FC = () => {
               </p>
             </div>
             <div>
-              <p className="text-sm" style={{ color: 'var(--accent)' }}>المدير المباشر</p>
-              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>{resolveManagerLabel() || '—'}</p>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>المدير المباشر</p>
+              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{resolveManagerLabel() || '—'}</p>
             </div>
             <div>
-              <p className="text-sm" style={{ color: 'var(--accent)' }}>رقم الموظف</p>
-              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>{employeeData.employee_number}</p>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>رقم الموظف</p>
+              <p className="text-base font-bold" style={{ color: 'var(--accent)' }}>{employeeData.employee_number}</p>
             </div>
           </div>
         </div>
