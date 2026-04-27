@@ -1,0 +1,46 @@
+{
+  "name": "@half-lens/design-system",
+  "version": "1.0.0",
+  "description": "Half Lens Design System — UI components, tokens, and styles",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "style": "dist/half-lens-ds.css",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./css": "./dist/half-lens-ds.css",
+    "./tokens": {
+      "import": "./dist/tokens.js",
+      "types": "./dist/tokens.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && cp src/styles/half-lens-ds.css dist/",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "lucide-react": ">=0.300.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.5.0"
+  },
+  "keywords": [
+    "design-system",
+    "half-lens",
+    "react",
+    "components",
+    "rtl",
+    "arabic"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}

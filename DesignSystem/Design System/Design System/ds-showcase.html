@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Half Lens DS — Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #050d1e; color: #f0f4ff; min-height: 100vh; }
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.frame-wrap {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.frame-wrap iframe {
+  width: 1440px;
+  height: 900px;
+  border: none;
+  transform-origin: top right;
+  pointer-events: none;
+}
+
+.frame-label {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(37,99,235,0.9);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+/* Navigation */
+.nav-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: rgba(7,20,45,0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 10px 16px;
+  z-index: 100;
+}
+.nav-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: rgba(200,215,255,0.6);
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn:hover { color: #f0f4ff; background: rgba(255,255,255,0.05); }
+.nav-btn.active { background: #2563eb; color: #fff; }
+
+.instructions {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(37,99,235,0.15);
+  border: 1px solid rgba(37,99,235,0.3);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 12px 24px;
+  z-index: 100;
+  font-size: 14px;
+  color: #60a5fa;
+  text-align: center;
+  font-weight: 600;
+}
+
+.screen-container {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+  padding: 80px 40px 100px;
+  text-align: center;
+}
+.screen-container.active { display: block; }
+
+.screen-container h2 {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+.screen-container p {
+  font-size: 14px;
+  color: rgba(200,215,255,0.5);
+  margin-bottom: 24px;
+}
+
+.preview-frame {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(37,99,235,0.1);
+  position: relative;
+}
+.preview-frame img {
+  width: 100%;
+  display: block;
+}
+/* Browser chrome mockup */
+.browser-bar {
+  background: #0a1a35;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.browser-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.browser-dots { display: flex; gap: 6px; }
+.browser-url {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: rgba(200,215,255,0.4);
+  text-align: center;
+  direction: ltr;
+}
+
+.preview-frame iframe {
+  width: 100%;
+  height: 720px;
+  border: none;
+}
+</style>
+</head>
+<body>
+
+<div class="instructions">
+  اضغط <b>Cmd+Shift+4</b> لالتقاط لقطة شاشة لأي صفحة — أو <b>Cmd+Shift+3</b> للشاشة كاملة
+</div>
+
+<!-- Screens -->
+<div class="screen-container active" id="sc-dash">
+  <h2>لوحة المعلومات</h2>
+  <p>Dashboard — نظرة سريعة على أداء المشاريع والعمليات</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/dashboard</div>
+    </div>
+    <iframe id="if-dash" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-clients">
+  <h2>إدارة العملاء</h2>
+  <p>Clients — عرض وإدارة بيانات العملاء</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/clients</div>
+    </div>
+    <iframe id="if-clients" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-projects">
+  <h2>إدارة المشاريع</h2>
+  <p>Projects — تتبع المشاريع والميزانيات والمراحل</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/projects</div>
+    </div>
+    <iframe id="if-projects" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-vendors">
+  <h2>إدارة الموردين</h2>
+  <p>Vendors — بيانات الموردين والتصدير</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/vendors</div>
+    </div>
+    <iframe id="if-vendors" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-project-detail">
+  <h2>تفاصيل المشروع</h2>
+  <p>Project Detail — بنود وفواتير ومصروفات المشروع</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/projects/التغطيات</div>
+    </div>
+    <iframe id="if-projdetail" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-vendor-detail">
+  <h2>صفحة المورد</h2>
+  <p>Vendor Detail — البيانات الشخصية والمالية والتأشيرات</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/vendors/أحمد-المطيري</div>
+    </div>
+    <iframe id="if-vendordetail" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-settings">
+  <h2>الإعدادات</h2>
+  <p>Settings — إعدادات النظام والتصنيفات والسياسات</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/settings</div>
+    </div>
+    <iframe id="if-settings" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<div class="screen-container" id="sc-profile">
+  <h2>الملف الشخصي</h2>
+  <p>Profile — بيانات المستخدم والصور والوثائق</p>
+  <div class="preview-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#febc2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+      </div>
+      <div class="browser-url">app.halflens.sa/profile</div>
+    </div>
+    <iframe id="if-profile" src="admin-panel-ds.html"></iframe>
+  </div>
+</div>
+
+<!-- Bottom navigation -->
+<div class="nav-bar">
+  <button class="nav-btn active" onclick="showScreen('dash')">لوحة المعلومات</button>
+  <button class="nav-btn" onclick="showScreen('clients')">العملاء</button>
+  <button class="nav-btn" onclick="showScreen('projects')">المشاريع</button>
+  <button class="nav-btn" onclick="showScreen('vendors')">الموردين</button>
+  <button class="nav-btn" onclick="showScreen('project-detail')">تفاصيل مشروع</button>
+  <button class="nav-btn" onclick="showScreen('vendor-detail')">صفحة مورد</button>
+  <button class="nav-btn" onclick="showScreen('settings')">الإعدادات</button>
+  <button class="nav-btn" onclick="showScreen('profile')">الملف الشخصي</button>
+</div>
+
+<script>
+// Navigate each iframe to the correct page after load
+var pageMap = {
+  'if-dash': 'dashboard',
+  'if-clients': 'clients',
+  'if-projects': 'projects',
+  'if-vendors': 'vendors',
+  'if-projdetail': 'project-detail',
+  'if-vendordetail': 'vendor-detail',
+  'if-settings': 'settings',
+  'if-profile': 'profile'
+};
+
+// Wait for each iframe to load, then navigate
+Object.keys(pageMap).forEach(function(id) {
+  var iframe = document.getElementById(id);
+  iframe.addEventListener('load', function() {
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      var fn = iframe.contentWindow.showPage;
+      if (id === 'if-projdetail') {
+        var spd = iframe.contentWindow.showProjectDetail;
+        if (spd) spd();
+      } else if (id === 'if-vendordetail') {
+        var svd = iframe.contentWindow.showVendorDetail;
+        if (svd) svd();
+      } else if (fn) {
+        fn(pageMap[id]);
+      }
+    } catch(e) { console.log('iframe nav error:', id, e); }
+  });
+});
+
+function showScreen(name) {
+  document.querySelectorAll('.screen-container').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('sc-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
