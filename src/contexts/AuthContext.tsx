@@ -6,6 +6,7 @@ interface User {
   email: string;
   full_name: string;
   role: 'admin' | 'employee' | 'ceo' | 'director';
+  avatar_url?: string | null;
 }
 
 interface AuthContextType {
@@ -49,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, role')
+        .select('id, email, full_name, role, avatar_url')
         .eq('auth_id', authId)
         .maybeSingle();
 

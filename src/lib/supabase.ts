@@ -22,6 +22,7 @@ export type Database = {
     password_hash: string;
     full_name: string;
     role: 'admin' | 'employee' | 'ceo' | 'director';
+    avatar_url: string | null;
     created_at: string;
     updated_at: string;
   };
