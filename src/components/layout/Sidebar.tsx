@@ -68,6 +68,26 @@ interface SidebarProps {
   onNavigate: (path: string) => void;
 }
 
+const navItemStyle = (active: boolean): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '10px 12px',
+  borderRadius: 'var(--radius-md)',
+  cursor: 'pointer',
+  transition: 'var(--transition-fast)',
+  marginBottom: '2px',
+  fontSize: '13px',
+  fontWeight: 500,
+  border: '1px solid transparent',
+  textDecoration: 'none',
+  width: '100%',
+  textAlign: 'right',
+  background: active ? 'var(--accent-glow)' : 'transparent',
+  color: active ? 'var(--accent-lighter)' : 'var(--text-secondary)',
+  borderColor: active ? 'var(--accent-glow-md)' : 'transparent',
+});
+
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
   const { user, logout } = useAuth();
   const [hasSupervisorAccess, setHasSupervisorAccess] = useState(false);
@@ -86,7 +106,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
       };
       checkAccess();
     }
-    // Check if CEO user is assigned as director/co-director
     if (user && user.role === 'ceo') {
       const checkDirectorAccess = async () => {
         const { data } = await supabase
@@ -104,68 +123,95 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
     user && item.roles.includes(user.role)
   );
 
+  const isActive = (p: string) => currentPath.split('?')[0] === p;
+
+  const renderNavButton = (
+    label: string,
+    icon: React.ReactNode,
+    path: string,
+  ) => (
+    <button
+      onClick={() => onNavigate(path)}
+      style={navItemStyle(isActive(path))}
+      onMouseEnter={(e) => {
+        if (!isActive(path)) {
+          (e.currentTarget as HTMLButtonElement).style.background = 'var(--mode-badge-bg)';
+          (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive(path)) {
+          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+          (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+        }
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ marginRight: 'auto' }}>{icon}</span>
+    </button>
+  );
+
   return (
-    <div className="h-screen w-64 bg-white border-l border-gray-200 fixed right-0 top-0 flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex-shrink-0">
+    <div
+      className="h-screen w-64 fixed right-0 top-0 flex flex-col"
+      style={{
+        background: 'var(--bg-sidebar)',
+        borderLeft: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      <div
+        className="p-4 flex-shrink-0"
+        style={{ borderBottom: '1px solid var(--border-subtle)' }}
+      >
         <div className="flex items-center justify-center">
           <img src="/logo-color.png" alt="Half Lens" className="h-16 w-auto" />
         </div>
-        <p className="text-center text-sm text-gray-600 mt-2">منصة التقييم الوظيفي</p>
+        <p
+          className="text-center text-sm mt-2"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          منصة التقييم الوظيفي
+        </p>
       </div>
 
       <nav className="p-4 flex-1 overflow-y-auto">
         <ul className="space-y-1">
           {filteredMenuItems.map((item) => {
-            // Insert director section before settings for CEO users assigned as directors
             const showDirectorBefore = item.path === '/settings' && user && user.role === 'ceo';
-            // Insert supervisor item before settings for employee and director
             const showSupervisorBefore = item.path === '/settings' && user && (user.role === 'employee' || user.role === 'director');
             return (
               <React.Fragment key={item.path}>
                 {showDirectorBefore && (
                   <>
                     <li className="pt-2 pb-1">
-                      <div className="border-t border-gray-200 mx-2"></div>
+                      <div
+                        className="mx-2"
+                        style={{ borderTop: '1px solid var(--border-subtle)' }}
+                      ></div>
                     </li>
                     <li>
                       {hasDirectorAccess ? (
                         <>
-                          <button
-                            onClick={() => onNavigate('/director-evaluate')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                              currentPath.split('?')[0] === '/director-evaluate'
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span>موظفو الإدارات</span>
-                            <span className="mr-auto">
-                              <Users className="h-5 w-5" />
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => onNavigate('/director-criteria')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                              currentPath.split('?')[0] === '/director-criteria'
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span>معايير الإدارة</span>
-                            <span className="mr-auto">
-                              <ListChecks className="h-5 w-5" />
-                            </span>
-                          </button>
+                          {renderNavButton('موظفو الإدارات', <Users className="h-5 w-5" />, '/director-evaluate')}
+                          {renderNavButton('معايير الإدارة', <ListChecks className="h-5 w-5" />, '/director-criteria')}
                         </>
                       ) : (
-                        <div className="px-4 py-3 rounded-lg bg-gray-50/50">
-                          <div className="flex items-center gap-3 text-gray-400">
+                        <div
+                          style={{
+                            padding: '12px',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--bg-card)',
+                            border: '1px dashed var(--border-subtle)',
+                          }}
+                        >
+                          <div className="flex items-center gap-3" style={{ color: 'var(--text-muted)' }}>
                             <span>التقييم كمدير إدارة</span>
                             <span className="mr-auto">
                               <Lock className="h-4 w-4" />
                             </span>
                           </div>
-                          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                          <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                             يتم التفعيل عند تعيينك كمدير إدارة من الموارد البشرية
                           </p>
                         </div>
@@ -176,47 +222,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
                 {showSupervisorBefore && (
                   <>
                     <li className="pt-2 pb-1">
-                      <div className="border-t border-gray-200 mx-2"></div>
+                      <div
+                        className="mx-2"
+                        style={{ borderTop: '1px solid var(--border-subtle)' }}
+                      ></div>
                     </li>
                     <li>
                       {hasSupervisorAccess ? (
                         <>
-                          <button
-                            onClick={() => onNavigate('/supervisor-evaluate')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                              currentPath.split('?')[0] === '/supervisor-evaluate'
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span>التقييم كمشرف</span>
-                            <span className="mr-auto">
-                              <Shield className="h-5 w-5" />
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => onNavigate('/supervisor-criteria')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                              currentPath.split('?')[0] === '/supervisor-criteria'
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span>معايير المشرف</span>
-                            <span className="mr-auto">
-                              <ListChecks className="h-5 w-5" />
-                            </span>
-                          </button>
+                          {renderNavButton('التقييم كمشرف', <Shield className="h-5 w-5" />, '/supervisor-evaluate')}
+                          {renderNavButton('معايير المشرف', <ListChecks className="h-5 w-5" />, '/supervisor-criteria')}
                         </>
                       ) : (
-                        <div className="px-4 py-3 rounded-lg bg-gray-50/50">
-                          <div className="flex items-center gap-3 text-gray-400">
+                        <div
+                          style={{
+                            padding: '12px',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--bg-card)',
+                            border: '1px dashed var(--border-subtle)',
+                          }}
+                        >
+                          <div className="flex items-center gap-3" style={{ color: 'var(--text-muted)' }}>
                             <span>التقييم كمشرف</span>
                             <span className="mr-auto">
                               <Lock className="h-4 w-4" />
                             </span>
                           </div>
-                          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                          <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                             يتم التفعيل عند تعيينك كمشرف من الموارد البشرية
                           </p>
                         </div>
@@ -225,17 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
                   </>
                 )}
                 <li>
-                  <button
-                    onClick={() => onNavigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                      currentPath.split('?')[0] === item.path
-                        ? 'bg-blue-50 text-blue-600 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    <span className="mr-auto">{item.icon}</span>
-                  </button>
+                  {renderNavButton(item.label, item.icon, item.path)}
                 </li>
               </React.Fragment>
             );
@@ -244,11 +266,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
       </nav>
 
       {user && (
-        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50">
+        <div
+          className="flex-shrink-0 p-4"
+          style={{
+            borderTop: '1px solid var(--border-subtle)',
+            background: 'var(--bg-overlay)',
+          }}
+        >
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
-            <p className="text-xs text-gray-600">{user.email}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{user.full_name}</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
               {user.role === 'admin' ? 'مدير النظام' : user.role === 'ceo' ? 'الإدارة العليا' : user.role === 'director' ? 'مدير إدارة' : 'موظف'}
             </p>
           </div>
