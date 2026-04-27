@@ -765,39 +765,54 @@ export const SupervisorEvaluateForm: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {(!emp.eval_status || emp.eval_status === 'مسودة') && !hasSupervisorCriteria ? (
-                          <div className="text-center">
+                        {(() => {
+                          const isPeriodOpen = selectedTablePeriod?.status === 'نشطة';
+                          const hasExisting = !!emp.eval_status && emp.eval_status !== 'مسودة';
+
+                          if (!isPeriodOpen && !hasExisting) {
+                            return <span className="text-xs text-ds-faint">لا توجد فترة نشطة</span>;
+                          }
+
+                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !hasSupervisorCriteria) {
+                            return (
+                              <div className="text-center">
+                                <button
+                                  disabled
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed"
+                                >
+                                  <ClipboardEdit className="h-4 w-4" />
+                                  <span>تقييم</span>
+                                </button>
+                                <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
+                              </div>
+                            );
+                          }
+
+                          const canEvaluate = isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة');
+
+                          return (
                             <button
-                              disabled
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed"
+                              onClick={() => setSelectedEmployeeId(emp.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                canEvaluate
+                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                  : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
+                              }`}
                             >
-                              <ClipboardEdit className="h-4 w-4" />
-                              <span>تقييم</span>
+                              {canEvaluate ? (
+                                <>
+                                  <ClipboardEdit className="h-4 w-4" />
+                                  <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : 'تقييم'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-4 w-4" />
+                                  <span>عرض التقييم</span>
+                                </>
+                              )}
                             </button>
-                            <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setSelectedEmployeeId(emp.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                              !emp.eval_status || emp.eval_status === 'مسودة'
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
-                            }`}
-                          >
-                            {!emp.eval_status || emp.eval_status === 'مسودة' ? (
-                              <>
-                                <ClipboardEdit className="h-4 w-4" />
-                                <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : 'تقييم'}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4" />
-                                <span>عرض التقييم</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}
