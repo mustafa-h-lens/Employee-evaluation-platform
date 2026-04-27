@@ -14,24 +14,14 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
+    <div className="input-group" style={{ width: '100%' }}>
+      {label && <label className="input-label">{label}</label>}
       <input
-        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } ${className}`}
+        className={`input ${error ? 'input-error' : ''} ${className}`}
         {...props}
       />
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
-      {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">{helperText}</p>
-      )}
+      {error && <p className="input-hint error">{error}</p>}
+      {helperText && !error && <p className="input-hint">{helperText}</p>}
     </div>
   );
 };
@@ -50,24 +40,15 @@ export const TextArea: React.FC<TextAreaProps> = ({
   ...props
 }) => {
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
+    <div className="input-group" style={{ width: '100%' }}>
+      {label && <label className="input-label">{label}</label>}
       <textarea
-        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } ${className}`}
+        className={`input ${error ? 'input-error' : ''} ${className}`}
+        style={{ height: 'auto', minHeight: '80px', padding: '10px 14px', resize: 'vertical' }}
         {...props}
       />
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
-      {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">{helperText}</p>
-      )}
+      {error && <p className="input-hint error">{error}</p>}
+      {helperText && !error && <p className="input-hint">{helperText}</p>}
     </div>
   );
 };
@@ -86,16 +67,10 @@ export const Select: React.FC<SelectProps> = ({
   ...props
 }) => {
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
+    <div className="input-group" style={{ width: '100%' }}>
+      {label && <label className="input-label">{label}</label>}
       <select
-        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } ${className}`}
+        className={`input select ${error ? 'input-error' : ''} ${className}`}
         {...props}
       >
         {options.map(option => (
@@ -104,9 +79,7 @@ export const Select: React.FC<SelectProps> = ({
           </option>
         ))}
       </select>
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="input-hint error">{error}</p>}
     </div>
   );
 };

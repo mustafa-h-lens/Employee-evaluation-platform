@@ -9,7 +9,7 @@ interface PageLayoutProps {
 
 export const PageLayout: React.FC<PageLayoutProps> = ({ children, currentPath, onNavigate }) => {
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
+    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }} dir="rtl">
       <Sidebar currentPath={currentPath} onNavigate={onNavigate} />
       <main className="mr-64">
         <div className="p-6">

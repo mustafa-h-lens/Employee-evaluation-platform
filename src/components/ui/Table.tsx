@@ -7,8 +7,8 @@ interface TableProps {
 
 export const Table: React.FC<TableProps> = ({ children, className = '' }) => {
   return (
-    <div className="overflow-x-auto">
-      <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
+    <div className={`table-wrap ${className}`} style={{ overflowX: 'auto' }}>
+      <table style={{ minWidth: '100%' }}>
         {children}
       </table>
     </div>
@@ -21,11 +21,7 @@ interface TableHeaderProps {
 }
 
 export const TableHeader: React.FC<TableHeaderProps> = ({ children, className = '' }) => {
-  return (
-    <thead className={`bg-gray-50 ${className}`}>
-      {children}
-    </thead>
-  );
+  return <thead className={className}>{children}</thead>;
 };
 
 interface TableBodyProps {
@@ -34,11 +30,7 @@ interface TableBodyProps {
 }
 
 export const TableBody: React.FC<TableBodyProps> = ({ children, className = '' }) => {
-  return (
-    <tbody className={`bg-white divide-y divide-gray-200 ${className}`}>
-      {children}
-    </tbody>
-  );
+  return <tbody className={className}>{children}</tbody>;
 };
 
 interface TableRowProps {
@@ -50,7 +42,7 @@ interface TableRowProps {
 export const TableRow: React.FC<TableRowProps> = ({ children, className = '', onClick }) => {
   return (
     <tr
-      className={`${onClick ? 'cursor-pointer hover:bg-gray-50' : ''} ${className}`}
+      className={`${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -64,11 +56,7 @@ interface TableHeadProps {
 }
 
 export const TableHead: React.FC<TableHeadProps> = ({ children, className = '' }) => {
-  return (
-    <th className={`px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}>
-      {children}
-    </th>
-  );
+  return <th className={className}>{children}</th>;
 };
 
 interface TableCellProps {
@@ -79,7 +67,7 @@ interface TableCellProps {
 
 export const TableCell: React.FC<TableCellProps> = ({ children, className = '', colSpan }) => {
   return (
-    <td colSpan={colSpan} className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${className}`}>
+    <td colSpan={colSpan} className={className}>
       {children}
     </td>
   );
@@ -92,9 +80,30 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ message, icon }) => {
   return (
-    <div className="text-center py-12">
-      {icon && <div className="flex justify-center mb-4">{icon}</div>}
-      <p className="text-gray-500 text-lg">{message}</p>
+    <div
+      className="text-center"
+      style={{
+        padding: '48px 24px',
+        background: 'var(--bg-card)',
+        border: '1px dashed var(--border-soft)',
+        borderRadius: 'var(--radius-lg)',
+      }}
+    >
+      {icon && (
+        <div
+          className="mx-auto mb-4 flex items-center justify-center"
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'var(--accent-glow)',
+            color: 'var(--accent-lighter)',
+          }}
+        >
+          {icon}
+        </div>
+      )}
+      <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{message}</p>
     </div>
   );
 };

@@ -28,36 +28,54 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onEsc);
+    return () => document.removeEventListener('keydown', onEsc);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    '2xl': 'max-w-6xl'
-  };
+  const maxWidth = {
+    sm: '448px',
+    md: '512px',
+    lg: '672px',
+    xl: '896px',
+    '2xl': '1152px',
+  }[size];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto"
+      style={{
+        background: 'rgba(5,13,30,0.55)',
+        backdropFilter: 'blur(4px)',
+      }}
+      onClick={onClose}
+    >
+      <div className="flex items-center justify-center min-h-screen px-4 py-8">
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          onClick={onClose}
-        ></div>
-
-        <div className={`relative bg-white rounded-lg text-right overflow-hidden shadow-xl transform transition-all sm:my-8 w-full ${sizeClasses[size]}`}>
-          <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          className="modal"
+          style={{ maxWidth, width: '100%', textAlign: 'right' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-hdr">
+            <div>
+              <div className="modal-ttl">{title}</div>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-500 transition-colors"
+              className="modal-close"
+              aria-label="إغلاق"
             >
-              <X className="h-6 w-6" />
+              <X className="h-4 w-4" />
             </button>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           </div>
 
-          <div className="px-6 py-4">
+          <div>
             {children}
           </div>
         </div>
@@ -73,7 +91,7 @@ interface ModalFooterProps {
 
 export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className = '' }) => {
   return (
-    <div className={`mt-6 pt-4 border-t border-gray-200 flex items-center justify-end gap-3 ${className}`}>
+    <div className={`modal-foot ${className}`}>
       {children}
     </div>
   );

@@ -17,18 +17,21 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = fa
       aria-checked={checked}
       disabled={disabled}
       onClick={onChange}
-      style={{ direction: 'ltr' }}
+      style={{
+        direction: 'ltr',
+        background: checked ? 'var(--success)' : 'var(--border-medium)',
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
       className={`
         relative inline-flex shrink-0 rounded-full transition-colors duration-300 ease-in-out
         ${isSmall ? 'w-9 h-[22px]' : 'w-[44px] h-[26px]'}
-        ${checked ? 'bg-green-500' : 'bg-gray-300'}
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
       `}
     >
       <span
         className={`
-          pointer-events-none absolute top-[2px] rounded-full bg-white shadow-md
+          pointer-events-none absolute top-[2px] rounded-full shadow-md
           transition-all duration-300 ease-in-out
           ${isSmall ? 'w-[18px] h-[18px]' : 'w-[22px] h-[22px]'}
           ${checked
@@ -36,6 +39,7 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = fa
             : 'left-[2px]'
           }
         `}
+        style={{ background: '#ffffff' }}
       />
     </button>
   );

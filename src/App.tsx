@@ -164,10 +164,19 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--bg-base)' }}
+      >
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
+          <div
+            className="w-16 h-16 rounded-full mx-auto mb-4 animate-spin"
+            style={{
+              border: '4px solid var(--border-soft)',
+              borderTopColor: 'var(--accent)',
+            }}
+          ></div>
+          <p style={{ color: 'var(--text-secondary)' }}>جاري التحميل...</p>
         </div>
       </div>
     );
