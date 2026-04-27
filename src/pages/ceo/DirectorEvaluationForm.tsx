@@ -717,37 +717,55 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                         </div>
                       </TableCell>
                       <TableCell>
-                        {(!dir.eval_status || dir.eval_status === 'مسودة') && !hasSpecificCriteria ? (
+                        {(() => {
+                          const isPeriodOpen = selectedTablePeriod?.status === 'نشطة';
+                          const hasExisting = !!dir.eval_status && dir.eval_status !== 'مسودة';
 
-                          <div className="text-center">
-                            <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed">
-                              <ClipboardEdit className="h-4 w-4" />
-                              <span>تقييم</span>
+                          // No active period AND no existing record → nothing to do
+                          if (!isPeriodOpen && !hasExisting) {
+                            return (
+                              <span className="text-xs text-ds-faint">لا توجد فترة نشطة</span>
+                            );
+                          }
+
+                          // Active period but criteria missing → show disabled state
+                          if (isPeriodOpen && (!dir.eval_status || dir.eval_status === 'مسودة') && !hasSpecificCriteria) {
+                            return (
+                              <div className="text-center">
+                                <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed">
+                                  <ClipboardEdit className="h-4 w-4" />
+                                  <span>تقييم</span>
+                                </button>
+                                <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
+                              </div>
+                            );
+                          }
+
+                          const canEvaluate = isPeriodOpen && (!dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض');
+
+                          return (
+                            <button
+                              onClick={() => setSelectedDirectorId(dir.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                canEvaluate
+                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                  : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
+                              }`}
+                            >
+                              {canEvaluate ? (
+                                <>
+                                  <ClipboardEdit className="h-4 w-4" />
+                                  <span>{dir.eval_status === 'مسودة' ? 'متابعة التقييم' : dir.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-4 w-4" />
+                                  <span>عرض التقييم</span>
+                                </>
+                              )}
                             </button>
-                            <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setSelectedDirectorId(dir.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                              !dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض'
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
-                            }`}
-                          >
-                            {!dir.eval_status || dir.eval_status === 'مسودة' || dir.eval_status === 'مرفوض' ? (
-                              <>
-                                <ClipboardEdit className="h-4 w-4" />
-                                <span>{dir.eval_status === 'مسودة' ? 'متابعة التقييم' : dir.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4" />
-                                <span>عرض التقييم</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}
