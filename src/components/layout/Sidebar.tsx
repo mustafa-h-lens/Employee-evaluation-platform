@@ -293,15 +293,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
               </span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 transition-colors"
+            style={{
+              height: '38px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-medium)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLButtonElement;
+              el.style.background = 'var(--danger-bg)';
+              el.style.color = 'var(--danger-text)';
+              el.style.borderColor = 'var(--danger-border)';
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLButtonElement;
+              el.style.background = 'var(--bg-card)';
+              el.style.color = 'var(--text-primary)';
+              el.style.borderColor = 'var(--border-medium)';
+            }}
           >
             <LogOut className="h-4 w-4" />
             <span>تسجيل الخروج</span>
-          </Button>
+          </button>
         </div>
       )}
     </div>
