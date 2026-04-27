@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronRight, User } from 'lucide-react';
 import { computeFinalScores } from '../../lib/scoring';
+import { AvatarUploader } from '../../components/ui/AvatarUploader';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -317,6 +318,12 @@ export const AdminSettings: React.FC = () => {
         <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>الإعدادات</h1>
         <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة إعدادات نظام التقييم</p>
       </div>
+
+      <Card>
+        <CardBody className="py-6 px-6">
+          <AvatarUploader />
+        </CardBody>
+      </Card>
 
       {!showWeights ? (
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowWeights(true)}>

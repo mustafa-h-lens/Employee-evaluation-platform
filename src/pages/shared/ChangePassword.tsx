@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronLeft } from 'lucide-react';
+import { AvatarUploader } from '../../components/ui/AvatarUploader';
 
 export const ChangePassword: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -72,6 +73,12 @@ export const ChangePassword: React.FC = () => {
         <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>الإعدادات</h1>
         <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة إعدادات حسابك</p>
       </div>
+
+      <Card>
+        <CardBody className="py-6 px-6">
+          <AvatarUploader />
+        </CardBody>
+      </Card>
 
       {!showForm ? (
         <Card className="max-w-lg cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowForm(true)}>
