@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { FileText, TrendingUp, Target } from 'lucide-react';
+import { FileText, TrendingUp, Target, Briefcase, Building2, UserCheck, Hash } from 'lucide-react';
 import { percentageToRating } from '../../lib/scoring';
 
 const monthLabels: Record<number, string> = {
@@ -188,42 +188,78 @@ export const EmployeeDashboard: React.FC = () => {
         <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>مرحبًا {user?.full_name}</p>
       </div>
 
-      {employeeData && (
-        <div
-          className="p-6 rounded-ds-lg"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-soft)',
-            boxShadow: 'var(--shadow-card)',
-          }}
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>المسمى الوظيفي</p>
-              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{employeeData.job_title}</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>الإدارة</p>
-              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
-                {(() => {
-                  const dirName = employeeData.assignment_directorate_name || employeeData.directorate?.name || '';
-                  const deptName = employeeData.assignment_department_name || employeeData.department?.name || '';
-                  if (dirName && deptName) return `${dirName} — ${deptName}`;
-                  return dirName || deptName || '—';
-                })()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>المدير المباشر</p>
-              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{resolveManagerLabel() || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>رقم الموظف</p>
-              <p className="text-base font-bold" style={{ color: 'var(--accent)' }}>{employeeData.employee_number}</p>
+      {employeeData && (() => {
+        const dirName = employeeData.assignment_directorate_name || employeeData.directorate?.name || '';
+        const deptName = employeeData.assignment_department_name || employeeData.department?.name || '';
+        const directorateLabel = dirName && deptName ? `${dirName} — ${deptName}` : (dirName || deptName || '—');
+
+        const fields: { label: string; value: string; icon: React.ReactNode; sc: 'blue' | 'green' | 'amber' | 'purple' }[] = [
+          { label: 'المسمى الوظيفي', value: employeeData.job_title || '—', icon: <Briefcase className="h-5 w-5" />, sc: 'blue' },
+          { label: 'الإدارة',         value: directorateLabel,              icon: <Building2 className="h-5 w-5" />, sc: 'green' },
+          { label: 'المدير المباشر',  value: resolveManagerLabel() || '—',  icon: <UserCheck className="h-5 w-5" />, sc: 'purple' },
+          { label: 'رقم الموظف',      value: String(employeeData.employee_number ?? '—'), icon: <Hash className="h-5 w-5" />, sc: 'amber' },
+        ];
+
+        return (
+          <div
+            className="p-6 rounded-ds-lg"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-soft)',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {fields.map((f) => (
+                <div
+                  key={f.label}
+                  className="flex items-center gap-3 p-3 rounded-ds-md transition-all"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-card)';
+                    (e.currentTarget as HTMLDivElement).style.borderColor = `var(--sc-${f.sc}-border)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+                    (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)';
+                  }}
+                >
+                  <div
+                    className="flex-shrink-0 flex items-center justify-center"
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: 'var(--radius-md)',
+                      background: `var(--sc-${f.sc}-icon-bg)`,
+                      border: `1px solid var(--sc-${f.sc}-icon-b)`,
+                      color: `var(--sc-${f.sc}-icon-c)`,
+                    }}
+                  >
+                    {f.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-[10px] font-bold uppercase mb-0.5"
+                      style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}
+                    >
+                      {f.label}
+                    </p>
+                    <p
+                      className="text-sm font-bold truncate"
+                      style={{ color: 'var(--text-primary)' }}
+                      title={f.value}
+                    >
+                      {f.value}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {latestEvaluation ? (
         <>
