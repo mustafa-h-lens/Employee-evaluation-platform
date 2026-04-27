@@ -182,15 +182,10 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                   <TableHead>الاسم</TableHead>
                   <TableHead>البريد الإلكتروني</TableHead>
                   <TableHead>المسمى الوظيفي</TableHead>
-                  <TableHead>حالة التقييم</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {directors.map((director) => {
-                  const evaluation = evalMap.get(director.id);
-                  const evalStatus = evaluation?.status || null;
-                  const isEvaluated = evalStatus && evalStatus !== 'مسودة';
-
                   return (
                     <TableRow key={director.id}>
                       <TableCell>
@@ -206,11 +201,6 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                       </TableCell>
                       <TableCell>
                         <span className="text-ds-muted text-sm">{director.job_title}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getEvalStatusVariant(evalStatus)} size="sm">
-                          {getEvalStatusLabel(evalStatus)}
-                        </Badge>
                       </TableCell>
                     </TableRow>
                   );
