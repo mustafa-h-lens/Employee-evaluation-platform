@@ -199,10 +199,7 @@ export const AvatarUploader: React.FC = () => {
       const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
       const publicUrl = pub.publicUrl;
 
-      const { error: updErr } = await supabase
-        .from('users')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
+      const { error: updErr } = await supabase.rpc('set_my_avatar_url', { p_url: publicUrl });
       if (updErr) throw updErr;
 
       await refreshUser();
@@ -221,10 +218,7 @@ export const AvatarUploader: React.FC = () => {
     if (!user) return;
     setRemoving(true);
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ avatar_url: null })
-        .eq('id', user.id);
+      const { error } = await supabase.rpc('set_my_avatar_url', { p_url: null });
       if (error) throw error;
 
       try {
