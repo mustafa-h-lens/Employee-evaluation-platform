@@ -651,36 +651,6 @@ export const SupervisorEvaluateForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Assignment Info Banner */}
-        <Card>
-          <CardBody className="bg-indigo-50 border border-indigo-200">
-            <div className="flex items-center gap-4">
-              <div className="bg-indigo-100 text-indigo-600 p-3 rounded-xl flex-shrink-0">
-                <Shield className="h-6 w-6" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
-                <div>
-                  <p className="text-xs text-indigo-500">التعيين</p>
-                  <p className="font-semibold text-indigo-900">{assignmentTitle} ({totalAssignedMembers} موظف)</p>
-                </div>
-                <div>
-                  <p className="text-xs text-indigo-500">فترة التعيين</p>
-                  <p className="font-semibold text-indigo-900">
-                    {formatDate(assignmentStartDate)} — {formatDate(assignmentEndDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-indigo-500">المدة المتبقية</p>
-                  <p className={`font-semibold flex items-center gap-1.5 ${remainingDays <= 7 ? 'text-amber-700' : 'text-indigo-900'}`}>
-                    <Clock className="h-4 w-4" />
-                    {remainingDays <= 0 ? 'منتهية الصلاحية' : `${remainingDays} يوم`}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardBody>
