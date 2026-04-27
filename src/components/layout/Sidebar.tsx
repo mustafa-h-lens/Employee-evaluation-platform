@@ -77,15 +77,16 @@ const navItemStyle = (active: boolean): React.CSSProperties => ({
   cursor: 'pointer',
   transition: 'var(--transition-fast)',
   marginBottom: '2px',
-  fontSize: '13px',
-  fontWeight: 500,
+  fontSize: '14px',
+  fontWeight: active ? 700 : 500,
   border: '1px solid transparent',
   textDecoration: 'none',
   width: '100%',
   textAlign: 'right',
-  background: active ? 'var(--accent-glow)' : 'transparent',
-  color: active ? 'var(--accent-lighter)' : 'var(--text-secondary)',
-  borderColor: active ? 'var(--accent-glow-md)' : 'transparent',
+  background: active ? 'var(--accent)' : 'transparent',
+  color: active ? '#ffffff' : 'var(--text-secondary)',
+  borderColor: active ? 'var(--accent)' : 'transparent',
+  boxShadow: active ? '0 4px 14px rgba(37,99,235,0.35)' : 'none',
 });
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
@@ -135,8 +136,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
       style={navItemStyle(isActive(path))}
       onMouseEnter={(e) => {
         if (!isActive(path)) {
-          (e.currentTarget as HTMLButtonElement).style.background = 'var(--mode-badge-bg)';
-          (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(37,99,235,0.08)';
+          (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
         }
       }}
       onMouseLeave={(e) => {
@@ -155,21 +156,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
     <div
       className="h-screen w-64 fixed right-0 top-0 flex flex-col"
       style={{
-        background: 'var(--bg-sidebar)',
+        background: 'var(--bg-surface)',
         borderLeft: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-card)',
       }}
     >
       <div
-        className="p-4 flex-shrink-0"
+        className="px-5 py-6 flex-shrink-0"
         style={{ borderBottom: '1px solid var(--border-subtle)' }}
       >
         <div className="flex items-center justify-center">
-          <img src="/logo-color.png" alt="Half Lens" className="h-16 w-auto" />
+          <img src="/logo-color.png" alt="Half Lens" className="h-14 w-auto" />
         </div>
         <p
-          className="text-center text-sm mt-2"
-          style={{ color: 'var(--text-secondary)' }}
+          className="text-center text-xs mt-3 font-semibold tracking-wide"
+          style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}
         >
           منصة التقييم الوظيفي
         </p>
@@ -268,23 +269,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
       {user && (
         <div
           className="flex-shrink-0 p-4"
-          style={{
-            borderTop: '1px solid var(--border-subtle)',
-            background: 'var(--bg-overlay)',
-          }}
+          style={{ borderTop: '1px solid var(--border-subtle)' }}
         >
-          <div className="text-right">
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{user.full_name}</p>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-              {user.role === 'admin' ? 'مدير النظام' : user.role === 'ceo' ? 'الإدارة العليا' : user.role === 'director' ? 'مدير إدارة' : 'موظف'}
-            </p>
+          <div
+            className="rounded-ds-md p-3 mb-3"
+            style={{
+              background: 'var(--bg-overlay)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div className="text-right">
+              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{user.full_name}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
+              <span
+                className="inline-block text-[10px] font-bold mt-2 px-2 py-0.5 rounded-full"
+                style={{
+                  background: 'var(--accent-glow)',
+                  color: 'var(--accent)',
+                  letterSpacing: '0.4px',
+                }}
+              >
+                {user.role === 'admin' ? 'مدير النظام' : user.role === 'ceo' ? 'الإدارة العليا' : user.role === 'director' ? 'مدير إدارة' : 'موظف'}
+              </span>
+            </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 mt-3"
+            className="w-full flex items-center justify-center gap-2"
           >
             <LogOut className="h-4 w-4" />
             <span>تسجيل الخروج</span>
