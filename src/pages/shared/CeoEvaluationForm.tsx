@@ -259,9 +259,16 @@ export const CeoEvaluationForm: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقييم الإدارة العليا</h1>
-        <p className="text-gray-600 mt-2">
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>تقييم الإدارة العليا</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>
           تقييم أداء الإدارة العليا كفريق واحد — يتم بشكل ربعي وبسرية تامة
         </p>
       </div>
@@ -272,7 +279,7 @@ export const CeoEvaluationForm: React.FC = () => {
           <CardBody>
             <div className="flex items-center gap-3 justify-center py-8">
               <AlertTriangle className="h-6 w-6 text-amber-500" />
-              <p className="text-lg text-gray-600 font-medium">لا توجد فترة تقييم نشطة حالياً</p>
+              <p className="text-lg text-ds-muted font-medium">لا توجد فترة تقييم نشطة حالياً</p>
             </div>
           </CardBody>
         </Card>
@@ -303,8 +310,8 @@ export const CeoEvaluationForm: React.FC = () => {
                       <Crown className="h-6 w-6" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">الإدارة العليا</h2>
-                      <p className="text-sm text-gray-500">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
+                      <h2 className="text-xl font-bold text-ds-text">الإدارة العليا</h2>
+                      <p className="text-sm text-ds-faint">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -316,20 +323,20 @@ export const CeoEvaluationForm: React.FC = () => {
 
                   {/* Leadership team chips */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-700 mb-2">أعضاء الإدارة العليا</p>
+                    <p className="text-xs font-semibold text-ds-muted mb-2">أعضاء الإدارة العليا</p>
                     {leadershipTeam.length === 0 ? (
-                      <p className="text-sm text-gray-500">لا يوجد أعضاء حاليًا</p>
+                      <p className="text-sm text-ds-faint">لا يوجد أعضاء حاليًا</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {leadershipTeam.map(member => (
-                          <div key={member.id} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
+                          <div key={member.id} className="flex items-center gap-2 bg-ds-bg border border-ds-border rounded-full px-3 py-1.5">
                             <div className="w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-xs font-bold">
                               {member.full_name.charAt(0)}
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-medium text-gray-900 leading-tight">{member.full_name}</p>
+                              <p className="text-sm font-medium text-ds-text leading-tight">{member.full_name}</p>
                               {member.job_title && (
-                                <p className="text-[10px] text-gray-500 leading-tight">{member.job_title}</p>
+                                <p className="text-[10px] text-ds-faint leading-tight">{member.job_title}</p>
                               )}
                             </div>
                           </div>
@@ -340,28 +347,28 @@ export const CeoEvaluationForm: React.FC = () => {
 
                   {/* Criteria preview */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-700 mb-2">معايير التقييم ({criteria.length})</p>
+                    <p className="text-xs font-semibold text-ds-muted mb-2">معايير التقييم ({criteria.length})</p>
                     <div className="space-y-2">
                       {criteria.map((c, idx) => (
-                        <div key={c.id} className="flex items-start justify-between gap-3 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                        <div key={c.id} className="flex items-start justify-between gap-3 bg-ds-bg border border-ds-border-subtle rounded-lg px-3 py-2">
                           <div className="flex items-start gap-2 min-w-0">
                             <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded mt-0.5">{idx + 1}</span>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900">{c.title}</p>
+                              <p className="text-sm font-medium text-ds-text">{c.title}</p>
                               {c.description && (
-                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{c.description}</p>
+                                <p className="text-xs text-ds-faint mt-0.5 line-clamp-2">{c.description}</p>
                               )}
                             </div>
                           </div>
-                          <span className="text-xs text-gray-500 whitespace-nowrap mt-1">الوزن: {c.weight}%</span>
+                          <span className="text-xs text-ds-faint whitespace-nowrap mt-1">الوزن: {c.weight}%</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Status / start button */}
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <p className="text-xs text-gray-500">
+                  <div className="flex items-center justify-between pt-2 border-t border-ds-border-subtle">
+                    <p className="text-xs text-ds-faint">
                       {isReadOnly
                         ? 'تم إرسال التقييم لهذه الفترة'
                         : evaluationStatus === 'مسودة'
@@ -394,8 +401,8 @@ export const CeoEvaluationForm: React.FC = () => {
                   <Crown className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">الإدارة العليا</h2>
-                  <p className="text-sm text-gray-500">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
+                  <h2 className="text-xl font-bold text-ds-text">الإدارة العليا</h2>
+                  <p className="text-sm text-ds-faint">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
                 </div>
               </div>
             </CardHeader>
@@ -405,15 +412,15 @@ export const CeoEvaluationForm: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-600 mb-1">المعايير المقيّمة</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-ds-muted mb-1">المعايير المقيّمة</p>
+                <p className="text-2xl font-bold text-ds-text">
                   {scoredCount} / {criteria.length}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-600 mb-1">النسبة المئوية</p>
+                <p className="text-sm text-ds-muted mb-1">النسبة المئوية</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {results.percentage.toFixed(1)}%
                 </p>
@@ -421,8 +428,8 @@ export const CeoEvaluationForm: React.FC = () => {
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-600 mb-1">التقدير العام</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-ds-muted mb-1">التقدير العام</p>
+                <p className="text-2xl font-bold text-ds-text">
                   {scoredCount > 0 ? results.generalRating : '-'}
                 </p>
               </CardBody>
@@ -440,13 +447,13 @@ export const CeoEvaluationForm: React.FC = () => {
                         <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
                           {index + 1}
                         </span>
-                        <h3 className="font-bold text-gray-900">{criterion.title}</h3>
+                        <h3 className="font-bold text-ds-text">{criterion.title}</h3>
                       </div>
                       {criterion.description && (
-                        <p className="text-sm text-gray-500 mr-8">{criterion.description}</p>
+                        <p className="text-sm text-ds-faint mr-8">{criterion.description}</p>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 whitespace-nowrap">
+                    <div className="text-sm text-ds-faint whitespace-nowrap">
                       الوزن: {criterion.weight}%
                     </div>
                   </div>
@@ -467,8 +474,8 @@ export const CeoEvaluationForm: React.FC = () => {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-gray-600" />
-                <h3 className="font-bold text-gray-900">ملاحظات المقيّم</h3>
+                <MessageSquare className="h-5 w-5 text-ds-muted" />
+                <h3 className="font-bold text-ds-text">ملاحظات المقيّم</h3>
               </div>
             </CardHeader>
             <CardBody>

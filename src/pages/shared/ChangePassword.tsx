@@ -61,19 +61,26 @@ export const ChangePassword: React.FC = () => {
         </div>
       )}
 
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">الإعدادات</h1>
-        <p className="text-gray-600 mt-2">إدارة إعدادات حسابك</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-purple-grad)',
+          border: '1px solid var(--sc-purple-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>الإعدادات</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة إعدادات حسابك</p>
       </div>
 
       {!showForm ? (
         <Card className="max-w-lg cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowForm(true)}>
           <CardBody className="flex items-center justify-between py-5 px-6">
-            <ChevronLeft className="h-5 w-5 text-gray-400" />
+            <ChevronLeft className="h-5 w-5 text-ds-faint" />
             <div className="flex items-center gap-3">
               <div>
-                <h3 className="font-semibold text-gray-900">تغيير كلمة المرور</h3>
-                <p className="text-sm text-gray-500">تحديث كلمة المرور الخاصة بحسابك</p>
+                <h3 className="font-semibold text-ds-text">تغيير كلمة المرور</h3>
+                <p className="text-sm text-ds-faint">تحديث كلمة المرور الخاصة بحسابك</p>
               </div>
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                 <Lock className="h-5 w-5 text-blue-600" />
@@ -87,7 +94,7 @@ export const ChangePassword: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <div />
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900 text-lg">تغيير كلمة المرور</h3>
+                <h3 className="font-semibold text-ds-text text-lg">تغيير كلمة المرور</h3>
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                   <Lock className="h-5 w-5 text-blue-600" />
                 </div>
@@ -103,7 +110,7 @@ export const ChangePassword: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الجديدة</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1">كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showNew ? 'text' : 'password'}
@@ -111,35 +118,35 @@ export const ChangePassword: React.FC = () => {
                     onChange={e => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     placeholder="أدخل كلمة المرور الجديدة"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted"
                   >
                     {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">6 أحرف على الأقل</p>
+                <p className="text-xs text-ds-faint mt-1">6 أحرف على الأقل</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">تأكيد كلمة المرور الجديدة</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1">تأكيد كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showConfirm ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     placeholder="أعد إدخال كلمة المرور الجديدة"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted"
                   >
                     {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>

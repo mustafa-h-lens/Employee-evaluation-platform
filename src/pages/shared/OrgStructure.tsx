@@ -116,24 +116,24 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease-out' }} />
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+      <div className="relative bg-ds-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
         onClick={e => e.stopPropagation()}
         style={{ animation: 'modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
         <div className={`relative bg-gradient-to-br ${c.gradient} px-6 pt-8 pb-12 overflow-hidden`}>
-          <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/10" />
-          <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10" />
-          <button onClick={onClose} className="absolute top-4 left-4 text-white/80 hover:text-white bg-white/20 rounded-xl p-2 hover:bg-white/30 backdrop-blur-sm transition-colors">
+          <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-ds-surface/10" />
+          <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-ds-surface/10" />
+          <button onClick={onClose} className="absolute top-4 left-4 text-white/80 hover:text-white bg-ds-surface/20 rounded-xl p-2 hover:bg-ds-surface/30 backdrop-blur-sm transition-colors">
             <X className="h-4 w-4" />
           </button>
           <div className="relative flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg mb-3"
+            <div className="w-20 h-20 rounded-2xl bg-ds-surface/20 backdrop-blur-sm flex items-center justify-center shadow-lg mb-3"
               style={{ animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' }}>
               <span className="text-white text-3xl font-bold">{initials(person.name)}</span>
             </div>
             <h3 className="text-xl font-bold text-white">{person.name}</h3>
             <p className="text-white/80 text-sm mt-1">{person.jobTitle || roleLabel(person.role)}</p>
             <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
-              <span className="text-xs bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
+              <span className="text-xs bg-ds-surface/20 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
                 <RoleIcon role={person.role} className="h-3.5 w-3.5" />
                 {roleLabel(person.role)}
               </span>
@@ -144,7 +144,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
                 </span>
               )}
               {person.teamSize !== undefined && person.teamSize > 0 && (
-                <span className="text-xs bg-white/20 text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
+                <span className="text-xs bg-ds-surface/20 text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
                   <Users className="h-3.5 w-3.5" />{person.teamSize} موظف
                 </span>
               )}
@@ -152,7 +152,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
           </div>
         </div>
         <div className="px-6 py-5 space-y-2.5 -mt-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-2.5">
+          <div className="bg-ds-surface rounded-2xl shadow-sm border border-ds-border-subtle p-4 space-y-2.5">
             <DetailRow icon={<Mail />} label="البريد الإلكتروني" value={person.email} />
             {person.phone && <DetailRow icon={<Phone />} label="الهاتف" value={person.phone} />}
             {person.employeeNumber && <DetailRow icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} />}
@@ -180,13 +180,13 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
 };
 
 const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: boolean }> = ({ icon, label, value, accent }) => (
-  <div className={`flex items-center gap-3 p-3 rounded-xl ${accent ? 'bg-orange-50' : 'bg-gray-50/80'} hover:bg-gray-100 transition-colors`}>
-    <div className={`w-9 h-9 rounded-xl ${accent ? 'bg-orange-100 text-orange-600' : 'bg-white text-gray-500 shadow-sm'} flex items-center justify-center flex-shrink-0`}>
+  <div className={`flex items-center gap-3 p-3 rounded-xl ${accent ? 'bg-orange-50' : 'bg-ds-bg/80'} hover:bg-ds-overlay transition-colors`}>
+    <div className={`w-9 h-9 rounded-xl ${accent ? 'bg-orange-100 text-orange-600' : 'bg-ds-surface text-ds-faint shadow-sm'} flex items-center justify-center flex-shrink-0`}>
       {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-[10px] text-gray-400 font-medium">{label}</p>
-      <p className="text-sm font-semibold text-gray-900 truncate">{value}</p>
+      <p className="text-[10px] text-ds-faint font-medium">{label}</p>
+      <p className="text-sm font-semibold text-ds-text truncate">{value}</p>
     </div>
   </div>
 );
@@ -413,7 +413,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
     return (
       <div key={emp.id}>
         <div
-          className="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/5"
+          className="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all hover:bg-ds-surface/5"
           onClick={() => handleEmpClick(emp, dirName, deptName)}
         >
           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#2dd4bf' }} />
@@ -432,7 +432,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
           {hasTeam && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleSupervisor(emp.user_id); }}
-              className="flex-shrink-0 p-1 rounded-md transition-colors hover:bg-white/10"
+              className="flex-shrink-0 p-1 rounded-md transition-colors hover:bg-ds-surface/10"
             >
               <ChevronDown
                 className="h-3.5 w-3.5 transition-transform"
@@ -448,7 +448,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
             {teamMembers.map(se => (
               <div
                 key={se.employee_id}
-                className="flex items-center gap-3 py-1.5 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/5"
+                className="flex items-center gap-3 py-1.5 px-3 rounded-lg cursor-pointer transition-all hover:bg-ds-surface/5"
                 onClick={() => onClickPerson({
                   name: se.full_name, email: se.email, role: 'employee',
                   jobTitle: se.job_title, phone: se.phone,
@@ -614,7 +614,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                       <p className="text-white font-bold text-sm">{dir.name}</p>
                       <div className="flex-1" />
                       <button
-                        className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-lg transition-colors hover:bg-white/10"
+                        className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-lg transition-colors hover:bg-ds-surface/10"
                         onClick={(e) => { e.stopPropagation(); onToggleDir(dir.id); }}
                       >
                         <span className="text-[10px] text-white font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center" style={{ background: '#2dd4bf' }}>
@@ -723,7 +723,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
                   return (
                     <div
                       key={emp.id}
-                      className="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/5"
+                      className="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all hover:bg-ds-surface/5"
                       onClick={() => onClickPerson({
                         name: emp.full_name, email: emp.email, role: 'employee',
                         jobTitle: emp.job_title, phone: emp.phone,
@@ -896,7 +896,7 @@ const JobTitlesTab: React.FC = () => {
           <div className="w-16 h-16 border-4 border-blue-100 rounded-full" />
           <div className="absolute inset-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
         </div>
-        <p className="text-gray-600 font-medium">جاري التحميل...</p>
+        <p className="text-ds-muted font-medium">جاري التحميل...</p>
       </div>
     );
   }
@@ -926,7 +926,7 @@ const JobTitlesTab: React.FC = () => {
             <button
               onClick={() => setEditMode(m => !m)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all backdrop-blur-sm ${
-                editMode ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                editMode ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-ds-surface/10 text-white hover:bg-ds-surface/20 border border-white/20'
               }`}
             >
               {editMode ? <><Check className="h-4 w-4" />تم</> : <><Pencil className="h-4 w-4" />تعديل</>}
@@ -943,7 +943,7 @@ const JobTitlesTab: React.FC = () => {
           return (
             <div
               key={dept.id}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col"
+              className="group bg-ds-surface rounded-2xl border border-ds-border-subtle shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col"
             >
               <div className="p-4 relative overflow-hidden" style={{ background: `linear-gradient(to left, ${c.gradFrom}, ${c.gradTo})` }}>
                 {editMode && (
@@ -951,7 +951,7 @@ const JobTitlesTab: React.FC = () => {
                     <button
                       onClick={() => handleDeleteDept(dept.id)}
                       title="حذف الإدارة"
-                      className="bg-white/20 hover:bg-red-500/80 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm"
+                      className="bg-ds-surface/20 hover:bg-red-500/80 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -959,7 +959,7 @@ const JobTitlesTab: React.FC = () => {
                       <button
                         onClick={() => setPalettePickerFor(palettePickerFor === dept.id ? null : dept.id)}
                         title="تغيير اللون"
-                        className="bg-white/20 hover:bg-white/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm"
+                        className="bg-ds-surface/20 hover:bg-ds-surface/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm"
                       >
                         <Palette className="h-3.5 w-3.5" />
                       </button>
@@ -967,7 +967,7 @@ const JobTitlesTab: React.FC = () => {
                         onClick={() => handleMoveDept(dept.id, -1)}
                         disabled={deptIdx === 0}
                         title="نقل لليمين"
-                        className="bg-white/20 hover:bg-white/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm disabled:opacity-30"
+                        className="bg-ds-surface/20 hover:bg-ds-surface/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm disabled:opacity-30"
                       >
                         <ChevronUp className="h-3.5 w-3.5 -rotate-90" />
                       </button>
@@ -975,7 +975,7 @@ const JobTitlesTab: React.FC = () => {
                         onClick={() => handleMoveDept(dept.id, 1)}
                         disabled={deptIdx === depts.length - 1}
                         title="نقل لليسار"
-                        className="bg-white/20 hover:bg-white/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm disabled:opacity-30"
+                        className="bg-ds-surface/20 hover:bg-ds-surface/40 text-white p-1.5 rounded-lg transition-colors backdrop-blur-sm disabled:opacity-30"
                       >
                         <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
                       </button>
@@ -994,7 +994,7 @@ const JobTitlesTab: React.FC = () => {
                         const v = e.target.value.trim();
                         if (v && v !== dept.name) handleUpdateDept(dept.id, { name: v });
                       }}
-                      className="w-full bg-white/10 border border-white/30 text-white font-bold text-sm text-center leading-relaxed rounded-lg px-2 py-1 backdrop-blur-sm placeholder-white/60 focus:bg-white/20 focus:border-white/60 focus:outline-none"
+                      className="w-full bg-ds-surface/10 border border-white/30 text-white font-bold text-sm text-center leading-relaxed rounded-lg px-2 py-1 backdrop-blur-sm placeholder-white/60 focus:bg-ds-surface/20 focus:border-white/60 focus:outline-none"
                     />
                   ) : (
                     <h3 className="text-white font-bold text-sm text-center leading-relaxed">{dept.name}</h3>
@@ -1005,7 +1005,7 @@ const JobTitlesTab: React.FC = () => {
                     </span>
                   </div>
                   {editMode && palettePickerFor === dept.id && (
-                    <div className="mt-3 grid grid-cols-4 gap-1.5 p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
+                    <div className="mt-3 grid grid-cols-4 gap-1.5 p-2 bg-ds-surface/10 rounded-lg backdrop-blur-sm border border-white/20">
                       {Object.entries(JOB_LADDER_PALETTES).map(([key, p]) => (
                         <button
                           key={key}
@@ -1042,7 +1042,7 @@ const JobTitlesTab: React.FC = () => {
                             </div>
                           ) : (
                             <div className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center" style={{ background: c.dot, boxShadow: `0 0 0 1px ${c.line}` }}>
-                              <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                              <div className="w-1.5 h-1.5 bg-ds-surface rounded-full" />
                             </div>
                           )}
                         </div>
@@ -1056,19 +1056,19 @@ const JobTitlesTab: React.FC = () => {
                                   const v = e.target.value.trim();
                                   if (v && v !== titleRow.title) handleUpdateTitle(titleRow.id, v);
                                 }}
-                                className={`flex-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm text-right ${isDir ? 'font-bold' : isSup ? 'font-semibold' : ''} focus:bg-white focus:border-blue-400 focus:outline-none`}
+                                className={`flex-1 bg-ds-bg border border-ds-border rounded-md px-2 py-1 text-sm text-right ${isDir ? 'font-bold' : isSup ? 'font-semibold' : ''} focus:bg-ds-surface focus:border-blue-400 focus:outline-none`}
                               />
                               <button
                                 onClick={() => handleMoveTitle(dept.id, titleRow.id, -1)}
                                 disabled={idx === 0}
-                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500"
+                                className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 text-ds-faint"
                               >
                                 <ChevronUp className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleMoveTitle(dept.id, titleRow.id, 1)}
                                 disabled={idx === list.length - 1}
-                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500"
+                                className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 text-ds-faint"
                               >
                                 <ChevronDown className="h-3.5 w-3.5" />
                               </button>
@@ -1081,7 +1081,7 @@ const JobTitlesTab: React.FC = () => {
                             </div>
                           ) : (
                             <>
-                              <p className={`text-sm font-medium text-right leading-relaxed ${isDir ? 'text-gray-900 font-bold' : isSup ? 'text-gray-800 font-semibold' : 'text-gray-600'}`}>
+                              <p className={`text-sm font-medium text-right leading-relaxed ${isDir ? 'text-ds-text font-bold' : isSup ? 'text-ds-text font-semibold' : 'text-ds-muted'}`}>
                                 {titleRow.title}
                               </p>
                               {isDir && (
@@ -1098,7 +1098,7 @@ const JobTitlesTab: React.FC = () => {
                   {editMode && (
                     <button
                       onClick={() => handleAddTitle(dept.id)}
-                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-3 border-2 border-dashed border-gray-200 rounded-lg text-xs text-gray-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-3 border-2 border-dashed border-ds-border rounded-lg text-xs text-ds-faint hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       إضافة مسمى
@@ -1108,7 +1108,7 @@ const JobTitlesTab: React.FC = () => {
               </div>
 
               <div className="px-4 py-2.5 border-t border-gray-50" style={{ background: 'rgba(249,250,251,0.5)' }}>
-                <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400">
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-ds-faint">
                   <Target className="h-3 w-3" />
                   <span>ارتقِ بمسيرتك المهنية</span>
                 </div>
@@ -1120,9 +1120,9 @@ const JobTitlesTab: React.FC = () => {
         {editMode && (
           <button
             onClick={handleAddDept}
-            className="bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center min-h-[300px] gap-3 text-gray-400 hover:text-blue-600"
+            className="bg-ds-surface rounded-2xl border-2 border-dashed border-ds-border hover:border-blue-400 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center min-h-[300px] gap-3 text-ds-faint hover:text-blue-600"
           >
-            <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-ds-overlay flex items-center justify-center">
               <Plus className="h-6 w-6" />
             </div>
             <span className="text-sm font-medium">إضافة إدارة جديدة</span>
@@ -1367,31 +1367,45 @@ export const OrgStructure: React.FC = () => {
       `}</style>
 
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div
+        className="rounded-ds-xl p-6 flex items-center justify-between flex-wrap gap-4"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200">
-            <Network className="h-6 w-6 text-white" />
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{
+              background: 'var(--sc-blue-icon-bg)',
+              border: '1px solid var(--sc-blue-icon-b)',
+              color: 'var(--sc-blue-icon-c)',
+            }}
+          >
+            <Network className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">الهيكل التنظيمي</h1>
-            <p className="text-gray-500 text-sm">التسلسل الهرمي للمنظمة — اضغط على أي عنصر لعرض التفاصيل</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>الهيكل التنظيمي</h1>
+            <p className="text-sm" style={{ color: 'var(--sc-blue-label)' }}>التسلسل الهرمي للمنظمة — اضغط على أي عنصر لعرض التفاصيل</p>
           </div>
         </div>
         <button onClick={() => fetchData(true)} disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 shadow-sm">
+          className="flex items-center gap-2 px-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-sm text-ds-muted hover:bg-ds-bg transition-all disabled:opacity-50 shadow-sm">
           <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           <span>تحديث</span>
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-ds-overlay p-1 rounded-xl w-fit">
         <button
           onClick={() => setActiveTab('org')}
           className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
             activeTab === 'org'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              ? 'bg-ds-surface text-blue-600 shadow-sm'
+              : 'text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
           }`}
         >
           <span className="flex items-center gap-2">
@@ -1403,8 +1417,8 @@ export const OrgStructure: React.FC = () => {
           onClick={() => setActiveTab('titles')}
           className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
             activeTab === 'titles'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              ? 'bg-ds-surface text-blue-600 shadow-sm'
+              : 'text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
           }`}
         >
           <span className="flex items-center gap-2">
@@ -1421,7 +1435,7 @@ export const OrgStructure: React.FC = () => {
             <div className="w-16 h-16 border-4 border-blue-100 rounded-full" />
             <div className="absolute inset-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
-          <p className="text-gray-600 font-medium">جاري تحميل الهيكل التنظيمي...</p>
+          <p className="text-ds-muted font-medium">جاري تحميل الهيكل التنظيمي...</p>
         </div>
       ) : (<>
       {/* Stats */}
@@ -1431,29 +1445,29 @@ export const OrgStructure: React.FC = () => {
           { l: 'موظفون', v: stats.employees, icon: <Users className="h-5 w-5" />, bg: 'bg-emerald-50 text-emerald-600' },
           { l: 'مشرفون', v: stats.supervisors, icon: <Shield className="h-5 w-5" />, bg: 'bg-orange-50 text-orange-600' },
         ].map(s => (
-          <div key={s.l} className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex items-center gap-3">
+          <div key={s.l} className="bg-ds-surface rounded-xl border border-ds-border-subtle shadow-sm p-3 flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center`}>{s.icon}</div>
             <div>
-              <p className="text-[10px] text-gray-400 font-medium">{s.l}</p>
-              <p className="text-xl font-bold text-gray-900">{s.v}</p>
+              <p className="text-[10px] text-ds-faint font-medium">{s.l}</p>
+              <p className="text-xl font-bold text-ds-text">{s.v}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap bg-white rounded-xl border border-gray-100 shadow-sm p-3">
+      <div className="flex items-center gap-3 flex-wrap bg-ds-surface rounded-xl border border-ds-border-subtle shadow-sm p-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
           <input type="text" placeholder="بحث بالاسم أو البريد..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pr-10 pl-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            className="w-full pr-10 pl-4 py-2 border border-ds-border rounded-lg text-sm bg-ds-bg focus:bg-ds-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
         </div>
         <div className="h-7 w-px bg-gray-200" />
         <button onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 hover:bg-blue-50 rounded-lg transition-colors">توسيع الكل</button>
-        <button onClick={collapseAll} className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1.5 hover:bg-gray-50 rounded-lg transition-colors">طي الكل</button>
+        <button onClick={collapseAll} className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors">طي الكل</button>
         <div className="h-7 w-px bg-gray-200" />
         <button onClick={toggleFullscreen}
-          className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1.5 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-1.5"
+          className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors flex items-center gap-1.5"
           title={isFullscreen ? 'خروج من ملء الشاشة' : 'ملء الشاشة'}>
           {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {isFullscreen ? 'تصغير' : 'ملء الشاشة'}
@@ -1461,20 +1475,20 @@ export const OrgStructure: React.FC = () => {
         <div className="h-7 w-px bg-gray-200" />
         <div className="flex items-center gap-1">
           <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
-            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors" title="تصغير">
+            className="p-1.5 rounded-lg text-ds-faint hover:text-ds-muted hover:bg-ds-bg transition-colors" title="تصغير">
             <ZoomOut className="h-4 w-4" />
           </button>
           <button onClick={() => setZoom(1)}
-            className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1 hover:bg-gray-50 rounded-lg transition-colors min-w-[3rem] text-center" title="إعادة تعيين">
+            className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1 hover:bg-ds-bg rounded-lg transition-colors min-w-[3rem] text-center" title="إعادة تعيين">
             {Math.round(zoom * 100)}%
           </button>
           <button onClick={() => setZoom(z => Math.min(2, z + 0.1))}
-            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors" title="تكبير">
+            className="p-1.5 rounded-lg text-ds-faint hover:text-ds-muted hover:bg-ds-bg transition-colors" title="تكبير">
             <ZoomIn className="h-4 w-4" />
           </button>
         </div>
         <div className="h-7 w-px bg-gray-200" />
-        <div className="flex items-center gap-3 text-[10px] text-gray-500 mr-auto flex-wrap">
+        <div className="flex items-center gap-3 text-[10px] text-ds-faint mr-auto flex-wrap">
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" />إدارة عليا</span>
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" />مديري إدارات</span>
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-teal-500" />أقسام</span>
@@ -1488,7 +1502,7 @@ export const OrgStructure: React.FC = () => {
       </div>
 
       {/* Interactive help hint */}
-      <div className="flex items-center gap-4 text-[11px] text-gray-400 px-1 flex-wrap">
+      <div className="flex items-center gap-4 text-[11px] text-ds-faint px-1 flex-wrap">
         <span className="flex items-center gap-1">اضغط على الإدارة للتوسيع/الطي</span>
         <span className="flex items-center gap-1">اضغط على أي شخص لعرض التفاصيل</span>
         <span className="flex items-center gap-1">Ctrl + تمرير للتكبير/التصغير</span>
