@@ -20,30 +20,26 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-const VARIANT_STYLE: Record<ToastVariant, { icon: React.ReactNode; ring: string; bar: string; iconBg: string; }> = {
+const VARIANT_CLASS: Record<ToastVariant, { wrap: string; icon: React.ReactNode; bar: string }> = {
   success: {
-    icon: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
-    ring: 'border-emerald-200',
-    bar: 'bg-gradient-to-l from-emerald-400 to-emerald-600',
-    iconBg: 'bg-emerald-50',
+    wrap: 't-ok',
+    icon: <CheckCircle2 className="h-3 w-3" />,
+    bar: 'var(--success)',
   },
   error: {
-    icon: <XCircle className="h-5 w-5 text-rose-600" />,
-    ring: 'border-rose-200',
-    bar: 'bg-gradient-to-l from-rose-400 to-rose-600',
-    iconBg: 'bg-rose-50',
+    wrap: 't-err',
+    icon: <XCircle className="h-3 w-3" />,
+    bar: 'var(--danger)',
   },
   warning: {
-    icon: <AlertTriangle className="h-5 w-5 text-amber-600" />,
-    ring: 'border-amber-200',
-    bar: 'bg-gradient-to-l from-amber-400 to-amber-600',
-    iconBg: 'bg-amber-50',
+    wrap: 't-warn',
+    icon: <AlertTriangle className="h-3 w-3" />,
+    bar: 'var(--warning)',
   },
   info: {
-    icon: <Info className="h-5 w-5 text-blue-600" />,
-    ring: 'border-blue-200',
-    bar: 'bg-gradient-to-l from-blue-400 to-blue-600',
-    iconBg: 'bg-blue-50',
+    wrap: 't-info',
+    icon: <Info className="h-3 w-3" />,
+    bar: 'var(--accent)',
   },
 };
 
@@ -87,7 +83,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 const ToastCard: React.FC<{ toast: Toast; onDismiss: () => void }> = ({ toast, onDismiss }) => {
   const [visible, setVisible] = useState(false);
-  const v = VARIANT_STYLE[toast.variant];
+  const v = VARIANT_CLASS[toast.variant];
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 20);
@@ -96,29 +92,40 @@ const ToastCard: React.FC<{ toast: Toast; onDismiss: () => void }> = ({ toast, o
 
   return (
     <div
-      className={`pointer-events-auto min-w-[280px] max-w-[460px] bg-white border ${v.ring} rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-out ${
+      className={`toast ${v.wrap} pointer-events-auto transition-all duration-300 ease-out ${
         toast.exiting
           ? 'opacity-0 -translate-y-3 scale-95'
           : visible
             ? 'opacity-100 translate-y-0 scale-100'
             : 'opacity-0 -translate-y-3 scale-95'
       }`}
-      style={{ fontFamily: 'inherit' }}
+      style={{
+        minWidth: '280px',
+        maxWidth: '460px',
+        position: 'relative',
+        flexDirection: 'column',
+        padding: 0,
+        overflow: 'hidden',
+      }}
     >
-      <div className="flex items-start gap-3 p-4">
-        <div className={`w-9 h-9 rounded-xl ${v.iconBg} flex items-center justify-center flex-shrink-0`}>
-          {v.icon}
-        </div>
-        <p className="flex-1 text-sm text-gray-800 leading-relaxed whitespace-pre-line">{toast.message}</p>
+      <div className="flex items-start gap-3" style={{ padding: '14px 16px' }}>
+        <div className="toast-ico">{v.icon}</div>
+        <p className="toast-msg flex-1 whitespace-pre-line" style={{ lineHeight: 1.5 }}>
+          {toast.message}
+        </p>
         <button
           onClick={onDismiss}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
+          className="toast-x flex-shrink-0"
           aria-label="إغلاق"
+          style={{ padding: 0, width: '20px', height: '20px' }}
         >
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className={`h-1 w-full ${v.bar} origin-right toast-bar`} />
+      <div
+        className="toast-bar origin-right"
+        style={{ height: '3px', width: '100%', background: v.bar }}
+      />
     </div>
   );
 };
