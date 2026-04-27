@@ -483,7 +483,7 @@ export const AllEvaluations: React.FC = () => {
         {evals.length === 0 ? (
           <EmptyState
             message={emptyMessage}
-            icon={<Users className="h-12 w-12 text-gray-400" />}
+            icon={<Users className="h-12 w-12 text-ds-faint" />}
           />
         ) : (
           <Table>
@@ -507,25 +507,25 @@ export const AllEvaluations: React.FC = () => {
                         {ev.employee?.full_name?.charAt(0) || '?'}
                       </div>
                       <div>
-                        <span className="font-medium text-gray-900">{ev.employee?.full_name}</span>
-                        <p className="text-xs text-gray-500">{ev.employee?.job_title}</p>
+                        <span className="font-medium text-ds-text">{ev.employee?.full_name}</span>
+                        <p className="text-xs text-ds-faint">{ev.employee?.job_title}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-gray-700">{ev.department?.name || '-'}</span>
+                    <span className="text-sm text-ds-muted">{ev.department?.name || '-'}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-gray-700">{ev.manager?.full_name || '-'}</span>
+                    <span className="text-sm text-ds-muted">{ev.manager?.full_name || '-'}</span>
                   </TableCell>
                   <TableCell>
                     {ev.period && (
-                      <span className="text-sm text-gray-700">{monthLabels[ev.period.month]} {ev.period.year}</span>
+                      <span className="text-sm text-ds-muted">{monthLabels[ev.period.month]} {ev.period.year}</span>
                     )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">{ev.percentage?.toFixed(0)}%</span>
+                      <span className="font-bold text-ds-text">{ev.percentage?.toFixed(0)}%</span>
                       {ev.general_rating && (
                         <Badge variant={getRatingVariant(ev.general_rating)} size="sm">
                           {ev.general_rating}
@@ -553,13 +553,20 @@ export const AllEvaluations: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">جميع التقييمات</h1>
-        <p className="text-gray-600 mt-2">عرض جميع تقييمات الإدارة العليا ومدراء الإدارات والمشرفين</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>جميع التقييمات</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>عرض جميع تقييمات الإدارة العليا ومدراء الإدارات والمشرفين</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-0">
+      <div className="flex gap-2 border-b border-ds-border pb-0">
         {tabs.map(tab => (
           <button
             key={tab.key}
@@ -567,7 +574,7 @@ export const AllEvaluations: React.FC = () => {
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeTab === tab.key
                 ? tab.color === 'amber' ? 'border-amber-600 text-amber-600 bg-amber-50' : tab.color === 'blue' ? 'border-blue-600 text-blue-600 bg-blue-50' : tab.color === 'rose' ? 'border-rose-600 text-rose-600 bg-rose-50' : 'border-emerald-600 text-emerald-600 bg-emerald-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                : 'border-transparent text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
             }`}
           >
             {tab.icon}
@@ -580,14 +587,14 @@ export const AllEvaluations: React.FC = () => {
       {activeTab !== 'ceo-eval' && <Card>
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 text-gray-500">
+            <div className="flex items-center gap-2 text-ds-faint">
               <Filter className="h-4 w-4" />
               <span className="text-sm font-medium">تصفية:</span>
             </div>
             <select
               value={filterPeriod}
               onChange={(e) => setFilterPeriod(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">جميع الفترات</option>
               {periods.map(p => (
@@ -598,7 +605,7 @@ export const AllEvaluations: React.FC = () => {
               <select
                 value={filterDirectorate}
                 onChange={(e) => setFilterDirectorate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">جميع الإدارات</option>
                 {directoratesFilter.map(d => (
@@ -621,7 +628,7 @@ export const AllEvaluations: React.FC = () => {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <div className="text-gray-500">جاري التحميل...</div>
+          <div className="text-ds-faint">جاري التحميل...</div>
         </div>
       ) : activeTab === 'ceo' ? (
         <Card>
@@ -629,7 +636,7 @@ export const AllEvaluations: React.FC = () => {
             {combinedDirectorEvals.length === 0 ? (
               <EmptyState
                 message="لا توجد تقييمات من الإدارة العليا"
-                icon={<Crown className="h-12 w-12 text-gray-400" />}
+                icon={<Crown className="h-12 w-12 text-ds-faint" />}
               />
             ) : (
               <Table>
@@ -652,26 +659,26 @@ export const AllEvaluations: React.FC = () => {
                             {combined.director?.full_name?.charAt(0) || '?'}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900">{combined.director?.full_name}</span>
-                            <p className="text-xs text-gray-500">{combined.director?.job_title}</p>
+                            <span className="font-medium text-ds-text">{combined.director?.full_name}</span>
+                            <p className="text-xs text-ds-faint">{combined.director?.job_title}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           {combined.evals.map(ev => (
-                            <span key={ev.id} className="text-sm text-gray-700">{ev.evaluator?.full_name} ({ev.percentage?.toFixed(0)}%)</span>
+                            <span key={ev.id} className="text-sm text-ds-muted">{ev.evaluator?.full_name} ({ev.percentage?.toFixed(0)}%)</span>
                           ))}
                         </div>
                       </TableCell>
                       <TableCell>
                         {combined.period && (
-                          <span className="text-sm text-gray-700">{monthLabels[combined.period.month]} {combined.period.year}</span>
+                          <span className="text-sm text-ds-muted">{monthLabels[combined.period.month]} {combined.period.year}</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900">{combined.avg_percentage?.toFixed(0)}%</span>
+                          <span className="font-bold text-ds-text">{combined.avg_percentage?.toFixed(0)}%</span>
                           {combined.avg_rating && (
                             <Badge variant={getRatingVariant(combined.avg_rating)} size="sm">
                               {combined.avg_rating}
@@ -703,7 +710,7 @@ export const AllEvaluations: React.FC = () => {
             {supervisorEvals.length === 0 ? (
               <EmptyState
                 message="لا توجد تقييمات من المشرفين"
-                icon={<Shield className="h-12 w-12 text-gray-400" />}
+                icon={<Shield className="h-12 w-12 text-ds-faint" />}
               />
             ) : (
               <Table>
@@ -726,22 +733,22 @@ export const AllEvaluations: React.FC = () => {
                             {ev.employee?.full_name?.charAt(0) || '?'}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900">{ev.employee?.full_name}</span>
-                            <p className="text-xs text-gray-500">{ev.employee?.job_title}</p>
+                            <span className="font-medium text-ds-text">{ev.employee?.full_name}</span>
+                            <p className="text-xs text-ds-faint">{ev.employee?.job_title}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-700">{ev.supervisor?.full_name || '-'}</span>
+                        <span className="text-sm text-ds-muted">{ev.supervisor?.full_name || '-'}</span>
                       </TableCell>
                       <TableCell>
                         {ev.period && (
-                          <span className="text-sm text-gray-700">{monthLabels[ev.period.month]} {ev.period.year}</span>
+                          <span className="text-sm text-ds-muted">{monthLabels[ev.period.month]} {ev.period.year}</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900">{ev.percentage?.toFixed(0)}%</span>
+                          <span className="font-bold text-ds-text">{ev.percentage?.toFixed(0)}%</span>
                           {ev.general_rating && (
                             <Badge variant={getRatingVariant(ev.general_rating)} size="sm">
                               {ev.general_rating}
@@ -778,20 +785,20 @@ export const AllEvaluations: React.FC = () => {
       >
         {detailLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">جاري التحميل...</div>
+            <div className="text-ds-faint">جاري التحميل...</div>
           </div>
         ) : detailData ? (
           <div className="space-y-6">
             {/* Header info */}
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-ds-bg rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-gray-900 text-lg">{detailData.name}</p>
-                  <p className="text-sm text-gray-600">{detailData.jobTitle}</p>
+                  <p className="font-bold text-ds-text text-lg">{detailData.name}</p>
+                  <p className="text-sm text-ds-muted">{detailData.jobTitle}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">فترة التقييم</p>
-                  <p className="font-medium text-gray-900">{detailData.period}</p>
+                  <p className="text-sm text-ds-faint">فترة التقييم</p>
+                  <p className="font-medium text-ds-text">{detailData.period}</p>
                 </div>
               </div>
             </div>
@@ -815,7 +822,7 @@ export const AllEvaluations: React.FC = () => {
                 {detailData.generalRating ? (
                   <Badge variant={getRatingVariant(detailData.generalRating)}>{detailData.generalRating}</Badge>
                 ) : (
-                  <span className="text-gray-400 text-sm">-</span>
+                  <span className="text-ds-faint text-sm">-</span>
                 )}
               </div>
             </div>
@@ -837,15 +844,15 @@ export const AllEvaluations: React.FC = () => {
                         <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-ds-border-subtle">
                       {generalScores.map((s, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">
-                            <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                            <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                            <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                            <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                           </td>
-                          <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                          <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                          <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                          <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                           <td className="px-4 py-2 font-bold text-blue-600">{s.weighted_result?.toFixed(1)}</td>
                         </tr>
                       ))}
@@ -872,15 +879,15 @@ export const AllEvaluations: React.FC = () => {
                         <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-ds-border-subtle">
                       {specificScores.map((s, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">
-                            <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                            <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                            <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                            <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                           </td>
-                          <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                          <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                          <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                          <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                           <td className="px-4 py-2 font-bold text-emerald-600">{s.weighted_result?.toFixed(1)}</td>
                         </tr>
                       ))}
@@ -896,13 +903,13 @@ export const AllEvaluations: React.FC = () => {
                 {detailData.evaluatorNote && (
                   <div className="bg-blue-50 rounded-lg p-4">
                     <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
-                    <p className="text-sm text-gray-800">{detailData.evaluatorNote}</p>
+                    <p className="text-sm text-ds-text">{detailData.evaluatorNote}</p>
                   </div>
                 )}
                 {detailData.subjectNote && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-xs font-medium text-gray-700 mb-1">ملاحظات المُقيَّم</p>
-                    <p className="text-sm text-gray-800">{detailData.subjectNote}</p>
+                  <div className="bg-ds-bg rounded-lg p-4">
+                    <p className="text-xs font-medium text-ds-muted mb-1">ملاحظات المُقيَّم</p>
+                    <p className="text-sm text-ds-text">{detailData.subjectNote}</p>
                   </div>
                 )}
               </div>

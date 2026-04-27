@@ -43,8 +43,8 @@ const getActionColor = (action: string) => {
   if (action.includes('إضافة') || action.includes('إنشاء') || action.includes('تسجيل') || action.includes('تفعيل')) return 'bg-green-100 text-green-600';
   if (action.includes('حذف')) return 'bg-red-100 text-red-600';
   if (action.includes('تحديث') || action.includes('تعديل')) return 'bg-blue-100 text-blue-600';
-  if (action.includes('تعطيل')) return 'bg-gray-100 text-gray-500';
-  return 'bg-gray-100 text-gray-600';
+  if (action.includes('تعطيل')) return 'bg-ds-overlay text-ds-faint';
+  return 'bg-ds-overlay text-ds-muted';
 };
 
 const getActionBadgeVariant = (action: string): 'success' | 'danger' | 'info' | 'default' => {
@@ -181,10 +181,17 @@ export const AuditLog: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">سجل النشاط</h1>
-          <p className="text-gray-600 mt-2">عرض جميع العمليات التي تمت في النظام</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>سجل النشاط</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>عرض جميع العمليات التي تمت في النظام</p>
         </div>
         <Button
           variant="outline"
@@ -202,8 +209,8 @@ export const AuditLog: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">إجمالي السجلات</p>
-                <p className="text-xl font-bold text-gray-900">{totalCount}</p>
+                <p className="text-sm text-ds-muted mb-1">إجمالي السجلات</p>
+                <p className="text-xl font-bold text-ds-text">{totalCount}</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                 <Activity className="h-6 w-6" />
@@ -215,8 +222,8 @@ export const AuditLog: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">آخر نشاط</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-sm text-ds-muted mb-1">آخر نشاط</p>
+                <p className="text-xl font-bold text-ds-text">
                   {logs.length > 0 ? formatDate(logs[0].created_at) : '-'}
                 </p>
               </div>
@@ -230,8 +237,8 @@ export const AuditLog: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">مستخدمين نشطين</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-sm text-ds-muted mb-1">مستخدمين نشطين</p>
+                <p className="text-xl font-bold text-ds-text">
                   {new Set(logs.map(l => l.user_id)).size}
                 </p>
               </div>
@@ -246,7 +253,7 @@ export const AuditLog: React.FC = () => {
       <Card>
         <CardBody>
           <div className="flex items-center gap-3 mb-4">
-            <Filter className="h-5 w-5 text-gray-400" />
+            <Filter className="h-5 w-5 text-ds-faint" />
             <div className="w-64">
               <Select
                 options={entityTypes}
@@ -259,7 +266,7 @@ export const AuditLog: React.FC = () => {
           {logs.length === 0 ? (
             <EmptyState
               message="لا توجد سجلات نشاط"
-              icon={<Activity className="h-12 w-12 text-gray-400" />}
+              icon={<Activity className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <>
@@ -282,8 +289,8 @@ export const AuditLog: React.FC = () => {
                             {getActionIcon(log.action)}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{log.user_full_name}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="font-medium text-ds-text text-sm">{log.user_full_name}</p>
+                            <p className="text-xs text-ds-faint">
                               {log.user_role === 'admin' ? 'مدير النظام' : 'موظف'}
                             </p>
                           </div>
@@ -295,19 +302,19 @@ export const AuditLog: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600 text-sm">
+                        <span className="text-ds-muted text-sm">
                           {entityTypeLabels[log.entity_type] || log.entity_type}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <p className="text-gray-500 text-sm max-w-xs truncate">
+                        <p className="text-ds-faint text-sm max-w-xs truncate">
                           {formatDetails(log.details) || '-'}
                         </p>
                       </TableCell>
                       <TableCell>
                         <div className="text-right">
-                          <p className="text-sm text-gray-900">{formatDate(log.created_at)}</p>
-                          <p className="text-xs text-gray-500">{formatTime(log.created_at)}</p>
+                          <p className="text-sm text-ds-text">{formatDate(log.created_at)}</p>
+                          <p className="text-xs text-ds-faint">{formatTime(log.created_at)}</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -316,25 +323,25 @@ export const AuditLog: React.FC = () => {
               </Table>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-ds-border">
+                  <p className="text-sm text-ds-muted">
                     عرض {page * PAGE_SIZE + 1} - {Math.min((page + 1) * PAGE_SIZE, totalCount)} من {totalCount}
                   </p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setPage(p => p + 1)}
                       disabled={page >= totalPages - 1}
-                      className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-600"
+                      className="p-2 rounded-lg hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-muted"
                     >
                       <ChevronRight className="h-5 w-5" />
                     </button>
-                    <span className="text-sm text-gray-600 font-medium">
+                    <span className="text-sm text-ds-muted font-medium">
                       {page + 1} / {totalPages}
                     </span>
                     <button
                       onClick={() => setPage(p => p - 1)}
                       disabled={page === 0}
-                      className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-600"
+                      className="p-2 rounded-lg hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-muted"
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>

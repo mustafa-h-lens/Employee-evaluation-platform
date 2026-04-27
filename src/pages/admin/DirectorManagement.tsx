@@ -272,10 +272,17 @@ export const DirectorManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">مديري الإدارات</h1>
-          <p className="text-gray-600 mt-2">إدارة وتسجيل مديري الإدارات في المنظمة</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>مديري الإدارات</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>إدارة وتسجيل مديري الإدارات في المنظمة</p>
         </div>
         <Button onClick={() => { setIsRegisterModalOpen(true); setRegisterFeedback(null); setRegisterForm({ full_name: '', email: '', job_title: '', employee_number: '' }); }} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -291,8 +298,8 @@ export const DirectorManagement: React.FC = () => {
               <Crown className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">إجمالي مديري الإدارات</p>
-              <p className="text-2xl font-bold text-gray-900">{totalDirectors}</p>
+              <p className="text-sm text-ds-faint">إجمالي مديري الإدارات</p>
+              <p className="text-2xl font-bold text-ds-text">{totalDirectors}</p>
             </div>
           </CardBody>
         </Card>
@@ -302,7 +309,7 @@ export const DirectorManagement: React.FC = () => {
               <FileCheck className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">مديرون تم تقييمهم</p>
+              <p className="text-sm text-ds-faint">مديرون تم تقييمهم</p>
               <p className="text-2xl font-bold text-green-700">{evaluatedCount}</p>
             </div>
           </CardBody>
@@ -313,7 +320,7 @@ export const DirectorManagement: React.FC = () => {
               <FileClock className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">بانتظار التقييم</p>
+              <p className="text-sm text-ds-faint">بانتظار التقييم</p>
               <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
             </div>
           </CardBody>
@@ -322,14 +329,14 @@ export const DirectorManagement: React.FC = () => {
 
       {/* Directors Table */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">جميع مديري الإدارات</h2>
+        <div className="px-6 py-4 border-b border-ds-border">
+          <h2 className="text-lg font-semibold text-ds-text">جميع مديري الإدارات</h2>
         </div>
         <CardBody className="p-0 overflow-x-auto">
           {directors.length === 0 ? (
             <EmptyState
               message="لا يوجد مديري إدارات مسجلين حاليًا"
-              icon={<Users className="h-12 w-12 text-gray-400" />}
+              icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -357,13 +364,13 @@ export const DirectorManagement: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-600">{director.email}</span>
+                        <span className="text-sm text-ds-muted">{director.email}</span>
                       </TableCell>
                       <TableCell>
                         {director.job_title ? (
-                          <span className="text-sm text-gray-700">{director.job_title}</span>
+                          <span className="text-sm text-ds-muted">{director.job_title}</span>
                         ) : (
-                          <span className="text-gray-400">--</span>
+                          <span className="text-ds-faint">--</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -479,8 +486,8 @@ export const DirectorManagement: React.FC = () => {
           <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>
-          <p className="text-gray-700">
-            هل أنت متأكد من حذف <span className="font-bold text-gray-900">{deleteTarget?.full_name}</span>؟
+          <p className="text-ds-muted">
+            هل أنت متأكد من حذف <span className="font-bold text-ds-text">{deleteTarget?.full_name}</span>؟
           </p>
           <p className="text-sm text-red-600">
             سيتم حذف الحساب نهائيًا ولا يمكن التراجع عن هذا الإجراء.
@@ -507,7 +514,7 @@ export const DirectorManagement: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
+            <label className="block text-sm font-medium text-ds-muted mb-1">الاسم الكامل</label>
             <Input
               value={editFullName}
               onChange={(e) => setEditFullName(e.target.value)}
@@ -515,7 +522,7 @@ export const DirectorManagement: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+            <label className="block text-sm font-medium text-ds-muted mb-1">البريد الإلكتروني</label>
             <Input
               type="email"
               value={editEmail}
@@ -524,7 +531,7 @@ export const DirectorManagement: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">المسمى الوظيفي</label>
+            <label className="block text-sm font-medium text-ds-muted mb-1">المسمى الوظيفي</label>
             <Input
               value={editJobTitle}
               onChange={(e) => setEditJobTitle(e.target.value)}

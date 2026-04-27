@@ -98,9 +98,16 @@ export const CriteriaOverview: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">نظرة عامة على المعايير</h1>
-        <p className="text-gray-600 mt-2">عرض المعايير العامة والخاصة لجميع الإدارات</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-green-grad)',
+          border: '1px solid var(--sc-green-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>نظرة عامة على المعايير</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>عرض المعايير العامة والخاصة لجميع الإدارات</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -108,7 +115,7 @@ export const CriteriaOverview: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">وزن المعايير العامة</p>
+                <p className="text-sm text-ds-muted mb-1">وزن المعايير العامة</p>
                 <p className="text-xl font-bold text-blue-600">{generalWeight}%</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
@@ -121,7 +128,7 @@ export const CriteriaOverview: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">وزن المعايير الخاصة</p>
+                <p className="text-sm text-ds-muted mb-1">وزن المعايير الخاصة</p>
                 <p className="text-xl font-bold text-emerald-600">{specificWeight}%</p>
               </div>
               <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
@@ -134,10 +141,10 @@ export const CriteriaOverview: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">عدد الإدارات</p>
-                <p className="text-xl font-bold text-gray-900">{directorates.length}</p>
+                <p className="text-sm text-ds-muted mb-1">عدد الإدارات</p>
+                <p className="text-xl font-bold text-ds-text">{directorates.length}</p>
               </div>
-              <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
+              <div className="bg-ds-overlay text-ds-muted p-3 rounded-xl">
                 <Building2 className="h-6 w-6" />
               </div>
             </div>
@@ -150,7 +157,7 @@ export const CriteriaOverview: React.FC = () => {
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <h2 className="text-lg font-bold text-gray-900">المعايير العامة ({generalWeight}%)</h2>
+            <h2 className="text-lg font-bold text-ds-text">المعايير العامة ({generalWeight}%)</h2>
             <Badge variant={generalTotal === generalWeight ? 'success' : 'warning'} size="sm">
               المجموع: {generalTotal}%
             </Badge>
@@ -160,7 +167,7 @@ export const CriteriaOverview: React.FC = () => {
           {generalCriteria.length === 0 ? (
             <EmptyState
               message="لا توجد معايير عامة"
-              icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -179,10 +186,10 @@ export const CriteriaOverview: React.FC = () => {
                   return (
                     <React.Fragment key={c.id}>
                       <TableRow
-                        className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
+                        className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
                         onClick={() => setExpandedId(isExpanded ? null : c.id)}
                       >
-                        <TableCell className="text-gray-400">
+                        <TableCell className="text-ds-faint">
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </TableCell>
                         <TableCell>
@@ -194,10 +201,10 @@ export const CriteriaOverview: React.FC = () => {
                           <span className="font-bold text-blue-600">{c.weight}%</span>
                         </TableCell>
                         <TableCell>
-                          <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
+                          <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
                         </TableCell>
                         <TableCell>
-                          <span className="font-bold text-gray-900">{c.title}</span>
+                          <span className="font-bold text-ds-text">{c.title}</span>
                         </TableCell>
                       </TableRow>
                       {isExpanded && (
@@ -205,7 +212,7 @@ export const CriteriaOverview: React.FC = () => {
                           <TableCell colSpan={5} className="!whitespace-normal">
                             <div className="px-2 py-1">
                               <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
-                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                              <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -221,12 +228,12 @@ export const CriteriaOverview: React.FC = () => {
 
       {/* Directorate Filter */}
       <div className="flex items-center gap-3">
-        <Filter className="h-5 w-5 text-gray-500" />
-        <label className="text-sm font-medium text-gray-700">عرض المعايير الخاصة لـ:</label>
+        <Filter className="h-5 w-5 text-ds-faint" />
+        <label className="text-sm font-medium text-ds-muted">عرض المعايير الخاصة لـ:</label>
         <select
           value={selectedDirId}
           onChange={(e) => setSelectedDirId(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+          className="px-4 py-2 border border-ds-border rounded-lg text-sm"
         >
           <option value="all">جميع الإدارات</option>
           {directorates.map(dir => (
@@ -262,9 +269,9 @@ export const CriteriaOverview: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-emerald-500" />
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900">{group.title}</h2>
+                      <h2 className="text-lg font-bold text-ds-text">{group.title}</h2>
                       {group.subtitle && (
-                        <p className="text-sm text-gray-500 mt-0.5">قسم: {group.subtitle}</p>
+                        <p className="text-sm text-ds-faint mt-0.5">قسم: {group.subtitle}</p>
                       )}
                     </div>
                   </div>
@@ -280,7 +287,7 @@ export const CriteriaOverview: React.FC = () => {
               </CardHeader>
               <CardBody className="p-0">
                 {group.list.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500 text-sm">
+                  <div className="p-6 text-center text-ds-faint text-sm">
                     لم يتم تحديد معايير خاصة بعد
                   </div>
                 ) : (
@@ -300,10 +307,10 @@ export const CriteriaOverview: React.FC = () => {
                         return (
                           <React.Fragment key={c.id}>
                             <TableRow
-                              className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                              className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
                               onClick={() => setExpandedId(isExpanded ? null : c.id)}
                             >
-                              <TableCell className="text-gray-400">
+                              <TableCell className="text-ds-faint">
                                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </TableCell>
                               <TableCell>
@@ -315,10 +322,10 @@ export const CriteriaOverview: React.FC = () => {
                                 <span className="font-bold text-emerald-600">{c.weight}%</span>
                               </TableCell>
                               <TableCell>
-                                <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
+                                <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
                               </TableCell>
                               <TableCell>
-                                <span className="font-bold text-gray-900">{c.title}</span>
+                                <span className="font-bold text-ds-text">{c.title}</span>
                               </TableCell>
                             </TableRow>
                             {isExpanded && (
@@ -326,7 +333,7 @@ export const CriteriaOverview: React.FC = () => {
                                 <TableCell colSpan={5} className="!whitespace-normal">
                                   <div className="px-2 py-1">
                                     <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
-                                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                    <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                                   </div>
                                 </TableCell>
                               </TableRow>

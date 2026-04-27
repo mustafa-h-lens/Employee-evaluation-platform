@@ -63,87 +63,62 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const statCards = [
-    {
-      title: 'عدد الإدارات',
-      value: stats.directoratesCount,
-      icon: <Building2 className="h-8 w-8" />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      title: 'عدد الموظفين',
-      value: stats.employeesCount,
-      icon: <Users className="h-8 w-8" />,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
-    },
-    {
-      title: 'التقييمات المكتملة',
-      value: stats.completedEvaluations,
-      icon: <FileCheck className="h-8 w-8" />,
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50'
-    },
-    {
-      title: 'التقييمات المعلقة',
-      value: stats.pendingEvaluations,
-      icon: <FileClock className="h-8 w-8" />,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50'
-    }
+    { title: 'عدد الإدارات',         value: stats.directoratesCount,   icon: <Building2 className="h-5 w-5" />, scClass: 'sc-blue' },
+    { title: 'عدد الموظفين',         value: stats.employeesCount,      icon: <Users className="h-5 w-5" />,     scClass: 'sc-green' },
+    { title: 'التقييمات المكتملة',   value: stats.completedEvaluations, icon: <FileCheck className="h-5 w-5" />, scClass: 'sc-blue' },
+    { title: 'التقييمات المعلقة',    value: stats.pendingEvaluations,  icon: <FileClock className="h-5 w-5" />, scClass: 'sc-amber' }
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">جاري التحميل...</div>
+        <div className="text-ds-faint">جاري التحميل...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">لوحة التحكم</h1>
-        <p className="text-gray-600 mt-2">نظرة عامة على منصة التقييم الوظيفي</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>لوحة التحكم</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>نظرة عامة على منصة التقييم الوظيفي</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat, index) => (
-          <Card key={index}>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-                <div className={`${stat.bgColor} ${stat.color} p-3 rounded-xl`}>
-                  {stat.icon}
-                </div>
+          <div key={index} className={`stat-card ${stat.scClass}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <div className="stat-sub">{stat.title}</div>
+                <div className="stat-val">{stat.value}</div>
               </div>
-            </CardBody>
-          </Card>
+              <div className="stat-icon-box">{stat.icon}</div>
+            </div>
+          </div>
         ))}
 
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">فترة التقييم الحالية</p>
-                <p className="text-lg font-bold text-gray-900">{stats.activePeriod}</p>
-              </div>
-              <div className="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
-                <Calendar className="h-8 w-8" />
-              </div>
+        <div className="stat-card sc-purple">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="stat-sub">فترة التقييم الحالية</div>
+              <div className="stat-val" style={{ fontSize: '18px', letterSpacing: 0 }}>{stats.activePeriod}</div>
             </div>
-          </CardBody>
-        </Card>
+            <div className="stat-icon-box"><Calendar className="h-5 w-5" /></div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">التقييمات الأخيرة</h2>
+            <h2 className="text-lg font-semibold text-ds-text">التقييمات الأخيرة</h2>
           </CardHeader>
           <CardBody>
             <RecentEvaluations />
@@ -152,7 +127,7 @@ export const AdminDashboard: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">إحصائيات الأداء</h2>
+            <h2 className="text-lg font-semibold text-ds-text">إحصائيات الأداء</h2>
           </CardHeader>
           <CardBody>
             <PerformanceStats />
@@ -188,16 +163,16 @@ const RecentEvaluations: React.FC = () => {
   };
 
   if (evaluations.length === 0) {
-    return <p className="text-gray-500 text-center py-4">لا توجد تقييمات حديثة</p>;
+    return <p className="text-ds-faint text-center py-4">لا توجد تقييمات حديثة</p>;
   }
 
   return (
     <div className="space-y-3">
       {evaluations.map((evaluation) => (
-        <div key={evaluation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div key={evaluation.id} className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
           <div className="flex-1">
-            <p className="font-medium text-gray-900">{evaluation.employee?.full_name}</p>
-            <p className="text-sm text-gray-600">{evaluation.department?.name}</p>
+            <p className="font-medium text-ds-text">{evaluation.employee?.full_name}</p>
+            <p className="text-sm text-ds-muted">{evaluation.department?.name}</p>
           </div>
           <Badge variant={evaluation.status === 'مسودة' ? 'default' : 'success'}>
             {evaluation.status}
@@ -246,7 +221,7 @@ const PerformanceStats: React.FC = () => {
   const total = stats.reduce((sum, s) => sum + s.count, 0);
 
   if (total === 0) {
-    return <p className="text-gray-500 text-center py-4">لا توجد بيانات متاحة</p>;
+    return <p className="text-ds-faint text-center py-4">لا توجد بيانات متاحة</p>;
   }
 
   return (
@@ -254,13 +229,13 @@ const PerformanceStats: React.FC = () => {
       {stats.map((stat) => (
         <div key={stat.rating}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-gray-900">{stat.rating}</span>
-            <span className="text-sm text-gray-600">{stat.count} تقييم</span>
+            <span className="text-sm font-medium text-ds-text">{stat.rating}</span>
+            <span className="text-sm text-ds-muted">{stat.count} تقييم</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full rounded-full h-2" style={{ background: 'var(--bg-overlay)' }}>
             <div
-              className="bg-blue-600 h-2 rounded-full"
-              style={{ width: `${(stat.count / total) * 100}%` }}
+              className="h-2 rounded-full"
+              style={{ width: `${(stat.count / total) * 100}%`, background: 'var(--accent)' }}
             ></div>
           </div>
         </div>

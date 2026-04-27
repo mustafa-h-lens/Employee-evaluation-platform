@@ -399,10 +399,17 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
   return (
     <div className="space-y-6">
       {!embedded && (
-        <div className="flex items-center justify-between">
+        <div
+          className="rounded-ds-xl p-8 flex items-center justify-between"
+          style={{
+            background: 'var(--sc-purple-grad)',
+            border: '1px solid var(--sc-purple-border)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">فترات تقييم الإدارة العليا</h1>
-            <p className="text-gray-600 mt-2">إدارة فترات التقييم الربعية للإدارة العليا</p>
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>فترات تقييم الإدارة العليا</h1>
+            <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة فترات التقييم الربعية للإدارة العليا</p>
           </div>
           <Button onClick={openAddModal} className="flex items-center gap-2">
             <span>إضافة فترة</span>
@@ -424,8 +431,8 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">الفترة النشطة</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-sm text-ds-muted mb-1">الفترة النشطة</p>
+                <p className="text-xl font-bold text-ds-text">
                   {activePeriod
                     ? `${quarterLabels[activePeriod.quarter]} - ${activePeriod.year}`
                     : 'لا يوجد'}
@@ -441,8 +448,8 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">فترات قادمة</p>
-                <p className="text-xl font-bold text-gray-900">{upcomingPeriods.length}</p>
+                <p className="text-sm text-ds-muted mb-1">فترات قادمة</p>
+                <p className="text-xl font-bold text-ds-text">{upcomingPeriods.length}</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                 <Calendar className="h-6 w-6" />
@@ -454,10 +461,10 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">فترات مغلقة</p>
-                <p className="text-xl font-bold text-gray-900">{closedPeriods.length}</p>
+                <p className="text-sm text-ds-muted mb-1">فترات مغلقة</p>
+                <p className="text-xl font-bold text-ds-text">{closedPeriods.length}</p>
               </div>
-              <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
+              <div className="bg-ds-overlay text-ds-muted p-3 rounded-xl">
                 <Lock className="h-6 w-6" />
               </div>
             </div>
@@ -470,7 +477,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
           {periods.length === 0 ? (
             <EmptyState
               message="لا توجد فترات تقييم مضافة حاليًا"
-              icon={<Calendar className="h-12 w-12 text-gray-400" />}
+              icon={<Calendar className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -489,10 +496,10 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
                   <TableRow key={period.id}>
                     <TableCell>
                       <div>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-ds-text">
                           {quarterLabels[period.quarter]}
                         </span>
-                        <span className="text-gray-500 mr-2">{period.year}</span>
+                        <span className="text-ds-faint mr-2">{period.year}</span>
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(period.start_date)}</TableCell>
@@ -563,13 +570,13 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
                 max={2099}
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ds-muted mb-1">
                   الربع
                 </label>
                 <select
                   value={formData.quarter}
                   onChange={(e) => handleQuarterChange(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {Object.entries(quarterLabels).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -597,13 +604,13 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
 
             {editingPeriod && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ds-muted mb-1">
                   الحالة
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as FormData['status'] })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="قادمة">قادمة</option>
                   <option value="نشطة">نشطة</option>
@@ -634,12 +641,12 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من حذف هذه الفترة؟
           </p>
-          <p className="text-gray-500 text-sm">
+          <p className="text-ds-faint text-sm">
             سيتم حذف فترة{' '}
-            <span className="font-bold text-gray-700">
+            <span className="font-bold text-ds-muted">
               {deleteTarget && `${quarterLabels[deleteTarget.quarter]} - ${deleteTarget.year}`}
             </span>{' '}
             نهائيًا.
@@ -679,10 +686,10 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
               <Lock className="h-7 w-7 text-red-600" />
             )}
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من {statusChangeLabel()} هذه الفترة؟
           </p>
-          <p className="text-gray-500 text-sm">
+          <p className="text-ds-faint text-sm">
             {statusChangeTarget?.newStatus === 'نشطة'
               ? 'سيتم تفعيل الفترة وستتمكن الإدارات من إنشاء تقييمات خلالها.'
               : 'سيتم إغلاق الفترة ولن يتمكن أحد من إنشاء تقييمات جديدة خلالها.'}
@@ -692,7 +699,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
               <Badge variant={getStatusBadgeVariant(statusChangeTarget.period.status)}>
                 {statusChangeTarget.period.status}
               </Badge>
-              <span className="text-gray-400">←</span>
+              <span className="text-ds-faint">←</span>
               <Badge variant={getStatusBadgeVariant(statusChangeTarget.newStatus)}>
                 {statusChangeTarget.newStatus}
               </Badge>

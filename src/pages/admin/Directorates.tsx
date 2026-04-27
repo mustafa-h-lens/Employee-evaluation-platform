@@ -340,10 +340,17 @@ export const Directorates: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-green-grad)',
+          border: '1px solid var(--sc-green-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">الإدارات</h1>
-          <p className="text-gray-600 mt-2">إدارة الإدارات والمديرين وتعيين الموظفين</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>الإدارات</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>إدارة الإدارات والمديرين وتعيين الموظفين</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => { setIsRegisterOpen(true); setRegisterFeedback(null); }} variant="outline" className="flex items-center gap-2">
@@ -362,31 +369,31 @@ export const Directorates: React.FC = () => {
         <Card>
           <CardBody className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center"><Landmark className="h-6 w-6 text-blue-600" /></div>
-            <div><p className="text-sm text-gray-500">إجمالي الإدارات</p><p className="text-2xl font-bold text-gray-900">{directorates.length}</p></div>
+            <div><p className="text-sm text-ds-faint">إجمالي الإدارات</p><p className="text-2xl font-bold text-ds-text">{directorates.length}</p></div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center"><Crown className="h-6 w-6 text-purple-600" /></div>
-            <div><p className="text-sm text-gray-500">مديري الإدارات</p><p className="text-2xl font-bold text-gray-900">{allDirectors.length}</p></div>
+            <div><p className="text-sm text-ds-faint">مديري الإدارات</p><p className="text-2xl font-bold text-ds-text">{allDirectors.length}</p></div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center"><Users className="h-6 w-6 text-green-600" /></div>
-            <div><p className="text-sm text-gray-500">إجمالي الموظفين</p><p className="text-2xl font-bold text-gray-900">{directorates.reduce((sum, d) => sum + (d.employees?.length || 0), 0)}</p></div>
+            <div><p className="text-sm text-ds-faint">إجمالي الموظفين</p><p className="text-2xl font-bold text-ds-text">{directorates.reduce((sum, d) => sum + (d.employees?.length || 0), 0)}</p></div>
           </CardBody>
         </Card>
       </div>
 
       {/* Directorates Table */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">الإدارات والمديرون</h2>
+        <div className="px-6 py-4 border-b border-ds-border">
+          <h2 className="text-lg font-semibold text-ds-text">الإدارات والمديرون</h2>
         </div>
         <CardBody className="p-0">
           {directorates.length === 0 ? (
-            <EmptyState message="لا يوجد إدارات" icon={<Landmark className="h-12 w-12 text-gray-400" />} />
+            <EmptyState message="لا يوجد إدارات" icon={<Landmark className="h-12 w-12 text-ds-faint" />} />
           ) : (
             <Table>
               <TableHeader>
@@ -400,10 +407,10 @@ export const Directorates: React.FC = () => {
               <TableBody>
                 {directorates.map((dir) => (
                   <React.Fragment key={dir.id}>
-                    <TableRow className="cursor-pointer hover:bg-gray-50" onClick={() => setExpandedId(expandedId === dir.id ? null : dir.id)}>
+                    <TableRow className="cursor-pointer hover:bg-ds-bg" onClick={() => setExpandedId(expandedId === dir.id ? null : dir.id)}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {expandedId === dir.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                          {expandedId === dir.id ? <ChevronUp className="h-4 w-4 text-ds-faint" /> : <ChevronDown className="h-4 w-4 text-ds-faint" />}
                           <span className="font-medium">{dir.name}</span>
                         </div>
                       </TableCell>
@@ -423,7 +430,7 @@ export const Directorates: React.FC = () => {
                                 <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                                   <span className="text-xs font-bold text-amber-700">{dir.secondary_director.full_name.charAt(0)}</span>
                                 </div>
-                                <span className="font-medium text-gray-600">{dir.secondary_director.full_name}</span>
+                                <span className="font-medium text-ds-muted">{dir.secondary_director.full_name}</span>
                               </div>
                             )}
                           </div>
@@ -448,7 +455,7 @@ export const Directorates: React.FC = () => {
                     </TableRow>
                     {expandedId === dir.id && (
                       <TableRow>
-                        <TableCell colSpan={4} className="bg-gray-50 px-8 py-4">
+                        <TableCell colSpan={4} className="bg-ds-bg px-8 py-4">
                           {(() => {
                             const dirDepts = getDeptsByDirectorate(dir.id);
                             const empsNoDept = (dir.employees || []).filter(e => !e.department_id);
@@ -461,7 +468,7 @@ export const Directorates: React.FC = () => {
                                   {dirDepts.map((dept) => {
                                     const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
                                     return (
-                                      <div key={dept.id} className="min-w-[220px] flex-1 max-w-sm bg-white border border-teal-200 rounded-xl overflow-hidden">
+                                      <div key={dept.id} className="min-w-[220px] flex-1 max-w-sm bg-ds-surface border border-teal-200 rounded-xl overflow-hidden">
                                         {/* Department header */}
                                         <div className="bg-teal-50 px-3 py-2 flex items-center justify-between border-b border-teal-200">
                                           <div className="flex items-center gap-1.5">
@@ -479,17 +486,17 @@ export const Directorates: React.FC = () => {
                                         {/* Employees list */}
                                         <div className="p-2 space-y-1.5">
                                           {deptEmps.length > 0 ? deptEmps.map((emp) => (
-                                            <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
+                                            <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-ds-bg transition-colors">
                                               <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-xs font-bold text-teal-700">{emp.full_name.charAt(0)}</span>
                                               </div>
                                               <div>
-                                                <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
-                                                <span className="text-xs text-gray-500 block">{emp.job_title}</span>
+                                                <span className="text-sm font-medium text-ds-text">{emp.full_name}</span>
+                                                <span className="text-xs text-ds-faint block">{emp.job_title}</span>
                                               </div>
                                             </div>
                                           )) : (
-                                            <p className="text-xs text-gray-400 text-center py-2">لا يوجد موظفون</p>
+                                            <p className="text-xs text-ds-faint text-center py-2">لا يوجد موظفون</p>
                                           )}
                                         </div>
                                       </div>
@@ -508,22 +515,22 @@ export const Directorates: React.FC = () => {
 
                                 {/* Employees without a department */}
                                 {empsNoDept.length > 0 && (
-                                  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                                    <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
-                                      <p className="text-sm font-semibold text-gray-600 flex items-center gap-1.5">
+                                  <div className="bg-ds-surface border border-ds-border rounded-xl overflow-hidden">
+                                    <div className="bg-ds-bg px-3 py-2 border-b border-ds-border">
+                                      <p className="text-sm font-semibold text-ds-muted flex items-center gap-1.5">
                                         <Users className="h-3.5 w-3.5" />
                                         {hasDepts ? 'بدون قسم' : 'الموظفون'} ({empsNoDept.length})
                                       </p>
                                     </div>
                                     <div className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                                       {empsNoDept.map((emp) => (
-                                        <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
+                                        <div key={emp.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-ds-bg transition-colors">
                                           <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                                             <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
                                           </div>
                                           <div>
-                                            <span className="text-sm font-medium text-gray-800">{emp.full_name}</span>
-                                            <span className="text-xs text-gray-500 block">{emp.job_title}</span>
+                                            <span className="text-sm font-medium text-ds-text">{emp.full_name}</span>
+                                            <span className="text-xs text-ds-faint block">{emp.job_title}</span>
                                           </div>
                                         </div>
                                       ))}
@@ -532,7 +539,7 @@ export const Directorates: React.FC = () => {
                                 )}
 
                                 {(dir.employees?.length || 0) === 0 && !hasDepts && (
-                                  <p className="text-sm text-gray-400">لا يوجد موظفون تابعون لهذه الإدارة</p>
+                                  <p className="text-sm text-ds-faint">لا يوجد موظفون تابعون لهذه الإدارة</p>
                                 )}
                               </div>
                             );
@@ -550,12 +557,12 @@ export const Directorates: React.FC = () => {
 
       {/* Directors List */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">مديري الإدارات</h2>
+        <div className="px-6 py-4 border-b border-ds-border">
+          <h2 className="text-lg font-semibold text-ds-text">مديري الإدارات</h2>
         </div>
         <CardBody className="p-0">
           {allDirectors.length === 0 ? (
-            <EmptyState message="لا يوجد مديري إدارات" icon={<Crown className="h-12 w-12 text-gray-400" />} />
+            <EmptyState message="لا يوجد مديري إدارات" icon={<Crown className="h-12 w-12 text-ds-faint" />} />
           ) : (
             <Table>
               <TableHeader>
@@ -584,14 +591,14 @@ export const Directorates: React.FC = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell><span className="text-sm text-gray-600">{director.email}</span></TableCell>
-                      <TableCell>{director.job_title || <span className="text-gray-400">--</span>}</TableCell>
+                      <TableCell><span className="text-sm text-ds-muted">{director.email}</span></TableCell>
+                      <TableCell>{director.job_title || <span className="text-ds-faint">--</span>}</TableCell>
                       <TableCell>
                         {dirNames.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {dirNames.map((name, i) => <Badge key={i} variant="info">{name}</Badge>)}
                           </div>
-                        ) : <span className="text-gray-400">غير معين</span>}
+                        ) : <span className="text-ds-faint">غير معين</span>}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -619,8 +626,8 @@ export const Directorates: React.FC = () => {
         <form onSubmit={handleDirSubmit} className="space-y-4">
           <Input label="اسم الإدارة" value={dirForm.name} onChange={(e) => setDirForm({ ...dirForm, name: e.target.value })} required placeholder="مثال: إدارة التقنية" />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">المدير الأساسي</label>
-            <select value={dirForm.director_id} onChange={(e) => setDirForm({ ...dirForm, director_id: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label className="block text-sm font-medium text-ds-muted mb-1">المدير الأساسي</label>
+            <select value={dirForm.director_id} onChange={(e) => setDirForm({ ...dirForm, director_id: e.target.value })} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">-- بدون مدير --</option>
               {allDirectors.filter(d => d.id === dirForm.director_id || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== editingDir?.id)).map((d) => (
                 <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
@@ -628,8 +635,8 @@ export const Directorates: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">المدير المشارك <span className="text-gray-400 text-xs">(اختياري)</span></label>
-            <select value={dirForm.secondary_director_id} onChange={(e) => setDirForm({ ...dirForm, secondary_director_id: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label className="block text-sm font-medium text-ds-muted mb-1">المدير المشارك <span className="text-ds-faint text-xs">(اختياري)</span></label>
+            <select value={dirForm.secondary_director_id} onChange={(e) => setDirForm({ ...dirForm, secondary_director_id: e.target.value })} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">-- بدون مدير مشارك --</option>
               {allDirectors.filter(d => d.id !== dirForm.director_id && (d.id === dirForm.secondary_director_id || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== editingDir?.id))).map((d) => (
                 <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
@@ -649,16 +656,16 @@ export const Directorates: React.FC = () => {
               return dirDepts.length > 0 ? (
                 <div className="space-y-1.5 mb-2">
                   {dirDepts.map(dept => (
-                    <div key={dept.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-100">
+                    <div key={dept.id} className="flex items-center justify-between bg-ds-surface rounded-lg px-3 py-2 border border-teal-100">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5 text-teal-500" />
-                        <span className="text-sm font-medium text-gray-800">{dept.name}</span>
+                        <span className="text-sm font-medium text-ds-text">{dept.name}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <button type="button" onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
-                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
+                          className="p-1 text-ds-faint hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => setDeleteDept(dept)}
-                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                          className="p-1 text-ds-faint hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                   ))}
@@ -670,13 +677,13 @@ export const Directorates: React.FC = () => {
             {!editingDir && newDeptNames.length > 0 && (
               <div className="space-y-1.5 mb-2">
                 {newDeptNames.map((name, i) => (
-                  <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-teal-100">
+                  <div key={i} className="flex items-center justify-between bg-ds-surface rounded-lg px-3 py-2 border border-teal-100">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-3.5 w-3.5 text-teal-500" />
-                      <span className="text-sm font-medium text-gray-800">{name}</span>
+                      <span className="text-sm font-medium text-ds-text">{name}</span>
                     </div>
                     <button type="button" onClick={() => setNewDeptNames(prev => prev.filter((_, idx) => idx !== i))}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                      className="p-1 text-ds-faint hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 ))}
               </div>
@@ -702,7 +709,7 @@ export const Directorates: React.FC = () => {
                     }
                   }}
                   placeholder="اسم القسم..."
-                  className="flex-1 px-3 py-1.5 text-sm border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-white"
+                  className="flex-1 px-3 py-1.5 text-sm border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-ds-surface"
                 />
                 <button type="button" onClick={() => {
                   if (newDeptInput.trim()) {
@@ -728,8 +735,8 @@ export const Directorates: React.FC = () => {
       <Modal isOpen={!!switchTarget} onClose={() => setSwitchTarget(null)} title={`تغيير مدير: ${switchTarget?.name || ''}`}>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">المدير الأساسي</label>
-            <select value={switchDirectorId} onChange={(e) => setSwitchDirectorId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label className="block text-sm font-medium text-ds-muted mb-1">المدير الأساسي</label>
+            <select value={switchDirectorId} onChange={(e) => setSwitchDirectorId(e.target.value)} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">-- بدون مدير --</option>
               {allDirectors.filter(d => d.id === switchDirectorId || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== switchTarget?.id)).map((d) => (
                 <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
@@ -737,8 +744,8 @@ export const Directorates: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">المدير المشارك <span className="text-gray-400 text-xs">(اختياري)</span></label>
-            <select value={switchSecondaryId} onChange={(e) => setSwitchSecondaryId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label className="block text-sm font-medium text-ds-muted mb-1">المدير المشارك <span className="text-ds-faint text-xs">(اختياري)</span></label>
+            <select value={switchSecondaryId} onChange={(e) => setSwitchSecondaryId(e.target.value)} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">-- بدون مدير مشارك --</option>
               {allDirectors.filter(d => d.id !== switchDirectorId && (d.id === switchSecondaryId || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== switchTarget?.id))).map((d) => (
                 <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
@@ -798,7 +805,7 @@ export const Directorates: React.FC = () => {
       <Modal isOpen={!!deleteDir} onClose={() => setDeleteDir(null)} title="تأكيد حذف الإدارة">
         <div className="text-center py-4">
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
-          <p className="text-gray-900 font-medium mb-2">هل أنت متأكد من حذف <span className="font-bold">{deleteDir?.name}</span>؟</p>
+          <p className="text-ds-text font-medium mb-2">هل أنت متأكد من حذف <span className="font-bold">{deleteDir?.name}</span>؟</p>
           {(deleteDir?.employees?.length ?? 0) > 0 && <p className="text-sm text-amber-600">سيتم فك ربط {deleteDir?.employees?.length} موظف</p>}
         </div>
         <ModalFooter className="justify-center">
@@ -811,7 +818,7 @@ export const Directorates: React.FC = () => {
       <Modal isOpen={!!deleteDirector} onClose={() => setDeleteDirector(null)} title="تأكيد حذف المدير">
         <div className="text-center py-4">
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
-          <p className="text-gray-700 mb-2">هل أنت متأكد من حذف <span className="font-bold text-gray-900">{deleteDirector?.full_name}</span>؟</p>
+          <p className="text-ds-muted mb-2">هل أنت متأكد من حذف <span className="font-bold text-ds-text">{deleteDirector?.full_name}</span>؟</p>
           <p className="text-sm text-red-600">سيتم حذف الحساب نهائيًا.</p>
         </div>
         <ModalFooter className="justify-center">
@@ -835,7 +842,7 @@ export const Directorates: React.FC = () => {
       <Modal isOpen={!!deleteDept} onClose={() => setDeleteDept(null)} title="تأكيد حذف القسم">
         <div className="text-center py-4">
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
-          <p className="text-gray-900 font-medium mb-2">هل أنت متأكد من حذف قسم <span className="font-bold">{deleteDept?.name}</span>؟</p>
+          <p className="text-ds-text font-medium mb-2">هل أنت متأكد من حذف قسم <span className="font-bold">{deleteDept?.name}</span>؟</p>
           <p className="text-sm text-amber-600">سيتم فك ربط الموظفين المرتبطين بهذا القسم</p>
         </div>
         <ModalFooter className="justify-center">

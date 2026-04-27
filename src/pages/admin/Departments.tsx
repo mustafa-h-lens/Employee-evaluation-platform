@@ -171,10 +171,17 @@ export const Departments: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-green-grad)',
+          border: '1px solid var(--sc-green-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">إدارة الأقسام</h1>
-          <p className="text-gray-600 mt-2">إدارة أقسام الشركة</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>إدارة الأقسام</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>إدارة أقسام الشركة</p>
         </div>
         <Button onClick={openAddModal} className="flex items-center gap-2">
           <span>إضافة قسم</span>
@@ -187,7 +194,7 @@ export const Departments: React.FC = () => {
           {departments.length === 0 ? (
             <EmptyState
               message="لا يوجد أقسام مضافة حاليًا"
-              icon={<Building2 className="h-12 w-12 text-gray-400" />}
+              icon={<Building2 className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -206,7 +213,7 @@ export const Departments: React.FC = () => {
                       <span className="font-medium">{dept.name}</span>
                     </TableCell>
                     <TableCell>
-                      {dept.directorate?.name || <span className="text-gray-400">غير محدد</span>}
+                      {dept.directorate?.name || <span className="text-ds-faint">غير محدد</span>}
                     </TableCell>
                     <TableCell>
                       <span className="font-medium">{dept.employee_count}</span>
@@ -256,11 +263,11 @@ export const Departments: React.FC = () => {
               placeholder="مثال: تقنية المعلومات"
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">الإدارة التابع لها</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">الإدارة التابع لها</label>
               <select
                 value={formData.directorate_id}
                 onChange={(e) => setFormData({ ...formData, directorate_id: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">-- اختر الإدارة --</option>
                 {directorates.map((dir) => (
@@ -290,11 +297,11 @@ export const Departments: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من حذف القسم؟
           </p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف قسم <span className="font-bold text-gray-700">{deleteTarget?.name}</span> نهائيًا.
+          <p className="text-ds-faint text-sm">
+            سيتم حذف قسم <span className="font-bold text-ds-muted">{deleteTarget?.name}</span> نهائيًا.
             {(deleteTarget?.employee_count ?? 0) > 0 && (
               <span className="block mt-1 text-red-500">
                 تحذير: يوجد {deleteTarget?.employee_count} موظف في هذا القسم

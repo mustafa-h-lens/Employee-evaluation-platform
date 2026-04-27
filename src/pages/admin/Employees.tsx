@@ -519,10 +519,17 @@ export const Employees: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">إدارة الموظفين</h1>
-          <p className="text-gray-600 mt-2">إدارة بيانات الموظفين وتوزيعهم على الإدارات</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>إدارة الموظفين</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>إدارة بيانات الموظفين وتوزيعهم على الإدارات</p>
         </div>
         <Button onClick={() => setIsRegisterModalOpen(true)} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -566,7 +573,7 @@ export const Employees: React.FC = () => {
           {employees.length === 0 ? (
             <EmptyState
               message="لا يوجد موظفون مضافون حاليًا"
-              icon={<Users className="h-12 w-12 text-gray-400" />}
+              icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -584,7 +591,7 @@ export const Employees: React.FC = () => {
                       type="checkbox"
                       checked={employees.length > 0 && selectedIds.size === employees.length}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-ds-border text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </TableHead>
                 </TableRow>
@@ -604,7 +611,7 @@ export const Employees: React.FC = () => {
                             <div className="flex flex-col gap-1">
                               {labels.directorates.map((name, i) => (
                                 <span key={i} className={`inline-block text-xs px-2 py-0.5 rounded-full ${
-                                  i === 0 ? 'bg-purple-100 text-purple-700 font-medium' : 'bg-gray-100 text-gray-600'
+                                  i === 0 ? 'bg-purple-100 text-purple-700 font-medium' : 'bg-ds-overlay text-ds-muted'
                                 }`}>
                                   {name}
                                 </span>
@@ -614,7 +621,7 @@ export const Employees: React.FC = () => {
                             <span className="text-sm">{labels.directorates}</span>
                           )
                         ) : (
-                          <span className="text-gray-400">غير محدد</span>
+                          <span className="text-ds-faint">غير محدد</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -631,7 +638,7 @@ export const Employees: React.FC = () => {
                             <span className="text-sm">{labels.departments}</span>
                           )
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-ds-faint">—</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -640,7 +647,7 @@ export const Employees: React.FC = () => {
                             {labels.jobTitles.map((jt, i) => (
                               <div key={i} className="text-sm">
                                 <span className="font-medium">{jt.title}</span>
-                                <span className="text-xs text-gray-400 mr-1">({jt.dirName})</span>
+                                <span className="text-xs text-ds-faint mr-1">({jt.dirName})</span>
                               </div>
                             ))}
                           </div>
@@ -678,7 +685,7 @@ export const Employees: React.FC = () => {
                           type="checkbox"
                           checked={selectedIds.has(emp.id)}
                           onChange={() => toggleSelect(emp.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-ds-border text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </TableCell>
                     </TableRow>
@@ -734,7 +741,7 @@ export const Employees: React.FC = () => {
           {/* Multi-directorate assignments */}
           <div className="mt-6 border-t pt-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-800">الإدارات والأقسام</h3>
+              <h3 className="text-sm font-semibold text-ds-text">الإدارات والأقسام</h3>
               <button
                 type="button"
                 onClick={addDirAssignment}
@@ -749,7 +756,7 @@ export const Employees: React.FC = () => {
               {dirAssignments.map((assignment, index) => {
                 const filteredDepts = getFilteredDepts(assignment.directorate_id);
                 return (
-                  <div key={index} className="p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+                  <div key={index} className="p-3 rounded-lg border border-ds-border bg-ds-bg/50">
                     {dirAssignments.length > 1 && (
                       <div className="flex items-center justify-end mb-2">
                         <button
@@ -763,11 +770,11 @@ export const Employees: React.FC = () => {
                     )}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">الإدارة</label>
+                        <label className="block text-xs font-medium text-ds-muted mb-1">الإدارة</label>
                         <select
                           value={assignment.directorate_id}
                           onChange={(e) => updateDirAssignment(index, 'directorate_id', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 text-sm border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">اختر الإدارة</option>
                           {directoratesList.map((dir) => (
@@ -779,11 +786,11 @@ export const Employees: React.FC = () => {
                       </div>
                       {filteredDepts.length > 0 && (
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">القسم</label>
+                          <label className="block text-xs font-medium text-ds-muted mb-1">القسم</label>
                           <select
                             value={assignment.department_id}
                             onChange={(e) => updateDirAssignment(index, 'department_id', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 text-sm border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="">-- اختر القسم (اختياري) --</option>
                             {filteredDepts.map((dept) => (
@@ -795,13 +802,13 @@ export const Employees: React.FC = () => {
                         </div>
                       )}
                       <div className={filteredDepts.length > 0 ? 'col-span-2' : ''}>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">المسمى الوظيفي في هذه الإدارة</label>
+                        <label className="block text-xs font-medium text-ds-muted mb-1">المسمى الوظيفي في هذه الإدارة</label>
                         <input
                           type="text"
                           value={assignment.job_title}
                           onChange={(e) => updateDirAssignment(index, 'job_title', e.target.value)}
                           placeholder={formData.job_title || 'المسمى الوظيفي'}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 text-sm border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -831,11 +838,11 @@ export const Employees: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من حذف هذا الموظف؟
           </p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف <span className="font-bold text-gray-700">{deleteTarget?.full_name}</span> ({deleteTarget?.email}) نهائيًا مع حساب الدخول الخاص به.
+          <p className="text-ds-faint text-sm">
+            سيتم حذف <span className="font-bold text-ds-muted">{deleteTarget?.full_name}</span> ({deleteTarget?.email}) نهائيًا مع حساب الدخول الخاص به.
           </p>
         </div>
         <ModalFooter className="justify-center">
@@ -867,14 +874,14 @@ export const Employees: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من حذف {selectedIds.size} موظف؟
           </p>
-          <div className="text-gray-500 text-sm space-y-2">
+          <div className="text-ds-faint text-sm space-y-2">
             <p>سيتم حذف الموظفين التالية أسماؤهم نهائيًا مع حساباتهم:</p>
-            <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+            <div className="bg-ds-bg rounded-lg p-3 max-h-40 overflow-y-auto">
               {selectedNames.map((name, i) => (
-                <div key={i} className="text-gray-700 font-medium py-0.5">{name}</div>
+                <div key={i} className="text-ds-muted font-medium py-0.5">{name}</div>
               ))}
             </div>
           </div>

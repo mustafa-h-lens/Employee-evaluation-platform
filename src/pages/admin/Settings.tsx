@@ -306,9 +306,16 @@ export const AdminSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">الإعدادات</h1>
-        <p className="text-gray-600 mt-2">إدارة إعدادات نظام التقييم</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-purple-grad)',
+          border: '1px solid var(--sc-purple-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>الإعدادات</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة إعدادات نظام التقييم</p>
       </div>
 
       {!showWeights ? (
@@ -319,11 +326,11 @@ export const AdminSettings: React.FC = () => {
                 <Scale className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">توزيع أوزان التقييم</h3>
-                <p className="text-sm text-gray-500">تحديد نسبة المعايير العامة والمعايير الخاصة لكل فترة تقييم</p>
+                <h3 className="font-semibold text-ds-text">توزيع أوزان التقييم</h3>
+                <p className="text-sm text-ds-faint">تحديد نسبة المعايير العامة والمعايير الخاصة لكل فترة تقييم</p>
               </div>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+            <ChevronRight className="h-5 w-5 text-ds-faint" />
           </CardBody>
         </Card>
       ) : (
@@ -334,8 +341,8 @@ export const AdminSettings: React.FC = () => {
               <Scale className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">توزيع أوزان التقييم</h2>
-              <p className="text-sm text-gray-600">تحديد نسبة المعايير العامة والمعايير الخاصة لكل فترة تقييم</p>
+              <h2 className="text-lg font-semibold text-ds-text">توزيع أوزان التقييم</h2>
+              <p className="text-sm text-ds-muted">تحديد نسبة المعايير العامة والمعايير الخاصة لكل فترة تقييم</p>
             </div>
           </div>
         </CardHeader>
@@ -343,14 +350,14 @@ export const AdminSettings: React.FC = () => {
 
           {/* Period selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-medium text-ds-muted mb-2 flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               فترة التقييم
             </label>
             <select
               value={selectedPeriodId}
               onChange={(e) => handlePeriodChange(e.target.value)}
-              className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full max-w-md px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {periods.map(p => (
                 <option key={p.id} value={p.id}>
@@ -359,23 +366,23 @@ export const AdminSettings: React.FC = () => {
               ))}
             </select>
             {selectedPeriod && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-ds-faint mt-1">
                 الأوزان الحالية لهذه الفترة: عامة {selectedPeriod.general_weight}% — خاصة {selectedPeriod.specific_weight}%
               </p>
             )}
           </div>
 
           {/* Weight distribution */}
-          <div className="bg-gray-50 rounded-xl p-6">
+          <div className="bg-ds-bg rounded-xl p-6">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="text-sm font-medium text-gray-700">المعايير العامة</span>
-                <span className="text-xs text-gray-500">(يحددها مسؤول الموارد البشرية)</span>
+                <span className="text-sm font-medium text-ds-muted">المعايير العامة</span>
+                <span className="text-xs text-ds-faint">(يحددها مسؤول الموارد البشرية)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">(يحددها المدير المباشر)</span>
-                <span className="text-sm font-medium text-gray-700">المعايير الخاصة</span>
+                <span className="text-xs text-ds-faint">(يحددها المدير المباشر)</span>
+                <span className="text-sm font-medium text-ds-muted">المعايير الخاصة</span>
                 <div className="w-3 h-3 rounded-full bg-emerald-500" />
               </div>
             </div>
@@ -496,11 +503,11 @@ export const AdminSettings: React.FC = () => {
                 <User className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">تغيير الاسم</h3>
-                <p className="text-sm text-gray-500">الاسم الحالي: {user?.full_name}</p>
+                <h3 className="font-semibold text-ds-text">تغيير الاسم</h3>
+                <p className="text-sm text-ds-faint">الاسم الحالي: {user?.full_name}</p>
               </div>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+            <ChevronRight className="h-5 w-5 text-ds-faint" />
           </CardBody>
         </Card>
       ) : (
@@ -510,7 +517,7 @@ export const AdminSettings: React.FC = () => {
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                 <User className="h-5 w-5 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-lg">تغيير الاسم</h3>
+              <h3 className="font-semibold text-ds-text text-lg">تغيير الاسم</h3>
             </div>
 
             <form onSubmit={handleChangeName} className="space-y-4">
@@ -522,13 +529,13 @@ export const AdminSettings: React.FC = () => {
               )}
 
               <div className="max-w-md">
-                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">الاسم الجديد</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1 text-right">الاسم الجديد</label>
                 <input
                   type="text"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                   placeholder="أدخل الاسم الجديد"
                 />
               </div>
@@ -567,11 +574,11 @@ export const AdminSettings: React.FC = () => {
                 <Lock className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">تغيير كلمة المرور</h3>
-                <p className="text-sm text-gray-500">تحديث كلمة المرور الخاصة بحسابك</p>
+                <h3 className="font-semibold text-ds-text">تغيير كلمة المرور</h3>
+                <p className="text-sm text-ds-faint">تحديث كلمة المرور الخاصة بحسابك</p>
               </div>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+            <ChevronRight className="h-5 w-5 text-ds-faint" />
           </CardBody>
         </Card>
       ) : (
@@ -581,7 +588,7 @@ export const AdminSettings: React.FC = () => {
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                 <Lock className="h-5 w-5 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-lg">تغيير كلمة المرور</h3>
+              <h3 className="font-semibold text-ds-text text-lg">تغيير كلمة المرور</h3>
             </div>
 
             <form onSubmit={handleChangePassword} className="space-y-4">
@@ -593,7 +600,7 @@ export const AdminSettings: React.FC = () => {
               )}
 
               <div className="max-w-md">
-                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">كلمة المرور الجديدة</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1 text-right">كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showNew ? 'text' : 'password'}
@@ -601,28 +608,28 @@ export const AdminSettings: React.FC = () => {
                     onChange={e => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     placeholder="أدخل كلمة المرور الجديدة"
                   />
-                  <button type="button" onClick={() => setShowNew(!showNew)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowNew(!showNew)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted">
                     {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1 text-right">6 أحرف على الأقل</p>
+                <p className="text-xs text-ds-faint mt-1 text-right">6 أحرف على الأقل</p>
               </div>
 
               <div className="max-w-md">
-                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">تأكيد كلمة المرور الجديدة</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1 text-right">تأكيد كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showConfirm ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     placeholder="أعد إدخال كلمة المرور الجديدة"
                   />
-                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted">
                     {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>

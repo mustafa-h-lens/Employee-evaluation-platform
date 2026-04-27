@@ -274,9 +274,16 @@ export const Reports: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">التقارير والإحصائيات</h1>
-        <p className="text-gray-600 mt-2">تقارير مفصلة عن أداء الموظفين حسب الفترة الزمنية</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-purple-grad)',
+          border: '1px solid var(--sc-purple-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>التقارير والإحصائيات</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>تقارير مفصلة عن أداء الموظفين حسب الفترة الزمنية</p>
       </div>
 
       {/* Employee Search */}
@@ -285,7 +292,7 @@ export const Reports: React.FC = () => {
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
             <div className="relative flex-1 min-w-[280px]">
-              <label className="block text-sm font-medium text-gray-700 mb-1">اختر الموظف</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">اختر الموظف</label>
               <div className="relative">
                 <input
                   type="text"
@@ -297,16 +304,16 @@ export const Reports: React.FC = () => {
                   }}
                   onFocus={() => setDropdownOpen(true)}
                   placeholder="ابحث بالاسم أو الرقم الوظيفي..."
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 pr-10 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
+                <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
               </div>
 
               {dropdownOpen && !selectedEmployee && (
-                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute z-20 mt-1 w-full bg-ds-surface border border-ds-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                   {filteredEmployees.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-gray-500">لا توجد نتائج</div>
+                    <div className="px-4 py-3 text-sm text-ds-faint">لا توجد نتائج</div>
                   ) : (
                     filteredEmployees.map(emp => (
                       <button
@@ -322,10 +329,10 @@ export const Reports: React.FC = () => {
                           {emp.full_name.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{emp.full_name}</p>
-                          <p className="text-xs text-gray-500">{emp.job_title} — {emp.department_name}</p>
+                          <p className="text-sm font-medium text-ds-text truncate">{emp.full_name}</p>
+                          <p className="text-xs text-ds-faint">{emp.job_title} — {emp.department_name}</p>
                         </div>
-                        <span className="text-xs text-gray-400 flex-shrink-0">{emp.employee_number}</span>
+                        <span className="text-xs text-ds-faint flex-shrink-0">{emp.employee_number}</span>
                       </button>
                     ))
                   )}
@@ -335,11 +342,11 @@ export const Reports: React.FC = () => {
 
             {/* Year */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">السنة</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">السنة</label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {years.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -347,8 +354,8 @@ export const Reports: React.FC = () => {
 
             {/* Period mode toggle */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نوع التقرير</label>
-              <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              <label className="block text-sm font-medium text-ds-muted mb-1">نوع التقرير</label>
+              <div className="flex rounded-lg border border-ds-border overflow-hidden">
                 {([
                   { key: 'monthly' as PeriodMode, label: 'شهري' },
                   { key: 'quarterly' as PeriodMode, label: 'ربعي' },
@@ -364,7 +371,7 @@ export const Reports: React.FC = () => {
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       periodMode === tab.key
                         ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                        : 'bg-ds-surface text-ds-muted hover:bg-ds-bg'
                     }`}
                   >
                     {tab.label}
@@ -376,11 +383,11 @@ export const Reports: React.FC = () => {
             {/* Month/Quarter selector */}
             {periodMode === 'monthly' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">الشهر</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1">الشهر</label>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value={0}>جميع الأشهر</option>
                   {Object.entries(monthLabels).map(([m, label]) => (
@@ -392,11 +399,11 @@ export const Reports: React.FC = () => {
 
             {periodMode === 'quarterly' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">الربع</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1">الربع</label>
                 <select
                   value={selectedQuarter}
                   onChange={(e) => setSelectedQuarter(Number(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value={0}>جميع الأرباع</option>
                   {Object.entries(quarterLabels).map(([q, label]) => (
@@ -414,8 +421,8 @@ export const Reports: React.FC = () => {
         <Card>
           <CardBody className="text-center py-16">
             <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">اختر موظفًا لعرض تقرير الأداء</p>
-            <p className="text-gray-400 text-sm mt-2">استخدم حقل البحث أعلاه للبحث عن موظف</p>
+            <p className="text-ds-faint text-lg">اختر موظفًا لعرض تقرير الأداء</p>
+            <p className="text-ds-faint text-sm mt-2">استخدم حقل البحث أعلاه للبحث عن موظف</p>
           </CardBody>
         </Card>
       )}
@@ -460,7 +467,7 @@ export const Reports: React.FC = () => {
             <Card>
               <CardBody className="text-center py-16">
                 <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">لا توجد تقييمات لهذا الموظف في الفترة المحددة</p>
+                <p className="text-ds-faint text-lg">لا توجد تقييمات لهذا الموظف في الفترة المحددة</p>
               </CardBody>
             </Card>
           ) : (
@@ -508,14 +515,14 @@ export const Reports: React.FC = () => {
 
                           {/* Performance trend */}
                           <div>
-                            <h3 className="text-sm font-medium text-gray-700 mb-3">مسار الأداء</h3>
+                            <h3 className="text-sm font-medium text-ds-muted mb-3">مسار الأداء</h3>
                             <div className="flex items-end gap-2 h-32">
                               {evaluations
                                 .slice()
                                 .sort((a, b) => (a.period?.month || 0) - (b.period?.month || 0))
                                 .map(ev => (
                                   <div key={ev.id} className="flex-1 flex flex-col items-center gap-1">
-                                    <span className="text-xs font-bold text-gray-700">{ev.percentage.toFixed(0)}%</span>
+                                    <span className="text-xs font-bold text-ds-muted">{ev.percentage.toFixed(0)}%</span>
                                     <div
                                       className={`w-full rounded-t-md transition-all ${
                                         ev.percentage >= 90 ? 'bg-green-500' :
@@ -524,7 +531,7 @@ export const Reports: React.FC = () => {
                                       }`}
                                       style={{ height: `${Math.max(ev.percentage * 0.9, 10)}%` }}
                                     ></div>
-                                    <span className="text-[10px] text-gray-500">
+                                    <span className="text-[10px] text-ds-faint">
                                       {ev.period ? monthLabels[ev.period.month] : ''}
                                     </span>
                                   </div>
@@ -554,14 +561,14 @@ export const Reports: React.FC = () => {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="bg-gray-100 p-2 rounded-lg">
-                              <Calendar className="h-5 w-5 text-gray-600" />
+                            <div className="bg-ds-overlay p-2 rounded-lg">
+                              <Calendar className="h-5 w-5 text-ds-muted" />
                             </div>
                             <div>
-                              <h2 className="text-lg font-semibold text-gray-900">
+                              <h2 className="text-lg font-semibold text-ds-text">
                                 {ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : 'غير محدد'}
                               </h2>
-                              <p className="text-xs text-gray-500">المدير المقيّم: {ev.manager?.full_name || '-'}</p>
+                              <p className="text-xs text-ds-faint">المدير المقيّم: {ev.manager?.full_name || '-'}</p>
                             </div>
                           </div>
                           <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
@@ -587,7 +594,7 @@ export const Reports: React.FC = () => {
                             <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
                             {ev.general_rating ? (
                               <Badge variant={getRatingVariant(ev.general_rating)}>{ev.general_rating}</Badge>
-                            ) : <span className="text-gray-400 text-sm">-</span>}
+                            ) : <span className="text-ds-faint text-sm">-</span>}
                           </div>
                         </div>
 
@@ -607,15 +614,15 @@ export const Reports: React.FC = () => {
                                     <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-ds-border-subtle">
                                   {generalScores.map((s, i) => (
                                     <tr key={i}>
                                       <td className="px-4 py-2">
-                                        <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                                        <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                                        <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                                        <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                                       </td>
-                                      <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                                      <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                                      <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                                      <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                                       <td className="px-4 py-2 font-bold text-blue-600">{s.weighted_result?.toFixed(1)}</td>
                                     </tr>
                                   ))}
@@ -641,15 +648,15 @@ export const Reports: React.FC = () => {
                                     <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-ds-border-subtle">
                                   {specificScores.map((s, i) => (
                                     <tr key={i}>
                                       <td className="px-4 py-2">
-                                        <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                                        <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                                        <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                                        <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                                       </td>
-                                      <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                                      <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                                      <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                                      <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                                       <td className="px-4 py-2 font-bold text-emerald-600">{s.weighted_result?.toFixed(1)}</td>
                                     </tr>
                                   ))}
@@ -667,7 +674,7 @@ export const Reports: React.FC = () => {
                                 <p className="text-xs font-medium text-blue-700 mb-1 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" /> ملاحظات المدير
                                 </p>
-                                <p className="text-sm text-gray-800">{ev.manager_note}</p>
+                                <p className="text-sm text-ds-text">{ev.manager_note}</p>
                               </div>
                             )}
                             {ev.employee_note && (
@@ -675,7 +682,7 @@ export const Reports: React.FC = () => {
                                 <p className="text-xs font-medium text-teal-700 mb-1 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" /> رد الموظف
                                 </p>
-                                <p className="text-sm text-gray-800">{ev.employee_note}</p>
+                                <p className="text-sm text-ds-text">{ev.employee_note}</p>
                               </div>
                             )}
                             {ev.ceo_comment && (
@@ -683,7 +690,7 @@ export const Reports: React.FC = () => {
                                 <p className="text-xs font-medium text-red-700 mb-1 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" /> ملاحظات الإدارة العليا
                                 </p>
-                                <p className="text-sm text-gray-800">{ev.ceo_comment}</p>
+                                <p className="text-sm text-ds-text">{ev.ceo_comment}</p>
                               </div>
                             )}
                           </div>
@@ -692,28 +699,28 @@ export const Reports: React.FC = () => {
                         {/* Development Plans */}
                         {evalDevPlans.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-ds-muted mb-2 flex items-center gap-2">
                               <Target className="h-4 w-4" /> خطة التطوير
                             </h3>
                             <div className="border rounded-lg overflow-hidden">
                               <table className="w-full text-sm">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-ds-bg">
                                   <tr>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">#</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">الهدف التطويري</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">الإجراء</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">المدة</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">ملاحظات</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-muted">#</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-muted">الهدف التطويري</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-muted">الإجراء</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-muted">المدة</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-muted">ملاحظات</th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-ds-border-subtle">
                                   {evalDevPlans.map((plan, i) => (
                                     <tr key={i}>
-                                      <td className="px-4 py-2 text-gray-500">{plan.item_order}</td>
-                                      <td className="px-4 py-2 font-medium text-gray-900">{plan.development_goal}</td>
-                                      <td className="px-4 py-2 text-gray-700">{plan.action_plan}</td>
-                                      <td className="px-4 py-2 text-gray-700">{plan.duration}</td>
-                                      <td className="px-4 py-2 text-gray-500">{plan.notes || '-'}</td>
+                                      <td className="px-4 py-2 text-ds-faint">{plan.item_order}</td>
+                                      <td className="px-4 py-2 font-medium text-ds-text">{plan.development_goal}</td>
+                                      <td className="px-4 py-2 text-ds-muted">{plan.action_plan}</td>
+                                      <td className="px-4 py-2 text-ds-muted">{plan.duration}</td>
+                                      <td className="px-4 py-2 text-ds-faint">{plan.notes || '-'}</td>
                                     </tr>
                                   ))}
                                 </tbody>

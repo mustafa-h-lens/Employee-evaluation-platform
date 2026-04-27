@@ -716,18 +716,25 @@ export const EvaluationCriteria: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">إدارة المعايير</h1>
-        <p className="text-gray-600 mt-2">إدارة معايير التقييم العامة والخاصة بالإدارات</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>إدارة المعايير</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>إدارة معايير التقييم العامة والخاصة بالإدارات</p>
       </div>
 
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-ds-border">
         <button
           onClick={() => setActiveTab('general')}
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'general'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-ds-faint hover:text-ds-muted'
           }`}
         >
           المعايير العامة ({generalWeightLimit}%)
@@ -737,7 +744,7 @@ export const EvaluationCriteria: React.FC = () => {
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'ceo'
               ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-ds-faint hover:text-ds-muted'
           }`}
         >
           المعايير الخاصة بالإدارة العليا ({ceoCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0)}%)
@@ -747,7 +754,7 @@ export const EvaluationCriteria: React.FC = () => {
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'departments'
               ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-ds-faint hover:text-ds-muted'
           }`}
         >
           المعايير الخاصة بالإدارات ({specificWeightLimit}%)
@@ -757,7 +764,7 @@ export const EvaluationCriteria: React.FC = () => {
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'supervisors'
               ? 'border-teal-600 text-teal-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-ds-faint hover:text-ds-muted'
           }`}
         >
           المعايير الخاصة بالمشرفين ({supCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0)}%)
@@ -767,7 +774,7 @@ export const EvaluationCriteria: React.FC = () => {
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'ceo-eval'
               ? 'border-amber-600 text-amber-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-ds-faint hover:text-ds-muted'
           }`}
         >
           معايير تقييم الموظفين للرؤساء ({ceoEvalTotalWeight}%)
@@ -787,8 +794,8 @@ export const EvaluationCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
-                <p className="text-xl font-bold text-gray-900">{activeCount}</p>
+                <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
+                <p className="text-xl font-bold text-ds-text">{activeCount}</p>
               </div>
               <div className="bg-green-50 text-green-600 p-3 rounded-xl">
                 <ClipboardList className="h-6 w-6" />
@@ -800,10 +807,10 @@ export const EvaluationCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
-                <p className="text-xl font-bold text-gray-900">{inactiveCount}</p>
+                <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
+                <p className="text-xl font-bold text-ds-text">{inactiveCount}</p>
               </div>
-              <div className="bg-gray-100 text-gray-500 p-3 rounded-xl">
+              <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
                 <EyeOff className="h-6 w-6" />
               </div>
             </div>
@@ -813,7 +820,7 @@ export const EvaluationCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
                 <p className={`text-xl font-bold ${totalWeight === generalWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
                   {totalWeight}% / {generalWeightLimit}%
                 </p>
@@ -840,7 +847,7 @@ export const EvaluationCriteria: React.FC = () => {
           {criteria.length === 0 ? (
             <EmptyState
               message="لا توجد معايير تقييم مضافة حاليًا"
-              icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -862,10 +869,10 @@ export const EvaluationCriteria: React.FC = () => {
                   return (
                     <React.Fragment key={criterion.id}>
                       <TableRow
-                        className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
+                        className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
                         onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                       >
-                        <TableCell className="text-gray-400">
+                        <TableCell className="text-ds-faint">
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </TableCell>
                         <TableCell>
@@ -873,11 +880,11 @@ export const EvaluationCriteria: React.FC = () => {
                             <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                               <GripVertical className="h-4 w-4" />
                             </div>
-                            <span className="font-bold text-gray-900">{criterion.title}</span>
+                            <span className="font-bold text-ds-text">{criterion.title}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                          <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
                         </TableCell>
                         <TableCell>
                           <Badge variant={criterion.is_active ? 'success' : 'default'}>
@@ -889,15 +896,15 @@ export const EvaluationCriteria: React.FC = () => {
                             <button
                               onClick={() => handleReorder(criterion, 'up')}
                               disabled={index === 0}
-                              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                             >
                               <ArrowUp className="h-4 w-4" />
                             </button>
-                            <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                            <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
                             <button
                               onClick={() => handleReorder(criterion, 'down')}
                               disabled={index === criteria.length - 1}
-                              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                             >
                               <ArrowDown className="h-4 w-4" />
                             </button>
@@ -949,7 +956,7 @@ export const EvaluationCriteria: React.FC = () => {
                           <TableCell colSpan={7} className="!whitespace-normal">
                             <div className="px-2 py-1">
                               <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
-                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                              <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -972,7 +979,7 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">وزن المعايير الخاصة</p>
+                    <p className="text-sm text-ds-muted mb-1">وزن المعايير الخاصة</p>
                     <p className="text-xl font-bold text-emerald-600">{specificWeightLimit}%</p>
                   </div>
                   <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
@@ -985,10 +992,10 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">عدد الإدارات</p>
-                    <p className="text-xl font-bold text-gray-900">{directorates.length}</p>
+                    <p className="text-sm text-ds-muted mb-1">عدد الإدارات</p>
+                    <p className="text-xl font-bold text-ds-text">{directorates.length}</p>
                   </div>
-                  <div className="bg-gray-100 text-gray-600 p-3 rounded-xl">
+                  <div className="bg-ds-overlay text-ds-muted p-3 rounded-xl">
                     <Building2 className="h-6 w-6" />
                   </div>
                 </div>
@@ -997,12 +1004,12 @@ export const EvaluationCriteria: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Filter className="h-5 w-5 text-gray-500" />
-            <label className="text-sm font-medium text-gray-700">عرض المعايير الخاصة لـ:</label>
+            <Filter className="h-5 w-5 text-ds-faint" />
+            <label className="text-sm font-medium text-ds-muted">عرض المعايير الخاصة لـ:</label>
             <select
               value={selectedDirId}
               onChange={(e) => setSelectedDirId(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+              className="px-4 py-2 border border-ds-border rounded-lg text-sm"
             >
               <option value="all">جميع الإدارات</option>
               {directorates.map(dir => (
@@ -1046,9 +1053,9 @@ export const EvaluationCriteria: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-emerald-500" />
                         <div>
-                          <h2 className="text-lg font-bold text-gray-900">{group.title}</h2>
+                          <h2 className="text-lg font-bold text-ds-text">{group.title}</h2>
                           {group.subtitle && (
-                            <p className="text-sm text-gray-500 mt-0.5">قسم: {group.subtitle}</p>
+                            <p className="text-sm text-ds-faint mt-0.5">قسم: {group.subtitle}</p>
                           )}
                         </div>
                       </div>
@@ -1064,7 +1071,7 @@ export const EvaluationCriteria: React.FC = () => {
                   </CardHeader>
                   <CardBody className="p-0">
                     {group.list.length === 0 ? (
-                      <div className="p-6 text-center text-gray-500 text-sm">
+                      <div className="p-6 text-center text-ds-faint text-sm">
                         لم يتم تحديد معايير خاصة لهذا القسم بعد
                       </div>
                     ) : (
@@ -1084,17 +1091,17 @@ export const EvaluationCriteria: React.FC = () => {
                             return (
                               <React.Fragment key={c.id}>
                                 <TableRow
-                                  className={!c.is_active ? 'opacity-60 bg-gray-50' : ''}
+                                  className={!c.is_active ? 'opacity-60 bg-ds-bg' : ''}
                                   onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
                                 >
-                                  <TableCell className="text-gray-400">
+                                  <TableCell className="text-ds-faint">
                                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                   </TableCell>
                                   <TableCell>
-                                    <span className="font-bold text-gray-900">{c.title}</span>
+                                    <span className="font-bold text-ds-text">{c.title}</span>
                                   </TableCell>
                                   <TableCell>
-                                    <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
+                                    <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
                                   </TableCell>
                                   <TableCell>
                                     <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
@@ -1110,7 +1117,7 @@ export const EvaluationCriteria: React.FC = () => {
                                     <TableCell colSpan={5} className="!whitespace-normal">
                                       <div className="px-2 py-1">
                                         <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
-                                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                        <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                                       </div>
                                     </TableCell>
                                   </TableRow>
@@ -1143,8 +1150,8 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
-                    <p className="text-xl font-bold text-gray-900">{ceoCriteria.filter(c => c.is_active).length}</p>
+                    <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
+                    <p className="text-xl font-bold text-ds-text">{ceoCriteria.filter(c => c.is_active).length}</p>
                   </div>
                   <div className="bg-green-50 text-green-600 p-3 rounded-xl">
                     <ClipboardList className="h-6 w-6" />
@@ -1156,10 +1163,10 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
-                    <p className="text-xl font-bold text-gray-900">{ceoCriteria.filter(c => !c.is_active).length}</p>
+                    <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
+                    <p className="text-xl font-bold text-ds-text">{ceoCriteria.filter(c => !c.is_active).length}</p>
                   </div>
-                  <div className="bg-gray-100 text-gray-500 p-3 rounded-xl">
+                  <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
                     <EyeOff className="h-6 w-6" />
                   </div>
                 </div>
@@ -1169,7 +1176,7 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                    <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
                     <p className={`text-xl font-bold ${ceoTotalWeight === specificWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
                       {ceoTotalWeight}% / {specificWeightLimit}%
                     </p>
@@ -1196,7 +1203,7 @@ export const EvaluationCriteria: React.FC = () => {
               {ceoCriteria.length === 0 ? (
                 <EmptyState
                   message="لا توجد معايير خاصة مضافة لتقييم المديرين حاليًا"
-                  icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+                  icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
                 />
               ) : (
                 <Table>
@@ -1218,10 +1225,10 @@ export const EvaluationCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
                             onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                           >
-                            <TableCell className="text-gray-400">
+                            <TableCell className="text-ds-faint">
                               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </TableCell>
                             <TableCell>
@@ -1229,11 +1236,11 @@ export const EvaluationCriteria: React.FC = () => {
                                 <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
                                   <GripVertical className="h-4 w-4" />
                                 </div>
-                                <span className="font-bold text-gray-900">{criterion.title}</span>
+                                <span className="font-bold text-ds-text">{criterion.title}</span>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                              <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
                             </TableCell>
                             <TableCell>
                               <Badge variant={criterion.is_active ? 'success' : 'default'}>
@@ -1245,15 +1252,15 @@ export const EvaluationCriteria: React.FC = () => {
                                 <button
                                   onClick={() => handleCeoReorder(criterion, 'up')}
                                   disabled={index === 0}
-                                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                                 >
                                   <ArrowUp className="h-4 w-4" />
                                 </button>
-                                <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
                                 <button
                                   onClick={() => handleCeoReorder(criterion, 'down')}
                                   disabled={index === ceoCriteria.length - 1}
-                                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                                 >
                                   <ArrowDown className="h-4 w-4" />
                                 </button>
@@ -1302,7 +1309,7 @@ export const EvaluationCriteria: React.FC = () => {
                               <TableCell colSpan={7} className="!whitespace-normal">
                                 <div className="px-2 py-1">
                                   <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
-                                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                                  <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1324,7 +1331,7 @@ export const EvaluationCriteria: React.FC = () => {
             <select
               value={selectedSupAssignment}
               onChange={(e) => setSelectedSupAssignment(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+              className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
             >
               {supAssignments.map(a => (
                 <option key={a.id} value={a.id}>
@@ -1334,8 +1341,8 @@ export const EvaluationCriteria: React.FC = () => {
             </select>
           )}
           {supAssignments.length === 1 && (
-            <p className="text-sm text-gray-600">
-              المشرف: <span className="font-bold text-gray-900">{supAssignments[0].user?.full_name}</span>
+            <p className="text-sm text-ds-muted">
+              المشرف: <span className="font-bold text-ds-text">{supAssignments[0].user?.full_name}</span>
               {supAssignments[0].title && <span> — {supAssignments[0].title}</span>}
             </p>
           )}
@@ -1352,7 +1359,7 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <EmptyState
                   message="لا يوجد مشرفون مُعيَّنون حاليًا"
-                  icon={<Shield className="h-12 w-12 text-gray-400" />}
+                  icon={<Shield className="h-12 w-12 text-ds-faint" />}
                 />
               </CardBody>
             </Card>
@@ -1361,7 +1368,7 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <EmptyState
                   message="لم يقم المشرف بإنشاء أي مجموعة معايير بعد"
-                  icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+                  icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
                 />
               </CardBody>
             </Card>
@@ -1376,9 +1383,9 @@ export const EvaluationCriteria: React.FC = () => {
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="w-3 h-3 rounded-full bg-teal-500" />
-                        <h2 className="text-lg font-bold text-gray-900">{group.name}</h2>
+                        <h2 className="text-lg font-bold text-ds-text">{group.name}</h2>
                         {group.is_default && <Badge variant="info" size="sm">افتراضية</Badge>}
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-ds-muted">
                           {groupMembers.length === 0
                             ? 'بدون موظفين'
                             : `${groupMembers.length} موظف: ${groupMembers.map(m => m.employee?.full_name || '').join('، ')}`}
@@ -1396,7 +1403,7 @@ export const EvaluationCriteria: React.FC = () => {
                   </CardHeader>
                   <CardBody className="p-0">
                     {list.length === 0 ? (
-                      <div className="p-6 text-center text-gray-500 text-sm">
+                      <div className="p-6 text-center text-ds-faint text-sm">
                         لا توجد معايير في هذه المجموعة
                       </div>
                     ) : (
@@ -1416,17 +1423,17 @@ export const EvaluationCriteria: React.FC = () => {
                             return (
                               <React.Fragment key={c.id}>
                                 <TableRow
-                                  className={`${!c.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-teal-50/40' : ''}`}
+                                  className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-teal-50/40' : ''}`}
                                   onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
                                 >
-                                  <TableCell className="text-gray-400">
+                                  <TableCell className="text-ds-faint">
                                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                   </TableCell>
                                   <TableCell>
-                                    <span className="font-bold text-gray-900">{c.title}</span>
+                                    <span className="font-bold text-ds-text">{c.title}</span>
                                   </TableCell>
                                   <TableCell>
-                                    <p className="text-gray-500 text-sm max-w-xs truncate">{c.description}</p>
+                                    <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
                                   </TableCell>
                                   <TableCell>
                                     <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
@@ -1442,7 +1449,7 @@ export const EvaluationCriteria: React.FC = () => {
                                     <TableCell colSpan={5} className="!whitespace-normal">
                                       <div className="px-2 py-1">
                                         <p className="text-xs font-semibold text-teal-700 mb-1">الوصف الكامل</p>
-                                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                        <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                                       </div>
                                     </TableCell>
                                   </TableRow>
@@ -1482,8 +1489,8 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
-                    <p className="text-xl font-bold text-gray-900">{ceoEvalCriteria.filter(c => c.is_active).length}</p>
+                    <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
+                    <p className="text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => c.is_active).length}</p>
                   </div>
                   <div className="bg-green-50 text-green-600 p-3 rounded-xl"><ClipboardList className="h-6 w-6" /></div>
                 </div>
@@ -1493,10 +1500,10 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
-                    <p className="text-xl font-bold text-gray-900">{ceoEvalCriteria.filter(c => !c.is_active).length}</p>
+                    <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
+                    <p className="text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => !c.is_active).length}</p>
                   </div>
-                  <div className="bg-gray-100 text-gray-500 p-3 rounded-xl"><EyeOff className="h-6 w-6" /></div>
+                  <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl"><EyeOff className="h-6 w-6" /></div>
                 </div>
               </CardBody>
             </Card>
@@ -1504,7 +1511,7 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                    <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
                     <p className={`text-xl font-bold ${ceoEvalTotalWeight === 100 ? 'text-green-600' : 'text-red-600'}`}>
                       {ceoEvalTotalWeight}% / 100%
                     </p>
@@ -1529,7 +1536,7 @@ export const EvaluationCriteria: React.FC = () => {
           <Card>
             <CardBody className="p-0">
               {ceoEvalCriteria.length === 0 ? (
-                <EmptyState message="لا توجد معايير مضافة لتقييم الإدارة العليا" icon={<ClipboardList className="h-12 w-12 text-gray-400" />} />
+                <EmptyState message="لا توجد معايير مضافة لتقييم الإدارة العليا" icon={<ClipboardList className="h-12 w-12 text-ds-faint" />} />
               ) : (
                 <Table>
                   <TableHeader>
@@ -1550,10 +1557,10 @@ export const EvaluationCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-amber-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-amber-50/40' : ''}`}
                             onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                           >
-                            <TableCell className="text-gray-400">
+                            <TableCell className="text-ds-faint">
                               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </TableCell>
                             <TableCell>
@@ -1561,16 +1568,16 @@ export const EvaluationCriteria: React.FC = () => {
                                 <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
                                   <GripVertical className="h-4 w-4" />
                                 </div>
-                                <span className="font-bold text-gray-900">{criterion.title}</span>
+                                <span className="font-bold text-ds-text">{criterion.title}</span>
                               </div>
                             </TableCell>
-                            <TableCell><p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p></TableCell>
+                            <TableCell><p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p></TableCell>
                             <TableCell><Badge variant={criterion.is_active ? 'success' : 'default'}>{criterion.is_active ? 'نشط' : 'معطل'}</Badge></TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1" onClick={stop}>
-                                <button onClick={() => handleCeoEvalReorder(criterion, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"><ArrowUp className="h-4 w-4" /></button>
-                                <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
-                                <button onClick={() => handleCeoEvalReorder(criterion, 'down')} disabled={index === ceoEvalCriteria.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"><ArrowDown className="h-4 w-4" /></button>
+                                <button onClick={() => handleCeoEvalReorder(criterion, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"><ArrowUp className="h-4 w-4" /></button>
+                                <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                <button onClick={() => handleCeoEvalReorder(criterion, 'down')} disabled={index === ceoEvalCriteria.length - 1} className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"><ArrowDown className="h-4 w-4" /></button>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1592,7 +1599,7 @@ export const EvaluationCriteria: React.FC = () => {
                               <TableCell colSpan={7} className="!whitespace-normal">
                                 <div className="px-2 py-1">
                                   <p className="text-xs font-semibold text-amber-700 mb-1">الوصف الكامل</p>
-                                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                                  <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1651,12 +1658,12 @@ export const EvaluationCriteria: React.FC = () => {
             />
 
             {editingCriterion && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle
                   checked={formData.is_active}
                   onChange={() => setFormData({ ...formData, is_active: !formData.is_active })}
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-ds-muted">
                   {formData.is_active ? 'المعيار نشط' : 'المعيار معطل'}
                 </span>
               </div>
@@ -1683,12 +1690,12 @@ export const EvaluationCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من حذف هذا المعيار؟
           </p>
-          <p className="text-gray-500 text-sm">
+          <p className="text-ds-faint text-sm">
             سيتم حذف معيار{' '}
-            <span className="font-bold text-gray-700">
+            <span className="font-bold text-ds-muted">
               {deleteTarget?.title}
             </span>{' '}
             نهائيًا.
@@ -1752,13 +1759,13 @@ export const EvaluationCriteria: React.FC = () => {
               helperText={`مجموع أوزان المعايير الخاصة النشطة الحالي: ${ceoTotalWeight}% من ${specificWeightLimit}%`}
             />
             {editingCeoCriterion && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle
                   checked={ceoFormData.is_active}
                   onChange={() => setCeoFormData({ ...ceoFormData, is_active: !ceoFormData.is_active })}
                   size="sm"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-ds-muted">
                   {ceoFormData.is_active ? 'المعيار نشط' : 'المعيار معطل'}
                 </span>
               </div>
@@ -1785,9 +1792,9 @@ export const EvaluationCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف معيار <span className="font-bold text-gray-700">{ceoDeleteTarget?.title}</span> نهائيًا.
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف معيار <span className="font-bold text-ds-muted">{ceoDeleteTarget?.title}</span> نهائيًا.
           </p>
           {ceoDeleteError && (
             <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">
@@ -1848,13 +1855,13 @@ export const EvaluationCriteria: React.FC = () => {
               helperText={`مجموع أوزان المعايير النشطة الحالي: ${ceoEvalTotalWeight}% من 100%`}
             />
             {editingCeoEvalCriterion && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle
                   checked={ceoEvalFormData.is_active}
                   onChange={() => setCeoEvalFormData({ ...ceoEvalFormData, is_active: !ceoEvalFormData.is_active })}
                   size="sm"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-ds-muted">
                   {ceoEvalFormData.is_active ? 'المعيار نشط' : 'المعيار معطل'}
                 </span>
               </div>
@@ -1881,9 +1888,9 @@ export const EvaluationCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف معيار <span className="font-bold text-gray-700">{ceoEvalDeleteTarget?.title}</span> نهائيًا.
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف معيار <span className="font-bold text-ds-muted">{ceoEvalDeleteTarget?.title}</span> نهائيًا.
           </p>
           {ceoEvalDeleteError && (
             <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">

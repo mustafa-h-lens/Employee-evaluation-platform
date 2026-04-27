@@ -432,7 +432,7 @@ export const SupervisorAssignments: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-500 text-sm">جاري تحميل التعيينات...</p>
+          <p className="text-ds-faint text-sm">جاري تحميل التعيينات...</p>
         </div>
       </div>
     );
@@ -443,10 +443,17 @@ export const SupervisorAssignments: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">إدارة تعيينات المشرفين</h1>
-          <p className="text-gray-600 mt-2">تعيين موظفين أو مدراء إدارات كمشرفين مؤقتين لتقييم موظفين محددين</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>إدارة تعيينات المشرفين</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>تعيين موظفين أو مدراء إدارات كمشرفين مؤقتين لتقييم موظفين محددين</p>
         </div>
         <Button onClick={openCreateModal} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -462,8 +469,8 @@ export const SupervisorAssignments: React.FC = () => {
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">إجمالي التعيينات</p>
-              <p className="text-2xl font-bold text-gray-900">{totalAssignments}</p>
+              <p className="text-sm text-ds-faint">إجمالي التعيينات</p>
+              <p className="text-2xl font-bold text-ds-text">{totalAssignments}</p>
             </div>
           </CardBody>
         </Card>
@@ -473,7 +480,7 @@ export const SupervisorAssignments: React.FC = () => {
               <ShieldCheck className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">نشطة</p>
+              <p className="text-sm text-ds-faint">نشطة</p>
               <p className="text-2xl font-bold text-green-700">{activeAssignments}</p>
             </div>
           </CardBody>
@@ -484,19 +491,19 @@ export const SupervisorAssignments: React.FC = () => {
               <ShieldOff className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">معطلة</p>
+              <p className="text-sm text-ds-faint">معطلة</p>
               <p className="text-2xl font-bold text-amber-700">{inactiveAssignments}</p>
             </div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <ShieldX className="h-6 w-6 text-gray-500" />
+            <div className="w-12 h-12 rounded-xl bg-ds-overlay flex items-center justify-center flex-shrink-0">
+              <ShieldX className="h-6 w-6 text-ds-faint" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">منتهية</p>
-              <p className="text-2xl font-bold text-gray-700">{endedAssignments}</p>
+              <p className="text-sm text-ds-faint">منتهية</p>
+              <p className="text-2xl font-bold text-ds-muted">{endedAssignments}</p>
             </div>
           </CardBody>
         </Card>
@@ -504,16 +511,16 @@ export const SupervisorAssignments: React.FC = () => {
 
       {/* Assignments Table */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">جميع التعيينات</h2>
+        <div className="px-6 py-4 border-b border-ds-border flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-lg font-semibold text-ds-text">جميع التعيينات</h2>
           <div className="relative w-full max-w-xs">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
             <input
               type="text"
               placeholder="بحث بالاسم أو الموظفين..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+              className="w-full pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
             />
           </div>
         </div>
@@ -521,7 +528,7 @@ export const SupervisorAssignments: React.FC = () => {
           {filteredAssignments.length === 0 ? (
             <EmptyState
               message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد تعيينات مشرفين حاليًا'}
-              icon={<Users className="h-12 w-12 text-gray-400" />}
+              icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -547,7 +554,7 @@ export const SupervisorAssignments: React.FC = () => {
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{assignment.user?.full_name || '--'}</p>
+                          <p className="font-medium text-ds-text">{assignment.user?.full_name || '--'}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -556,17 +563,17 @@ export const SupervisorAssignments: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-ds-text">
                           {(assignment.members || []).length} موظف
                         </span>
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
                           {(assignment.members || []).slice(0, 3).map(m => (
-                            <span key={m.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full truncate max-w-[120px]">
+                            <span key={m.id} className="text-xs bg-ds-overlay text-ds-muted px-2 py-0.5 rounded-full truncate max-w-[120px]">
                               {m.employee?.full_name || '--'}
                             </span>
                           ))}
                           {(assignment.members || []).length > 3 && (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-ds-faint">
                               +{(assignment.members || []).length - 3} آخرين
                             </span>
                           )}
@@ -577,7 +584,7 @@ export const SupervisorAssignments: React.FC = () => {
                       {getStatusBadge(assignment)}
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs text-gray-500">{assignment.creator?.full_name || '--'}</span>
+                      <span className="text-xs text-ds-faint">{assignment.creator?.full_name || '--'}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -663,11 +670,11 @@ export const SupervisorAssignments: React.FC = () => {
           {/* Row 1: Supervisor selection */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نوع المشرف</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">نوع المشرف</label>
               <select
                 value={form.user_type}
                 onChange={(e) => handleUserTypeChange(e.target.value as 'employee' | 'director')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 required
               >
                 <option value="employee">موظف</option>
@@ -675,11 +682,11 @@ export const SupervisorAssignments: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">اسم المشرف</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">اسم المشرف</label>
               <select
                 value={form.user_id}
                 onChange={(e) => setForm(prev => ({ ...prev, user_id: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 required
               >
                 <option value="">اختر المشرف</option>
@@ -693,7 +700,7 @@ export const SupervisorAssignments: React.FC = () => {
           {/* Employee Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-bold text-gray-900">
+              <label className="block text-sm font-bold text-ds-text">
                 اختيار الموظفين المشرف عليهم
                 {form.selected_employee_ids.size > 0 && (
                   <span className="text-blue-600 font-normal mr-2">
@@ -724,21 +731,21 @@ export const SupervisorAssignments: React.FC = () => {
             {/* Search + Filter bar */}
             <div className="flex items-center gap-3 mb-3">
               <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
                 <input
                   type="text"
                   placeholder="بحث بالاسم أو البريد أو الرقم الوظيفي..."
                   value={empSearch}
                   onChange={(e) => setEmpSearch(e.target.value)}
-                  className="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  className="w-full pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                 />
               </div>
               <div className="relative">
-                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
                 <select
                   value={empDeptFilter}
                   onChange={(e) => setEmpDeptFilter(e.target.value)}
-                  className="pr-9 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm min-w-[180px]"
+                  className="pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm min-w-[180px]"
                 >
                   <option value="">كل الإدارات</option>
                   {departments.map(d => (
@@ -749,15 +756,15 @@ export const SupervisorAssignments: React.FC = () => {
             </div>
 
             {/* Employee table */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[320px] overflow-y-auto">
+            <div className="border border-ds-border rounded-lg overflow-hidden max-h-[320px] overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 sticky top-0 z-10">
+                <thead className="bg-ds-bg sticky top-0 z-10">
                   <tr>
                     <th className="w-10 px-3 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={toggleAllVisible}
-                        className="text-gray-500 hover:text-blue-600"
+                        className="text-ds-faint hover:text-blue-600"
                       >
                         {allVisibleSelected && pickerEmployees.length > 0
                           ? <CheckSquare className="h-4 w-4 text-blue-600" />
@@ -765,16 +772,16 @@ export const SupervisorAssignments: React.FC = () => {
                         }
                       </button>
                     </th>
-                    <th className="px-3 py-2.5 text-right font-medium text-gray-700">اسم الموظف</th>
-                    <th className="px-3 py-2.5 text-right font-medium text-gray-700">البريد الإلكتروني</th>
-                    <th className="px-3 py-2.5 text-right font-medium text-gray-700">الإدارة</th>
-                    <th className="px-3 py-2.5 text-right font-medium text-gray-700">المسمى الوظيفي</th>
+                    <th className="px-3 py-2.5 text-right font-medium text-ds-muted">اسم الموظف</th>
+                    <th className="px-3 py-2.5 text-right font-medium text-ds-muted">البريد الإلكتروني</th>
+                    <th className="px-3 py-2.5 text-right font-medium text-ds-muted">الإدارة</th>
+                    <th className="px-3 py-2.5 text-right font-medium text-ds-muted">المسمى الوظيفي</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-ds-border-subtle">
                   {pickerEmployees.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-gray-400">
+                      <td colSpan={5} className="text-center py-8 text-ds-faint">
                         لا توجد نتائج
                       </td>
                     </tr>
@@ -786,13 +793,13 @@ export const SupervisorAssignments: React.FC = () => {
                           key={emp.id}
                           onClick={() => toggleEmployee(emp.id)}
                           className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-blue-50/60' : 'hover:bg-gray-50'
+                            isSelected ? 'bg-blue-50/60' : 'hover:bg-ds-bg'
                           }`}
                         >
                           <td className="px-3 py-2.5">
                             {isSelected
                               ? <CheckSquare className="h-4 w-4 text-blue-600" />
-                              : <Square className="h-4 w-4 text-gray-400" />
+                              : <Square className="h-4 w-4 text-ds-faint" />
                             }
                           </td>
                           <td className="px-3 py-2.5">
@@ -800,12 +807,12 @@ export const SupervisorAssignments: React.FC = () => {
                               <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                                 <span className="text-xs font-bold text-blue-700">{emp.full_name.charAt(0)}</span>
                               </div>
-                              <span className="font-medium text-gray-900">{emp.full_name}</span>
+                              <span className="font-medium text-ds-text">{emp.full_name}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2.5 text-gray-500">{emp.email}</td>
-                          <td className="px-3 py-2.5 text-gray-500">{emp.department?.name || '--'}</td>
-                          <td className="px-3 py-2.5 text-gray-500">{emp.job_title}</td>
+                          <td className="px-3 py-2.5 text-ds-faint">{emp.email}</td>
+                          <td className="px-3 py-2.5 text-ds-faint">{emp.department?.name || '--'}</td>
+                          <td className="px-3 py-2.5 text-ds-faint">{emp.job_title}</td>
                         </tr>
                       );
                     })
