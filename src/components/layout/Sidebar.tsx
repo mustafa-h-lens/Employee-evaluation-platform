@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/Button';
+import { UserAvatar } from '../ui/UserAvatar';
 import {
   LayoutDashboard,
 
@@ -272,15 +273,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
           style={{ borderTop: '1px solid var(--border-subtle)' }}
         >
           <div
-            className="rounded-ds-md p-3 mb-3"
+            className="rounded-ds-md p-3 mb-3 flex items-center gap-3"
             style={{
               background: 'var(--bg-overlay)',
               border: '1px solid var(--border-subtle)',
             }}
           >
-            <div className="text-right">
-              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{user.full_name}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
+            <UserAvatar
+              name={user.full_name}
+              avatarUrl={user.avatar_url}
+              size="lg"
+              initialsLength={2}
+            />
+            <div className="text-right min-w-0 flex-1">
+              <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{user.full_name}</p>
+              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
               <span
                 className="inline-block text-[10px] font-bold mt-2 px-2 py-0.5 rounded-full"
                 style={{
