@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { TextArea } from '../../components/ui/Input';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 import {
   FileX, ChevronDown, ChevronUp, Send, MessageSquare, CheckCircle2, Calendar,
   User, Award, TrendingUp, BarChart3, Star,
@@ -303,17 +304,32 @@ export const DirectorMyEvaluations: React.FC = () => {
           <Calendar className="h-5 w-5 text-ds-faint" />
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-ds-muted">السنة:</label>
-            <select value={filterYear} onChange={e => { setFilterYear(Number(e.target.value)); setFilterMonth(0); }} className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value={0}>الكل</option>
-              {[...new Set(combinedEvaluations.map(c => c.period?.year).filter(Boolean))].sort((a, b) => (b as number) - (a as number)).map(y => <option key={y} value={y!}>{y}</option>)}
-            </select>
+            <ModernSelect
+              value={String(filterYear)}
+              onChange={(v) => { setFilterYear(Number(v)); setFilterMonth(0); }}
+              ariaLabel="السنة"
+              className="min-w-[140px]"
+              options={[
+                { value: '0', label: 'الكل' },
+                ...[...new Set(combinedEvaluations.map(c => c.period?.year).filter(Boolean))]
+                  .sort((a, b) => (b as number) - (a as number))
+                  .map(y => ({ value: String(y), label: String(y) })),
+              ]}
+            />
           </div>
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-ds-muted">الشهر:</label>
-            <select value={filterMonth} onChange={e => setFilterMonth(Number(e.target.value))} className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled={filterYear === 0}>
-              <option value={0}>الكل</option>
-              {Object.entries(monthLabels).map(([m, label]) => <option key={m} value={m}>{label}</option>)}
-            </select>
+            <ModernSelect
+              value={String(filterMonth)}
+              onChange={(v) => setFilterMonth(Number(v))}
+              ariaLabel="الشهر"
+              disabled={filterYear === 0}
+              className="min-w-[160px]"
+              options={[
+                { value: '0', label: 'الكل' },
+                ...Object.entries(monthLabels).map(([m, label]) => ({ value: m, label })),
+              ]}
+            />
           </div>
           {(filterYear !== 0 || filterMonth !== 0) && (
             <button onClick={() => { setFilterYear(0); setFilterMonth(0); }} className="text-xs text-blue-600 hover:underline">مسح الفلتر</button>

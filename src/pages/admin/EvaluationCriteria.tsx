@@ -6,6 +6,7 @@ import { Input, TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 import {
   Plus,
   CreditCard as Edit,
@@ -1006,16 +1007,16 @@ export const EvaluationCriteria: React.FC = () => {
           <div className="flex items-center gap-3">
             <Filter className="h-5 w-5 text-ds-faint" />
             <label className="text-sm font-medium text-ds-muted">عرض المعايير الخاصة لـ:</label>
-            <select
+            <ModernSelect
               value={selectedDirId}
-              onChange={(e) => setSelectedDirId(e.target.value)}
-              className="px-4 py-2 border border-ds-border rounded-lg text-sm"
-            >
-              <option value="all">جميع الإدارات</option>
-              {directorates.map(dir => (
-                <option key={dir.id} value={dir.id}>{dir.name}</option>
-              ))}
-            </select>
+              onChange={setSelectedDirId}
+              ariaLabel="تصفية الإدارة"
+              className="min-w-[260px]"
+              options={[
+                { value: 'all', label: 'جميع الإدارات' },
+                ...directorates.map(dir => ({ value: dir.id, label: dir.name })),
+              ]}
+            />
           </div>
 
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3">
@@ -1328,17 +1329,16 @@ export const EvaluationCriteria: React.FC = () => {
       {activeTab === 'supervisors' && (
         <>
           {supAssignments.length > 1 && (
-            <select
+            <ModernSelect
               value={selectedSupAssignment}
-              onChange={(e) => setSelectedSupAssignment(e.target.value)}
-              className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
-            >
-              {supAssignments.map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.user?.full_name}{a.title ? ` — ${a.title}` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedSupAssignment}
+              ariaLabel="مهمة المشرف"
+              className="min-w-[260px]"
+              options={supAssignments.map(a => ({
+                value: a.id,
+                label: `${a.user?.full_name}${a.title ? ` — ${a.title}` : ''}`,
+              }))}
+            />
           )}
           {supAssignments.length === 1 && (
             <p className="text-sm text-ds-muted">

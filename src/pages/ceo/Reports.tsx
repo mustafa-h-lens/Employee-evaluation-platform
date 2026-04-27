@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { BarChart3, Search, User, Calendar, Star, MessageSquare, FileText, ChevronDown, Crown, UserCheck } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -611,13 +612,13 @@ export const CeoReports: React.FC = () => {
             {/* Year */}
             <div>
               <label className="block text-sm font-medium text-ds-muted mb-1">السنة</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+              <ModernSelect
+                value={String(selectedYear)}
+                onChange={(v) => setSelectedYear(Number(v))}
+                ariaLabel="السنة"
+                className="min-w-[140px]"
+                options={years.map(y => ({ value: String(y), label: String(y) }))}
+              />
             </div>
 
             {/* Period mode */}
@@ -651,32 +652,32 @@ export const CeoReports: React.FC = () => {
             {periodMode === 'monthly' && (
               <div>
                 <label className="block text-sm font-medium text-ds-muted mb-1">الشهر</label>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value={0}>جميع الأشهر</option>
-                  {Object.entries(monthLabels).map(([m, label]) => (
-                    <option key={m} value={m}>{label}</option>
-                  ))}
-                </select>
+                <ModernSelect
+                  value={String(selectedMonth)}
+                  onChange={(v) => setSelectedMonth(Number(v))}
+                  ariaLabel="الشهر"
+                  className="min-w-[180px]"
+                  options={[
+                    { value: '0', label: 'جميع الأشهر' },
+                    ...Object.entries(monthLabels).map(([m, label]) => ({ value: m, label })),
+                  ]}
+                />
               </div>
             )}
 
             {periodMode === 'quarterly' && (
               <div>
                 <label className="block text-sm font-medium text-ds-muted mb-1">الربع</label>
-                <select
-                  value={selectedQuarter}
-                  onChange={(e) => setSelectedQuarter(Number(e.target.value))}
-                  className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value={0}>جميع الأرباع</option>
-                  {Object.entries(quarterLabels).map(([q, label]) => (
-                    <option key={q} value={q}>{label}</option>
-                  ))}
-                </select>
+                <ModernSelect
+                  value={String(selectedQuarter)}
+                  onChange={(v) => setSelectedQuarter(Number(v))}
+                  ariaLabel="الربع"
+                  className="min-w-[260px]"
+                  options={[
+                    { value: '0', label: 'جميع الأرباع' },
+                    ...Object.entries(quarterLabels).map(([q, label]) => ({ value: q, label })),
+                  ]}
+                />
               </div>
             )}
           </div>

@@ -6,6 +6,7 @@ import { Input, TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 import {
   Plus,
   CreditCard as Edit,
@@ -572,15 +573,13 @@ export const SupervisorCriteria: React.FC = () => {
       {assignments.length > 1 && (
         <div className="flex items-center gap-3">
           <label className="text-sm font-medium text-ds-muted">مهمة الإشراف:</label>
-          <select
+          <ModernSelect
             value={selectedAssignment}
-            onChange={e => setSelectedAssignment(e.target.value)}
-            className="border border-ds-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-          >
-            {assignments.map(a => (
-              <option key={a.id} value={a.id}>{a.title || 'مهمة إشراف'}</option>
-            ))}
-          </select>
+            onChange={setSelectedAssignment}
+            ariaLabel="مهمة الإشراف"
+            className="min-w-[220px]"
+            options={assignments.map(a => ({ value: a.id, label: a.title || 'مهمة إشراف' }))}
+          />
         </div>
       )}
 

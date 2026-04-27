@@ -7,6 +7,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronRight, User } from 'lucide-react';
 import { computeFinalScores } from '../../lib/scoring';
 import { AvatarUploader } from '../../components/ui/AvatarUploader';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -361,17 +362,18 @@ export const AdminSettings: React.FC = () => {
               <Calendar className="h-4 w-4" />
               فترة التقييم
             </label>
-            <select
-              value={selectedPeriodId}
-              onChange={(e) => handlePeriodChange(e.target.value)}
-              className="w-full max-w-md px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {periods.map(p => (
-                <option key={p.id} value={p.id}>
-                  {monthLabels[p.month]} {p.year} — {p.status === 'نشطة' ? '(نشطة)' : p.status}
-                </option>
-              ))}
-            </select>
+            <div className="max-w-md">
+              <ModernSelect
+                value={selectedPeriodId}
+                onChange={handlePeriodChange}
+                ariaLabel="فترة التقييم"
+                options={periods.map(p => ({
+                  value: p.id,
+                  label: `${monthLabels[p.month]} ${p.year}`,
+                  hint: p.status === 'نشطة' ? 'نشطة' : p.status,
+                }))}
+              />
+            </div>
             {selectedPeriod && (
               <p className="text-xs text-ds-faint mt-1">
                 الأوزان الحالية لهذه الفترة: عامة {selectedPeriod.general_weight}% — خاصة {selectedPeriod.specific_weight}%

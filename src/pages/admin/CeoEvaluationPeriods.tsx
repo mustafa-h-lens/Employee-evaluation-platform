@@ -8,6 +8,7 @@ import { Badge, getStatusBadgeVariant } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Plus, CreditCard as Edit, Trash2, Calendar, AlertTriangle, Play, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface CeoEvaluationPeriod {
   id: string;
@@ -573,15 +574,12 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
                 <label className="block text-sm font-medium text-ds-muted mb-1">
                   الربع
                 </label>
-                <select
-                  value={formData.quarter}
-                  onChange={(e) => handleQuarterChange(e.target.value)}
-                  className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {Object.entries(quarterLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+                <ModernSelect
+                  value={String(formData.quarter)}
+                  onChange={handleQuarterChange}
+                  ariaLabel="الربع"
+                  options={Object.entries(quarterLabels).map(([value, label]) => ({ value, label }))}
+                />
               </div>
             </div>
 
@@ -607,15 +605,16 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
                 <label className="block text-sm font-medium text-ds-muted mb-1">
                   الحالة
                 </label>
-                <select
+                <ModernSelect
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as FormData['status'] })}
-                  className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="قادمة">قادمة</option>
-                  <option value="نشطة">نشطة</option>
-                  <option value="مغلقة">مغلقة</option>
-                </select>
+                  onChange={(v) => setFormData({ ...formData, status: v as FormData['status'] })}
+                  ariaLabel="الحالة"
+                  options={[
+                    { value: 'قادمة', label: 'قادمة' },
+                    { value: 'نشطة', label: 'نشطة' },
+                    { value: 'مغلقة', label: 'مغلقة' },
+                  ]}
+                />
               </div>
             )}
           </div>

@@ -6,6 +6,7 @@ import { Input, TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 import {
   Plus,
   CreditCard as Edit,
@@ -531,15 +532,13 @@ export const DirectorSpecificCriteria: React.FC = () => {
           <CardBody className="flex items-center gap-3 flex-wrap py-3">
             <Building2 className="h-5 w-5 text-blue-600" />
             <label className="text-sm font-medium text-ds-muted">الإدارة:</label>
-            <select
+            <ModernSelect
               value={selectedDirectorateId}
-              onChange={(e) => setSelectedDirectorateId(e.target.value)}
-              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {myDirectorates.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+              onChange={setSelectedDirectorateId}
+              ariaLabel="الإدارة"
+              className="min-w-[220px]"
+              options={myDirectorates.map(d => ({ value: d.id, label: d.name }))}
+            />
             <span className="text-xs text-ds-faint">— كل إدارة لها قائمة معاييرها الخاصة، ويتشاركها مدراؤها.</span>
           </CardBody>
         </Card>
@@ -558,15 +557,13 @@ export const DirectorSpecificCriteria: React.FC = () => {
           <CardBody className="flex items-center gap-3 flex-wrap py-3">
             <ClipboardList className="h-5 w-5 text-emerald-600" />
             <label className="text-sm font-medium text-ds-muted">القسم:</label>
-            <select
+            <ModernSelect
               value={selectedDepartmentId}
-              onChange={(e) => setSelectedDepartmentId(e.target.value)}
-              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            >
-              {departments.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+              onChange={setSelectedDepartmentId}
+              ariaLabel="القسم"
+              className="min-w-[220px]"
+              options={departments.map(d => ({ value: d.id, label: d.name }))}
+            />
             <span className="text-xs text-ds-faint">— هذه الإدارة تحتوي على عدة أقسام، ولكل قسم قائمة معاييره الخاصة.</span>
           </CardBody>
         </Card>

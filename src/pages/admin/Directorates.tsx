@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { UserAvatar } from '../../components/ui/UserAvatar';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface DirectorUser {
   id: string;
@@ -618,21 +619,41 @@ export const Directorates: React.FC = () => {
           <Input label="اسم الإدارة" value={dirForm.name} onChange={(e) => setDirForm({ ...dirForm, name: e.target.value })} required placeholder="مثال: إدارة التقنية" />
           <div>
             <label className="block text-sm font-medium text-ds-muted mb-1">المدير الأساسي</label>
-            <select value={dirForm.director_id} onChange={(e) => setDirForm({ ...dirForm, director_id: e.target.value })} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="">-- بدون مدير --</option>
-              {allDirectors.filter(d => d.id === dirForm.director_id || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== editingDir?.id)).map((d) => (
-                <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
-              ))}
-            </select>
+            <ModernSelect
+              value={dirForm.director_id}
+              onChange={(v) => setDirForm({ ...dirForm, director_id: v })}
+              ariaLabel="المدير الأساسي"
+              placeholder="-- بدون مدير --"
+              options={[
+                { value: '', label: '-- بدون مدير --' },
+                ...allDirectors
+                  .filter(d => d.id === dirForm.director_id || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== editingDir?.id))
+                  .map((d) => ({
+                    value: d.id,
+                    label: `${d.full_name} (${d.email})`,
+                    hint: isCeoUser(d.email) ? 'إدارة عليا' : undefined,
+                  })),
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-ds-muted mb-1">المدير المشارك <span className="text-ds-faint text-xs">(اختياري)</span></label>
-            <select value={dirForm.secondary_director_id} onChange={(e) => setDirForm({ ...dirForm, secondary_director_id: e.target.value })} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="">-- بدون مدير مشارك --</option>
-              {allDirectors.filter(d => d.id !== dirForm.director_id && (d.id === dirForm.secondary_director_id || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== editingDir?.id))).map((d) => (
-                <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
-              ))}
-            </select>
+            <ModernSelect
+              value={dirForm.secondary_director_id}
+              onChange={(v) => setDirForm({ ...dirForm, secondary_director_id: v })}
+              ariaLabel="المدير المشارك"
+              placeholder="-- بدون مدير مشارك --"
+              options={[
+                { value: '', label: '-- بدون مدير مشارك --' },
+                ...allDirectors
+                  .filter(d => d.id !== dirForm.director_id && (d.id === dirForm.secondary_director_id || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== editingDir?.id)))
+                  .map((d) => ({
+                    value: d.id,
+                    label: `${d.full_name} (${d.email})`,
+                    hint: isCeoUser(d.email) ? 'إدارة عليا' : undefined,
+                  })),
+              ]}
+            />
           </div>
           {/* Departments section */}
           <div className="border border-teal-200 rounded-lg p-3 bg-teal-50/50">
@@ -727,21 +748,41 @@ export const Directorates: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-ds-muted mb-1">المدير الأساسي</label>
-            <select value={switchDirectorId} onChange={(e) => setSwitchDirectorId(e.target.value)} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="">-- بدون مدير --</option>
-              {allDirectors.filter(d => d.id === switchDirectorId || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== switchTarget?.id)).map((d) => (
-                <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
-              ))}
-            </select>
+            <ModernSelect
+              value={switchDirectorId}
+              onChange={setSwitchDirectorId}
+              ariaLabel="المدير الأساسي"
+              placeholder="-- بدون مدير --"
+              options={[
+                { value: '', label: '-- بدون مدير --' },
+                ...allDirectors
+                  .filter(d => d.id === switchDirectorId || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== switchTarget?.id))
+                  .map((d) => ({
+                    value: d.id,
+                    label: `${d.full_name} (${d.email})`,
+                    hint: isCeoUser(d.email) ? 'إدارة عليا' : undefined,
+                  })),
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-ds-muted mb-1">المدير المشارك <span className="text-ds-faint text-xs">(اختياري)</span></label>
-            <select value={switchSecondaryId} onChange={(e) => setSwitchSecondaryId(e.target.value)} className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="">-- بدون مدير مشارك --</option>
-              {allDirectors.filter(d => d.id !== switchDirectorId && (d.id === switchSecondaryId || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== switchTarget?.id))).map((d) => (
-                <option key={d.id} value={d.id}>{d.full_name} ({d.email}){isCeoUser(d.email) ? ' — إدارة عليا' : ''}</option>
-              ))}
-            </select>
+            <ModernSelect
+              value={switchSecondaryId}
+              onChange={setSwitchSecondaryId}
+              ariaLabel="المدير المشارك"
+              placeholder="-- بدون مدير مشارك --"
+              options={[
+                { value: '', label: '-- بدون مدير مشارك --' },
+                ...allDirectors
+                  .filter(d => d.id !== switchDirectorId && (d.id === switchSecondaryId || isCeoUser(d.email) || !directorates.some(dir => (dir.director_id === d.id || dir.secondary_director_id === d.id) && dir.id !== switchTarget?.id)))
+                  .map((d) => ({
+                    value: d.id,
+                    label: `${d.full_name} (${d.email})`,
+                    hint: isCeoUser(d.email) ? 'إدارة عليا' : undefined,
+                  })),
+              ]}
+            />
           </div>
           {switchTarget?.director?.full_name && switchDirectorId !== switchTarget?.director_id && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">

@@ -7,6 +7,7 @@ import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Plus, CreditCard as Edit, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface Department {
   id: string;
@@ -264,16 +265,13 @@ export const Departments: React.FC = () => {
             />
             <div>
               <label className="block text-sm font-medium text-ds-muted mb-1">الإدارة التابع لها</label>
-              <select
+              <ModernSelect
                 value={formData.directorate_id}
-                onChange={(e) => setFormData({ ...formData, directorate_id: e.target.value })}
-                className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">-- اختر الإدارة --</option>
-                {directorates.map((dir) => (
-                  <option key={dir.id} value={dir.id}>{dir.name}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, directorate_id: v })}
+                ariaLabel="الإدارة"
+                placeholder="-- اختر الإدارة --"
+                options={directorates.map((dir) => ({ value: dir.id, label: dir.name }))}
+              />
             </div>
           </div>
 

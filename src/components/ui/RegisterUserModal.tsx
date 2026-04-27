@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Modal, ModalFooter } from './Modal';
 import { Input } from './Input';
 import { Button } from './Button';
+import { ModernSelect } from './ModernSelect';
 import { UserPlus, CheckCircle, AlertCircle, Plus, X } from 'lucide-react';
 
 interface DirectorateOption {
@@ -278,34 +279,30 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">الإدارة</label>
-                        <select
+                        <ModernSelect
                           value={assignment.directorate_id}
-                          onChange={(e) => updateDirAssignment(index, 'directorate_id', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">اختر الإدارة</option>
-                          {directorates.map((dir) => (
-                            <option key={dir.id} value={dir.id}>
-                              {dir.name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(v) => updateDirAssignment(index, 'directorate_id', v)}
+                          ariaLabel="الإدارة"
+                          placeholder="اختر الإدارة"
+                          options={[
+                            { value: '', label: 'اختر الإدارة' },
+                            ...directorates.map((dir) => ({ value: dir.id, label: dir.name })),
+                          ]}
+                        />
                       </div>
                       {filteredDepts.length > 0 && (
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-1">القسم</label>
-                          <select
+                          <ModernSelect
                             value={assignment.department_id}
-                            onChange={(e) => updateDirAssignment(index, 'department_id', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="">-- اختر القسم (اختياري) --</option>
-                            {filteredDepts.map((dept) => (
-                              <option key={dept.id} value={dept.id}>
-                                {dept.name}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(v) => updateDirAssignment(index, 'department_id', v)}
+                            ariaLabel="القسم"
+                            placeholder="-- اختر القسم --"
+                            options={[
+                              { value: '', label: '-- اختر القسم (اختياري) --' },
+                              ...filteredDepts.map((dept) => ({ value: dept.id, label: dept.name })),
+                            ]}
+                          />
                         </div>
                       )}
                       <div className={filteredDepts.length > 0 ? 'col-span-2' : ''}>

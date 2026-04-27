@@ -741,16 +741,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                 />
               </div>
               {myDirectorates.length > 1 && (
-                <select
+                <ModernSelect
                   value={selectedDirectorateId}
-                  onChange={(e) => setSelectedDirectorateId(e.target.value)}
-                  className="px-3 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  <option value="all">جميع الإدارات</option>
-                  {myDirectorates.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
+                  onChange={setSelectedDirectorateId}
+                  ariaLabel="تصفية الإدارة"
+                  className="min-w-[200px]"
+                  options={[
+                    { value: 'all', label: 'جميع الإدارات' },
+                    ...myDirectorates.map(d => ({ value: d.id, label: d.name })),
+                  ]}
+                />
               )}
             </div>
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { percentageToScore5, percentageToRating } from '../../lib/scoring';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 import {
   FileX, ChevronDown, ChevronUp, Calendar, BarChart3, Users, TrendingUp,
 } from 'lucide-react';
@@ -157,30 +158,32 @@ export const MyCeoEvaluations: React.FC = () => {
           <Calendar className="h-5 w-5 text-ds-faint" />
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-ds-muted">السنة:</label>
-            <select
-              value={filterYear}
-              onChange={e => { setFilterYear(Number(e.target.value)); setFilterQuarter(0); }}
-              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value={0}>الكل</option>
-              {[...new Set(evaluations.map(e => e.year).filter(Boolean))]
-                .sort((a, b) => b - a)
-                .map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
+            <ModernSelect
+              value={String(filterYear)}
+              onChange={(v) => { setFilterYear(Number(v)); setFilterQuarter(0); }}
+              ariaLabel="السنة"
+              className="min-w-[140px]"
+              options={[
+                { value: '0', label: 'الكل' },
+                ...[...new Set(evaluations.map(e => e.year).filter(Boolean))]
+                  .sort((a, b) => b - a)
+                  .map(y => ({ value: String(y), label: String(y) })),
+              ]}
+            />
           </div>
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-ds-muted">الربع:</label>
-            <select
-              value={filterQuarter}
-              onChange={e => setFilterQuarter(Number(e.target.value))}
-              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            <ModernSelect
+              value={String(filterQuarter)}
+              onChange={(v) => setFilterQuarter(Number(v))}
+              ariaLabel="الربع"
               disabled={filterYear === 0}
-            >
-              <option value={0}>الكل</option>
-              {Object.entries(quarterLabels).map(([q, label]) => (
-                <option key={q} value={q}>{label}</option>
-              ))}
-            </select>
+              className="min-w-[260px]"
+              options={[
+                { value: '0', label: 'الكل' },
+                ...Object.entries(quarterLabels).map(([q, label]) => ({ value: q, label })),
+              ]}
+            />
           </div>
           {(filterYear !== 0 || filterQuarter !== 0) && (
             <button

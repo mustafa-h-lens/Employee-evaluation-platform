@@ -7,6 +7,7 @@ import {
   Calendar, MessageSquare, FileX,
 } from 'lucide-react';
 import { percentageToRating, percentageToScore5 } from '../../lib/scoring';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 const quarterLabels: Record<number, string> = {
   1: 'الربع الأول',
@@ -203,16 +204,16 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
       {/* Period Filter */}
       <div className="flex items-center gap-3 flex-wrap">
         <Calendar className="h-4 w-4 text-ds-faint" />
-        <select
+        <ModernSelect
           value={filterPeriod}
-          onChange={(e) => setFilterPeriod(e.target.value)}
-          className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-ds-surface"
-        >
-          <option value="">جميع الفترات</option>
-          {periods.map(p => (
-            <option key={p.id} value={p.id}>{quarterLabels[p.quarter]} {p.year}</option>
-          ))}
-        </select>
+          onChange={setFilterPeriod}
+          ariaLabel="تصفية بالفترة"
+          className="min-w-[280px]"
+          options={[
+            { value: '', label: 'جميع الفترات' },
+            ...periods.map(p => ({ value: p.id, label: `${quarterLabels[p.quarter]} ${p.year}` })),
+          ]}
+        />
         {filterPeriod && (
           <button
             onClick={() => setFilterPeriod('')}

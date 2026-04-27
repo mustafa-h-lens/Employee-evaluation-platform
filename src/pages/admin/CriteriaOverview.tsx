@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { ClipboardList, Building2, Scale, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface GeneralCriterion {
   id: string;
@@ -230,16 +231,16 @@ export const CriteriaOverview: React.FC = () => {
       <div className="flex items-center gap-3">
         <Filter className="h-5 w-5 text-ds-faint" />
         <label className="text-sm font-medium text-ds-muted">عرض المعايير الخاصة لـ:</label>
-        <select
+        <ModernSelect
           value={selectedDirId}
-          onChange={(e) => setSelectedDirId(e.target.value)}
-          className="px-4 py-2 border border-ds-border rounded-lg text-sm"
-        >
-          <option value="all">جميع الإدارات</option>
-          {directorates.map(dir => (
-            <option key={dir.id} value={dir.id}>{dir.name}</option>
-          ))}
-        </select>
+          onChange={setSelectedDirId}
+          ariaLabel="تصفية بالإدارة"
+          className="min-w-[260px]"
+          options={[
+            { value: 'all', label: 'جميع الإدارات' },
+            ...directorates.map(dir => ({ value: dir.id, label: dir.name })),
+          ]}
+        />
       </div>
 
       {/* Specific Criteria — per department for multi-dept directorates, per directorate otherwise */}

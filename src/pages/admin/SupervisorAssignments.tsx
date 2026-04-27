@@ -13,6 +13,7 @@ import {
   Trash2, CheckSquare, Square, Filter
 } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -668,29 +669,28 @@ export const SupervisorAssignments: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ds-muted mb-1">نوع المشرف</label>
-              <select
+              <ModernSelect
                 value={form.user_type}
-                onChange={(e) => handleUserTypeChange(e.target.value as 'employee' | 'director')}
-                className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              >
-                <option value="employee">موظف</option>
-                <option value="director">مدير إدارة</option>
-              </select>
+                onChange={(v) => handleUserTypeChange(v as 'employee' | 'director')}
+                ariaLabel="نوع المشرف"
+                options={[
+                  { value: 'employee', label: 'موظف' },
+                  { value: 'director', label: 'مدير إدارة' },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-ds-muted mb-1">اسم المشرف</label>
-              <select
+              <ModernSelect
                 value={form.user_id}
-                onChange={(e) => setForm(prev => ({ ...prev, user_id: e.target.value }))}
-                className="w-full px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              >
-                <option value="">اختر المشرف</option>
-                {filteredSupervisorUsers.map(u => (
-                  <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>
-                ))}
-              </select>
+                onChange={(v) => setForm(prev => ({ ...prev, user_id: v }))}
+                ariaLabel="اسم المشرف"
+                placeholder="اختر المشرف"
+                options={[
+                  { value: '', label: 'اختر المشرف' },
+                  ...filteredSupervisorUsers.map(u => ({ value: u.id, label: `${u.full_name} (${u.email})` })),
+                ]}
+              />
             </div>
           </div>
 
@@ -737,19 +737,17 @@ export const SupervisorAssignments: React.FC = () => {
                   className="w-full pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                 />
               </div>
-              <div className="relative">
-                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
-                <select
-                  value={empDeptFilter}
-                  onChange={(e) => setEmpDeptFilter(e.target.value)}
-                  className="pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm min-w-[180px]"
-                >
-                  <option value="">كل الإدارات</option>
-                  {departments.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
+              <ModernSelect
+                value={empDeptFilter}
+                onChange={setEmpDeptFilter}
+                icon={<Filter className="h-4 w-4" />}
+                ariaLabel="تصفية الإدارة"
+                className="min-w-[200px]"
+                options={[
+                  { value: '', label: 'كل الإدارات' },
+                  ...departments.map(d => ({ value: d.id, label: d.name })),
+                ]}
+              />
             </div>
 
             {/* Employee table */}
