@@ -129,13 +129,12 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
           </button>
           <div className="relative flex flex-col items-center text-center">
             <div
-              className="mb-3 shadow-lg"
+              className="mb-3"
               style={{
                 animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
                 borderRadius: '50%',
-                padding: '3px',
-                background: 'rgba(255,255,255,0.25)',
-                backdropFilter: 'blur(4px)',
+                lineHeight: 0,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
               }}
             >
               <UserAvatar
