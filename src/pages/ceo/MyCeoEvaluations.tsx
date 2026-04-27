@@ -139,21 +139,28 @@ export const MyCeoEvaluations: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقييماتي من الموظفين</h1>
-        <p className="text-gray-600 mt-2">تقييمات أداء الإدارة العليا من قبل الموظفين — بشكل مجهول</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>تقييماتي من الموظفين</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>تقييمات أداء الإدارة العليا من قبل الموظفين — بشكل مجهول</p>
       </div>
 
       {/* Filters */}
       <Card>
         <CardBody className="flex items-center gap-4 flex-wrap py-3">
-          <Calendar className="h-5 w-5 text-gray-400" />
+          <Calendar className="h-5 w-5 text-ds-faint" />
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">السنة:</label>
+            <label className="text-sm font-medium text-ds-muted">السنة:</label>
             <select
               value={filterYear}
               onChange={e => { setFilterYear(Number(e.target.value)); setFilterQuarter(0); }}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value={0}>الكل</option>
               {[...new Set(evaluations.map(e => e.year).filter(Boolean))]
@@ -162,11 +169,11 @@ export const MyCeoEvaluations: React.FC = () => {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">الربع:</label>
+            <label className="text-sm font-medium text-ds-muted">الربع:</label>
             <select
               value={filterQuarter}
               onChange={e => setFilterQuarter(Number(e.target.value))}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={filterYear === 0}
             >
               <option value={0}>الكل</option>
@@ -192,22 +199,22 @@ export const MyCeoEvaluations: React.FC = () => {
           <Card>
             <CardBody className="text-center py-4">
               <Users className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{filtered.length}</p>
-              <p className="text-sm text-gray-500">عدد التقييمات</p>
+              <p className="text-2xl font-bold text-ds-text">{filtered.length}</p>
+              <p className="text-sm text-ds-faint">عدد التقييمات</p>
             </CardBody>
           </Card>
           <Card>
             <CardBody className="text-center py-4">
               <TrendingUp className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{avgScore.toFixed(2)} / 5</p>
-              <p className="text-sm text-gray-500">متوسط الدرجة</p>
+              <p className="text-2xl font-bold text-ds-text">{avgScore.toFixed(2)} / 5</p>
+              <p className="text-sm text-ds-faint">متوسط الدرجة</p>
             </CardBody>
           </Card>
           <Card>
             <CardBody className="text-center py-4">
               <BarChart3 className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{avgPercentage.toFixed(1)}%</p>
-              <p className="text-sm text-gray-500">متوسط النسبة</p>
+              <p className="text-2xl font-bold text-ds-text">{avgPercentage.toFixed(1)}%</p>
+              <p className="text-sm text-ds-faint">متوسط النسبة</p>
             </CardBody>
           </Card>
           <Card>
@@ -215,12 +222,12 @@ export const MyCeoEvaluations: React.FC = () => {
               <Badge variant={ratingVariant(avgRating)} size="sm">
                 {avgRating}
               </Badge>
-              <p className="text-sm text-gray-500 mt-2">التقييم العام</p>
+              <p className="text-sm text-ds-faint mt-2">التقييم العام</p>
               <div className="mt-2 space-y-1">
                 {Object.entries(ratingDistribution).map(([rating, count]) => (
                   <div key={rating} className="flex items-center justify-between text-xs px-2">
                     <Badge variant={ratingVariant(rating)} size="sm">{rating}</Badge>
-                    <span className="text-gray-600">{count}</span>
+                    <span className="text-ds-muted">{count}</span>
                   </div>
                 ))}
               </div>
@@ -234,7 +241,7 @@ export const MyCeoEvaluations: React.FC = () => {
         <Card>
           <CardBody className="text-center py-16">
             <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">
+            <p className="text-ds-faint text-lg">
               {evaluations.length === 0
                 ? 'لا توجد تقييمات حالياً'
                 : 'لا توجد تقييمات للفترة المحددة'}
@@ -253,18 +260,18 @@ export const MyCeoEvaluations: React.FC = () => {
                   onClick={() => toggleExpand(ev.id)}
                   className="w-full text-right"
                 >
-                  <div className="px-6 py-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                  <div className="px-6 py-5 flex items-center justify-between hover:bg-ds-bg transition-colors">
                     <div className="flex items-center gap-3">
                       <Badge variant={ratingVariant(rating)}>
                         {rating}
                       </Badge>
                       {expandedId === ev.id
-                        ? <ChevronUp className="h-5 w-5 text-gray-400" />
-                        : <ChevronDown className="h-5 w-5 text-gray-400" />}
+                        ? <ChevronUp className="h-5 w-5 text-ds-faint" />
+                        : <ChevronDown className="h-5 w-5 text-ds-faint" />}
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <span className="font-bold text-lg text-gray-900">
+                      <span className="font-bold text-lg text-ds-text">
                         {ev.percentage?.toFixed(1)}%
                       </span>
                       <span className="text-gray-300">|</span>
@@ -272,11 +279,11 @@ export const MyCeoEvaluations: React.FC = () => {
                         {score5.toFixed(2)} / 5
                       </span>
                       <span className="text-gray-300">|</span>
-                      <span className="text-gray-700 font-semibold">
+                      <span className="text-ds-muted font-semibold">
                         {quarterLabels[ev.quarter]} - {ev.year}
                       </span>
                       <span className="text-gray-300">|</span>
-                      <span className="text-gray-600 font-medium">
+                      <span className="text-ds-muted font-medium">
                         تقييم #{index + 1}
                       </span>
                     </div>
@@ -284,7 +291,7 @@ export const MyCeoEvaluations: React.FC = () => {
                 </button>
 
                 {expandedId === ev.id && (
-                  <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 space-y-4">
+                  <div className="border-t border-ds-border px-6 py-4 bg-ds-bg space-y-4">
                     {scoresLoading === ev.id ? (
                       <div className="flex items-center justify-center py-6">
                         <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -299,13 +306,13 @@ export const MyCeoEvaluations: React.FC = () => {
                               {scores[ev.id].map(score => (
                                 <div
                                   key={score.id}
-                                  className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200"
+                                  className="flex items-center justify-between bg-ds-surface rounded-lg p-3 border border-ds-border"
                                 >
                                   <div>
-                                    <p className="font-medium text-gray-900">
+                                    <p className="font-medium text-ds-text">
                                       {score.criterion?.title || '—'}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-ds-faint">
                                       الوزن: {score.criterion?.weight || 0}%
                                     </p>
                                   </div>
@@ -314,7 +321,7 @@ export const MyCeoEvaluations: React.FC = () => {
                                       {score.score_1_to_5} / 5
                                     </p>
                                     {score.weighted_result != null && (
-                                      <p className="text-xs text-gray-500">المرجحة: {score.weighted_result.toFixed(1)}</p>
+                                      <p className="text-xs text-ds-faint">المرجحة: {score.weighted_result.toFixed(1)}</p>
                                     )}
                                   </div>
                                 </div>
@@ -322,7 +329,7 @@ export const MyCeoEvaluations: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-center text-gray-400 py-4">
+                          <p className="text-center text-ds-faint py-4">
                             لا توجد تفاصيل درجات لهذا التقييم
                           </p>
                         )}

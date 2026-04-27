@@ -285,25 +285,32 @@ export const DirectorMyEvaluations: React.FC = () => {
         </div>
       )}
 
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقييماتي</h1>
-        <p className="text-gray-600 mt-2">عرض جميع التقييمات الخاصة بك من الإدارة العليا</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-purple-grad)',
+          border: '1px solid var(--sc-purple-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>تقييماتي</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>عرض جميع التقييمات الخاصة بك من الإدارة العليا</p>
       </div>
 
       {/* Date Filter */}
       <Card>
         <CardBody className="flex items-center gap-4 flex-wrap py-3">
-          <Calendar className="h-5 w-5 text-gray-400" />
+          <Calendar className="h-5 w-5 text-ds-faint" />
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">السنة:</label>
-            <select value={filterYear} onChange={e => { setFilterYear(Number(e.target.value)); setFilterMonth(0); }} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label className="text-sm font-medium text-ds-muted">السنة:</label>
+            <select value={filterYear} onChange={e => { setFilterYear(Number(e.target.value)); setFilterMonth(0); }} className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value={0}>الكل</option>
               {[...new Set(combinedEvaluations.map(c => c.period?.year).filter(Boolean))].sort((a, b) => (b as number) - (a as number)).map(y => <option key={y} value={y!}>{y}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">الشهر:</label>
-            <select value={filterMonth} onChange={e => setFilterMonth(Number(e.target.value))} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled={filterYear === 0}>
+            <label className="text-sm font-medium text-ds-muted">الشهر:</label>
+            <select value={filterMonth} onChange={e => setFilterMonth(Number(e.target.value))} className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled={filterYear === 0}>
               <option value={0}>الكل</option>
               {Object.entries(monthLabels).map(([m, label]) => <option key={m} value={m}>{label}</option>)}
             </select>
@@ -318,7 +325,7 @@ export const DirectorMyEvaluations: React.FC = () => {
         <Card>
           <CardBody className="text-center py-16">
             <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">{combinedEvaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
+            <p className="text-ds-faint text-lg">{combinedEvaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
           </CardBody>
         </Card>
       ) : (
@@ -334,19 +341,19 @@ export const DirectorMyEvaluations: React.FC = () => {
                   onClick={() => toggleExpand(combined)}
                   className="w-full text-right"
                 >
-                  <div className="px-6 py-5 hover:bg-gray-50 transition-colors">
+                  <div className="px-6 py-5 hover:bg-ds-bg transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Badge variant={statusVariant(combined.status)}>
                           {statusLabel(combined.status, !!combined.director_note)}
                         </Badge>
                         {isExpanded
-                          ? <ChevronUp className="h-5 w-5 text-gray-400" />
-                          : <ChevronDown className="h-5 w-5 text-gray-400" />}
+                          ? <ChevronUp className="h-5 w-5 text-ds-faint" />
+                          : <ChevronDown className="h-5 w-5 text-ds-faint" />}
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <span className="font-bold text-lg text-gray-900">
+                        <span className="font-bold text-lg text-ds-text">
                           {combined.avg_percentage.toFixed(1)}%
                         </span>
                         <span className="text-gray-300">|</span>
@@ -358,12 +365,12 @@ export const DirectorMyEvaluations: React.FC = () => {
                           {combined.avg_rating}
                         </Badge>
                         <span className="text-gray-300">|</span>
-                        <span className="text-gray-600 flex items-center gap-1">
+                        <span className="text-ds-muted flex items-center gap-1">
                           <Award className="h-4 w-4 text-amber-500" />
                           الإدارة العليا
                         </span>
                         <span className="text-gray-300">|</span>
-                        <span className="text-gray-700 font-semibold">
+                        <span className="text-ds-muted font-semibold">
                           {combined.period
                             ? `${monthLabels[combined.period.month]} - ${combined.period.year}`
                             : '—'}
@@ -372,14 +379,14 @@ export const DirectorMyEvaluations: React.FC = () => {
                     </div>
 
                     {/* Progress bar */}
-                    <div className="mt-3 w-full bg-gray-100 rounded-full h-2">
+                    <div className="mt-3 w-full bg-ds-overlay rounded-full h-2">
                       <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(scorePercent, 100)}%` }} />
                     </div>
                   </div>
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-gray-200 px-6 py-5 bg-gray-50 space-y-5">
+                  <div className="border-t border-ds-border px-6 py-5 bg-ds-bg space-y-5">
                     {scoresLoading === combined.key ? (
                       <div className="flex items-center justify-center py-6">
                         <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -388,25 +395,25 @@ export const DirectorMyEvaluations: React.FC = () => {
                       <>
                         {/* Summary Cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
+                          <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <TrendingUp className="h-5 w-5 text-blue-500 mx-auto mb-1" />
-                            <p className="text-xs text-gray-500">النسبة المئوية</p>
-                            <p className="text-lg font-bold text-gray-900">{combined.avg_percentage.toFixed(1)}%</p>
+                            <p className="text-xs text-ds-faint">النسبة المئوية</p>
+                            <p className="text-lg font-bold text-ds-text">{combined.avg_percentage.toFixed(1)}%</p>
                           </div>
-                          <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
+                          <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <BarChart3 className="h-5 w-5 text-emerald-500 mx-auto mb-1" />
-                            <p className="text-xs text-gray-500">الدرجة من 5</p>
-                            <p className="text-lg font-bold text-gray-900">{combined.avg_score_5.toFixed(2)}</p>
+                            <p className="text-xs text-ds-faint">الدرجة من 5</p>
+                            <p className="text-lg font-bold text-ds-text">{combined.avg_score_5.toFixed(2)}</p>
                           </div>
-                          <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
+                          <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <Star className="h-5 w-5 text-amber-500 mx-auto mb-1" />
-                            <p className="text-xs text-gray-500">التقدير العام</p>
+                            <p className="text-xs text-ds-faint">التقدير العام</p>
                             <Badge variant={ratingVariant(combined.avg_rating)} size="sm">{combined.avg_rating}</Badge>
                           </div>
-                          <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
+                          <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <User className="h-5 w-5 text-indigo-500 mx-auto mb-1" />
-                            <p className="text-xs text-gray-500">جهة التقييم</p>
-                            <p className="text-sm font-semibold text-gray-900">الإدارة العليا</p>
+                            <p className="text-xs text-ds-faint">جهة التقييم</p>
+                            <p className="text-sm font-semibold text-ds-text">الإدارة العليا</p>
                           </div>
                         </div>
 
@@ -424,18 +431,18 @@ export const DirectorMyEvaluations: React.FC = () => {
                                   const pct = (score.avg_score / 5) * 100;
                                   const color = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-blue-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
                                   return (
-                                    <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
+                                    <div key={idx} className="bg-ds-surface rounded-lg p-3 border border-ds-border">
                                       <div className="flex items-center justify-between mb-2">
                                         <div>
-                                          <p className="font-medium text-gray-900">{score.criterion_title}</p>
-                                          <p className="text-xs text-gray-500">الوزن: {score.criterion_weight}%</p>
+                                          <p className="font-medium text-ds-text">{score.criterion_title}</p>
+                                          <p className="text-xs text-ds-faint">الوزن: {score.criterion_weight}%</p>
                                         </div>
                                         <div className="text-right">
                                           <p className="font-semibold text-blue-600">{score.avg_score.toFixed(2)} / 5</p>
-                                          <p className="text-xs text-gray-500">المرجحة: {score.avg_weighted.toFixed(1)}</p>
+                                          <p className="text-xs text-ds-faint">المرجحة: {score.avg_weighted.toFixed(1)}</p>
                                         </div>
                                       </div>
-                                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                      <div className="w-full bg-ds-overlay rounded-full h-1.5">
                                         <div className={`h-1.5 rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                                       </div>
                                     </div>
@@ -459,18 +466,18 @@ export const DirectorMyEvaluations: React.FC = () => {
                                   const pct = (score.avg_score / 5) * 100;
                                   const color = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-blue-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
                                   return (
-                                    <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
+                                    <div key={idx} className="bg-ds-surface rounded-lg p-3 border border-ds-border">
                                       <div className="flex items-center justify-between mb-2">
                                         <div>
-                                          <p className="font-medium text-gray-900">{score.criterion_title}</p>
-                                          <p className="text-xs text-gray-500">الوزن: {score.criterion_weight}%</p>
+                                          <p className="font-medium text-ds-text">{score.criterion_title}</p>
+                                          <p className="text-xs text-ds-faint">الوزن: {score.criterion_weight}%</p>
                                         </div>
                                         <div className="text-right">
                                           <p className="font-semibold text-emerald-600">{score.avg_score.toFixed(2)} / 5</p>
-                                          <p className="text-xs text-gray-500">المرجحة: {score.avg_weighted.toFixed(1)}</p>
+                                          <p className="text-xs text-ds-faint">المرجحة: {score.avg_weighted.toFixed(1)}</p>
                                         </div>
                                       </div>
-                                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                      <div className="w-full bg-ds-overlay rounded-full h-1.5">
                                         <div className={`h-1.5 rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                                       </div>
                                     </div>
@@ -481,7 +488,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                         )}
 
                         {(!scores[combined.key] || scores[combined.key].length === 0) && (
-                          <p className="text-center text-gray-400 py-4">لا توجد تفاصيل درجات لهذا التقييم</p>
+                          <p className="text-center text-ds-faint py-4">لا توجد تفاصيل درجات لهذا التقييم</p>
                         )}
 
                         {/* Evaluator Notes */}
@@ -502,7 +509,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                               ردك على التقييم
                             </h4>
                             {combined.director_note ? (
-                              <p className="text-sm text-gray-800 leading-relaxed bg-white rounded-lg p-3 border border-teal-200">{combined.director_note}</p>
+                              <p className="text-sm text-ds-text leading-relaxed bg-ds-surface rounded-lg p-3 border border-teal-200">{combined.director_note}</p>
                             ) : (
                               <>
                                 <TextArea

@@ -763,13 +763,20 @@ export const PendingApprovals: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">اعتمادية التقييمات</h1>
-        <p className="text-gray-600 mt-2">مراجعة واعتماد جميع التقييمات</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-purple-grad)',
+          border: '1px solid var(--sc-purple-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>اعتمادية التقييمات</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>مراجعة واعتماد جميع التقييمات</p>
       </div>
 
       {/* Main tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-ds-border">
         {([
           { key: 'ceo' as const, label: 'تقييمات الإدارة العليا', icon: <Crown className="h-4 w-4" />, color: 'amber' },
           { key: 'directors' as const, label: 'تقييمات مدراء الإدارات', icon: <Users className="h-4 w-4" />, color: 'blue' },
@@ -781,7 +788,7 @@ export const PendingApprovals: React.FC = () => {
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
               mainTab === tab.key
                 ? tab.color === 'amber' ? 'border-amber-600 text-amber-600' : tab.color === 'blue' ? 'border-blue-600 text-blue-600' : 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-ds-faint hover:text-ds-muted'
             }`}
           >
             {tab.icon}
@@ -791,7 +798,7 @@ export const PendingApprovals: React.FC = () => {
       </div>
 
       {/* Status filter tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-0">
+      <div className="flex gap-2 border-b border-ds-border pb-0">
         {filterTabs.map(tab => (
           <button
             key={tab.key}
@@ -799,7 +806,7 @@ export const PendingApprovals: React.FC = () => {
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeFilter === tab.key
                 ? 'border-blue-600 text-blue-600 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                : 'border-transparent text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
             }`}
           >
             {tab.icon}
@@ -812,7 +819,7 @@ export const PendingApprovals: React.FC = () => {
       {mainTab === 'directors' && (
         empLoading ? (
           <div className="flex items-center justify-center h-48">
-            <div className="text-gray-500">جاري التحميل...</div>
+            <div className="text-ds-faint">جاري التحميل...</div>
           </div>
         ) : (
           <Card>
@@ -820,7 +827,7 @@ export const PendingApprovals: React.FC = () => {
               {combinedEmployeeEvals.length === 0 ? (
                 <EmptyState
                   message={activeFilter === 'pending' ? 'لا توجد تقييمات بانتظار المراجعة' : 'لا توجد تقييمات'}
-                  icon={<FileText className="h-12 w-12 text-gray-400" />}
+                  icon={<FileText className="h-12 w-12 text-ds-faint" />}
                 />
               ) : (
                 <Table>
@@ -847,25 +854,25 @@ export const PendingApprovals: React.FC = () => {
                               {ev.employee?.full_name?.charAt(0) || '?'}
                             </div>
                             <div>
-                              <span className="font-medium text-gray-900">{ev.employee?.full_name}</span>
-                              <p className="text-xs text-gray-500">{ev.employee?.job_title}</p>
+                              <span className="font-medium text-ds-text">{ev.employee?.full_name}</span>
+                              <p className="text-xs text-ds-faint">{ev.employee?.job_title}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-700">{ev.department?.name || '-'}</span>
+                          <span className="text-sm text-ds-muted">{ev.department?.name || '-'}</span>
                         </TableCell>
                         <TableCell>
-                          <span className={`text-sm ${isCombined ? 'font-semibold text-indigo-700' : 'text-gray-700'}`}>{group.manager_label}</span>
+                          <span className={`text-sm ${isCombined ? 'font-semibold text-indigo-700' : 'text-ds-muted'}`}>{group.manager_label}</span>
                         </TableCell>
                         <TableCell>
                           {ev.period && (
-                            <span className="text-sm text-gray-700">{monthLabels[ev.period.month]} {ev.period.year}</span>
+                            <span className="text-sm text-ds-muted">{monthLabels[ev.period.month]} {ev.period.year}</span>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{group.percentage?.toFixed(0)}%</span>
+                            <span className="font-bold text-ds-text">{group.percentage?.toFixed(0)}%</span>
                             {group.general_rating && (
                               <Badge variant={getRatingVariant(group.general_rating)} size="sm">
                                 {group.general_rating}
@@ -921,7 +928,7 @@ export const PendingApprovals: React.FC = () => {
       {mainTab === 'ceo' && (
         dirLoading ? (
           <div className="flex items-center justify-center h-48">
-            <div className="text-gray-500">جاري التحميل...</div>
+            <div className="text-ds-faint">جاري التحميل...</div>
           </div>
         ) : (
           <Card>
@@ -929,7 +936,7 @@ export const PendingApprovals: React.FC = () => {
               {combinedDirectorEvals.length === 0 ? (
                 <EmptyState
                   message={activeFilter === 'pending' ? 'لا توجد تقييمات بانتظار الاعتماد' : 'لا توجد تقييمات'}
-                  icon={<Crown className="h-12 w-12 text-gray-400" />}
+                  icon={<Crown className="h-12 w-12 text-ds-faint" />}
                 />
               ) : (
                 <Table>
@@ -952,26 +959,26 @@ export const PendingApprovals: React.FC = () => {
                               {combined.director?.full_name?.charAt(0) || '?'}
                             </div>
                             <div>
-                              <span className="font-medium text-gray-900">{combined.director?.full_name}</span>
-                              <p className="text-xs text-gray-500">{combined.director?.job_title}</p>
+                              <span className="font-medium text-ds-text">{combined.director?.full_name}</span>
+                              <p className="text-xs text-ds-faint">{combined.director?.job_title}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-0.5">
                             {combined.evals.map(ev => (
-                              <span key={ev.id} className="text-sm text-gray-700">{ev.evaluator?.full_name} ({ev.percentage?.toFixed(0)}%)</span>
+                              <span key={ev.id} className="text-sm text-ds-muted">{ev.evaluator?.full_name} ({ev.percentage?.toFixed(0)}%)</span>
                             ))}
                           </div>
                         </TableCell>
                         <TableCell>
                           {combined.period && (
-                            <span className="text-sm text-gray-700">{monthLabels[combined.period.month]} {combined.period.year}</span>
+                            <span className="text-sm text-ds-muted">{monthLabels[combined.period.month]} {combined.period.year}</span>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{combined.avg_percentage?.toFixed(0)}%</span>
+                            <span className="font-bold text-ds-text">{combined.avg_percentage?.toFixed(0)}%</span>
                             {combined.avg_rating && (
                               <Badge variant={getRatingVariant(combined.avg_rating)} size="sm">
                                 {combined.avg_rating}
@@ -1026,7 +1033,7 @@ export const PendingApprovals: React.FC = () => {
       {mainTab === 'supervisors' && (
         supLoading ? (
           <div className="flex items-center justify-center h-48">
-            <div className="text-gray-500">جاري التحميل...</div>
+            <div className="text-ds-faint">جاري التحميل...</div>
           </div>
         ) : (
           <Card>
@@ -1034,7 +1041,7 @@ export const PendingApprovals: React.FC = () => {
               {supervisorEvals.length === 0 ? (
                 <EmptyState
                   message={activeFilter === 'pending' ? 'لا توجد تقييمات بانتظار المراجعة' : 'لا توجد تقييمات'}
-                  icon={<Shield className="h-12 w-12 text-gray-400" />}
+                  icon={<Shield className="h-12 w-12 text-ds-faint" />}
                 />
               ) : (
                 <Table>
@@ -1057,22 +1064,22 @@ export const PendingApprovals: React.FC = () => {
                               {ev.employee?.full_name?.charAt(0) || '?'}
                             </div>
                             <div>
-                              <span className="font-medium text-gray-900">{ev.employee?.full_name}</span>
-                              <p className="text-xs text-gray-500">{ev.employee?.job_title}</p>
+                              <span className="font-medium text-ds-text">{ev.employee?.full_name}</span>
+                              <p className="text-xs text-ds-faint">{ev.employee?.job_title}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-700">{ev.supervisor?.full_name || '-'}</span>
+                          <span className="text-sm text-ds-muted">{ev.supervisor?.full_name || '-'}</span>
                         </TableCell>
                         <TableCell>
                           {ev.period && (
-                            <span className="text-sm text-gray-700">{monthLabels[ev.period.month]} {ev.period.year}</span>
+                            <span className="text-sm text-ds-muted">{monthLabels[ev.period.month]} {ev.period.year}</span>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{ev.percentage?.toFixed(0)}%</span>
+                            <span className="font-bold text-ds-text">{ev.percentage?.toFixed(0)}%</span>
                             {ev.general_rating && (
                               <Badge variant={getRatingVariant(ev.general_rating)} size="sm">
                                 {ev.general_rating}
@@ -1142,35 +1149,35 @@ export const PendingApprovals: React.FC = () => {
       >
         {detailLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">جاري التحميل...</div>
+            <div className="text-ds-faint">جاري التحميل...</div>
           </div>
         ) : (detailEval || detailDirEval || detailSupEval || detailCombined) ? (
           <div className="space-y-6">
             {/* Header info */}
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-ds-bg rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-gray-900 text-lg">
+                  <p className="font-bold text-ds-text text-lg">
                     {detailEval?.employee?.full_name || detailDirEval?.director?.full_name || detailCombined?.director?.full_name || detailSupEval?.employee?.full_name}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-ds-muted">
                     {detailEval?.employee?.job_title || detailDirEval?.director?.job_title || detailCombined?.director?.job_title || detailSupEval?.employee?.job_title}
                   </p>
                   {detailCombined ? (
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-ds-faint mt-1">
                       {detailCombined.evals.map(ev => (
                         <p key={ev.id}>المقيّم: {ev.evaluator?.full_name} — {ev.percentage?.toFixed(0)}%</p>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-ds-faint mt-1">
                       المقيّم: {detailEval?.manager?.full_name || detailDirEval?.evaluator?.full_name || detailSupEval?.supervisor?.full_name}
                     </p>
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">فترة التقييم</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-sm text-ds-faint">فترة التقييم</p>
+                  <p className="font-medium text-ds-text">
                     {(() => {
                       const period = detailEval?.period || detailDirEval?.period || detailCombined?.period || detailSupEval?.period;
                       return period ? `${monthLabels[period.month]} ${period.year}` : '';
@@ -1210,7 +1217,7 @@ export const PendingApprovals: React.FC = () => {
                   return rating ? (
                     <Badge variant={getRatingVariant(rating)}>{rating}</Badge>
                   ) : (
-                    <span className="text-gray-400 text-sm">-</span>
+                    <span className="text-ds-faint text-sm">-</span>
                   );
                 })()}
               </div>
@@ -1233,15 +1240,15 @@ export const PendingApprovals: React.FC = () => {
                         <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-ds-border-subtle">
                       {generalScores.map((s, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">
-                            <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                            <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                            <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                            <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                           </td>
-                          <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                          <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                          <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                          <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                           <td className="px-4 py-2 font-bold text-blue-600">{s.weighted_result?.toFixed(1)}</td>
                         </tr>
                       ))}
@@ -1268,15 +1275,15 @@ export const PendingApprovals: React.FC = () => {
                         <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-ds-border-subtle">
                       {specificScores.map((s, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">
-                            <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                            <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                            <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                            <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                           </td>
-                          <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                          <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                          <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                          <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                           <td className="px-4 py-2 font-bold text-emerald-600">{s.weighted_result?.toFixed(1)}</td>
                         </tr>
                       ))}
@@ -1293,7 +1300,7 @@ export const PendingApprovals: React.FC = () => {
                   {detailCombined.evals.filter(ev => ev.evaluator_note).map(ev => (
                     <div key={ev.id} className="bg-blue-50 rounded-lg p-4">
                       <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات {ev.evaluator?.full_name}</p>
-                      <p className="text-sm text-gray-800">{ev.evaluator_note}</p>
+                      <p className="text-sm text-ds-text">{ev.evaluator_note}</p>
                     </div>
                   ))}
                 </div>
@@ -1304,14 +1311,14 @@ export const PendingApprovals: React.FC = () => {
                 {detailEmpCombined.notes.map((n, i) => (
                   <div key={i} className="bg-blue-50 rounded-lg p-4">
                     <p className="text-xs font-semibold text-blue-700 mb-1">{n.name}</p>
-                    <p className="text-sm text-gray-800">{n.note}</p>
+                    <p className="text-sm text-ds-text">{n.note}</p>
                   </div>
                 ))}
               </div>
             ) : (detailEval?.manager_note || detailDirEval?.evaluator_note || detailSupEval?.supervisor_note) ? (
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
-                <p className="text-sm text-gray-800">{detailEval?.manager_note || detailDirEval?.evaluator_note || detailSupEval?.supervisor_note}</p>
+                <p className="text-sm text-ds-text">{detailEval?.manager_note || detailDirEval?.evaluator_note || detailSupEval?.supervisor_note}</p>
               </div>
             ) : null}
 
@@ -1320,7 +1327,7 @@ export const PendingApprovals: React.FC = () => {
               detailCombined.evals.some(ev => ev.director_note) && (
                 <div className="bg-teal-50 rounded-lg p-4">
                   <p className="text-xs font-medium text-teal-700 mb-1">رد المقيَّم على التقييم</p>
-                  <p className="text-sm text-gray-800">{detailCombined.evals.find(ev => ev.director_note)?.director_note}</p>
+                  <p className="text-sm text-ds-text">{detailCombined.evals.find(ev => ev.director_note)?.director_note}</p>
                 </div>
               )
             ) : (detailEval?.employee_note || detailDirEval?.director_note || detailSupEval?.employee_note) ? (
@@ -1328,7 +1335,7 @@ export const PendingApprovals: React.FC = () => {
                 <p className="text-xs font-medium text-teal-700 mb-1">
                   {detailDirEval ? 'رد المقيَّم على التقييم' : 'رد الموظف على التقييم'}
                 </p>
-                <p className="text-sm text-gray-800">{detailEval?.employee_note || detailDirEval?.director_note || detailSupEval?.employee_note}</p>
+                <p className="text-sm text-ds-text">{detailEval?.employee_note || detailDirEval?.director_note || detailSupEval?.employee_note}</p>
               </div>
             ) : null}
 
@@ -1337,19 +1344,19 @@ export const PendingApprovals: React.FC = () => {
               detailCombined.evals.some(ev => ev.ceo_comment) && (
                 <div className="bg-red-50 rounded-lg p-4">
                   <p className="text-xs font-medium text-red-700 mb-1">سبب الرفض السابق</p>
-                  <p className="text-sm text-gray-800">{detailCombined.evals.find(ev => ev.ceo_comment)?.ceo_comment}</p>
+                  <p className="text-sm text-ds-text">{detailCombined.evals.find(ev => ev.ceo_comment)?.ceo_comment}</p>
                 </div>
               )
             ) : (detailEval?.ceo_comment || detailDirEval?.ceo_comment) ? (
               <div className="bg-red-50 rounded-lg p-4">
                 <p className="text-xs font-medium text-red-700 mb-1">سبب الرفض السابق</p>
-                <p className="text-sm text-gray-800">{detailEval?.ceo_comment || detailDirEval?.ceo_comment}</p>
+                <p className="text-sm text-ds-text">{detailEval?.ceo_comment || detailDirEval?.ceo_comment}</p>
               </div>
             ) : null}
 
             {/* Action buttons inside modal */}
             {isPendingApproval && (
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <div className="flex gap-3 pt-4 border-t border-ds-border">
                 <Button
                   onClick={() => detailCombined ? handleApproveCombined(detailCombined) : handleApprove(currentDetailId, currentDetailType)}
                   loading={actionLoading}
@@ -1389,7 +1396,7 @@ export const PendingApprovals: React.FC = () => {
         size="md"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ds-muted">
             يرجى كتابة سبب الرفض ليتمكن المقيّم من تعديل التقييم وإعادة إرساله.
           </p>
 
@@ -1403,7 +1410,7 @@ export const PendingApprovals: React.FC = () => {
                 {rejectEvaluators.map(ev => (
                   <label
                     key={ev.id}
-                    className="flex items-center gap-3 bg-white border border-amber-200 rounded-lg px-3 py-2.5 cursor-pointer hover:border-amber-300 transition-colors"
+                    className="flex items-center gap-3 bg-ds-surface border border-amber-200 rounded-lg px-3 py-2.5 cursor-pointer hover:border-amber-300 transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -1411,9 +1418,9 @@ export const PendingApprovals: React.FC = () => {
                       onChange={(e) => setRejectEvaluators(prev =>
                         prev.map(p => p.id === ev.id ? { ...p, selected: e.target.checked } : p)
                       )}
-                      className="h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                      className="h-4 w-4 text-red-600 rounded border-ds-border focus:ring-red-500"
                     />
-                    <span className="text-sm text-gray-800 font-medium">{ev.name}</span>
+                    <span className="text-sm text-ds-text font-medium">{ev.name}</span>
                   </label>
                 ))}
               </div>

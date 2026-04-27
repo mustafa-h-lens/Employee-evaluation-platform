@@ -68,99 +68,75 @@ export const CeoDashboard: React.FC = () => {
   };
 
   const statCards = [
-    {
-      title: 'عدد مديري الإدارات',
-      value: stats.directorsCount,
-      icon: <UserCog className="h-8 w-8" />,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
-    },
-    {
-      title: 'عدد الإدارات',
-      value: stats.directoratesCount,
-      icon: <Building2 className="h-8 w-8" />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      title: 'التقييمات المكتملة',
-      value: stats.completedEvaluations,
-      icon: <FileCheck className="h-8 w-8" />,
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50'
-    },
-    {
-      title: 'التقييمات المعلقة',
-      value: stats.pendingEvaluations,
-      icon: <FileClock className="h-8 w-8" />,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50'
-    },
-    {
-      title: 'بانتظار الموافقة',
-      value: stats.pendingApprovals,
-      icon: <ClipboardCheck className="h-8 w-8" />,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    }
+    { title: 'عدد مديري الإدارات', value: stats.directorsCount,       icon: <UserCog className="h-5 w-5" />,        scClass: 'sc-purple' },
+    { title: 'عدد الإدارات',        value: stats.directoratesCount,    icon: <Building2 className="h-5 w-5" />,      scClass: 'sc-blue' },
+    { title: 'التقييمات المكتملة',  value: stats.completedEvaluations, icon: <FileCheck className="h-5 w-5" />,      scClass: 'sc-green' },
+    { title: 'التقييمات المعلقة',   value: stats.pendingEvaluations,   icon: <FileClock className="h-5 w-5" />,      scClass: 'sc-amber' },
+    { title: 'بانتظار الموافقة',    value: stats.pendingApprovals,     icon: <ClipboardCheck className="h-5 w-5" />, scClass: 'sc-amber' }
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">جاري التحميل...</div>
+        <div className="text-ds-faint">جاري التحميل...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
-          <Crown className="h-8 w-8" />
+      <div
+        className="rounded-ds-xl p-8 flex items-center gap-4"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <div
+          className="p-3 rounded-xl flex items-center justify-center"
+          style={{
+            background: 'var(--sc-amber-icon-bg)',
+            border: '1px solid var(--sc-amber-icon-b)',
+            color: 'var(--sc-amber-icon-c)',
+          }}
+        >
+          <Crown className="h-7 w-7" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">لوحة تحكم الإدارة العليا</h1>
-          <p className="text-gray-600 mt-1">نظرة عامة على تقييمات مديري الإدارات</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>لوحة تحكم الإدارة العليا</h1>
+          <p className="mt-1" style={{ color: 'var(--sc-amber-label)' }}>نظرة عامة على تقييمات مديري الإدارات</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat, index) => (
-          <Card key={index}>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-                <div className={`${stat.bgColor} ${stat.color} p-3 rounded-xl`}>
-                  {stat.icon}
-                </div>
+          <div key={index} className={`stat-card ${stat.scClass}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <div className="stat-sub">{stat.title}</div>
+                <div className="stat-val">{stat.value}</div>
               </div>
-            </CardBody>
-          </Card>
+              <div className="stat-icon-box">{stat.icon}</div>
+            </div>
+          </div>
         ))}
 
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">فترة التقييم الحالية</p>
-                <p className="text-lg font-bold text-gray-900">{stats.activePeriod}</p>
-              </div>
-              <div className="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
-                <Calendar className="h-8 w-8" />
-              </div>
+        <div className="stat-card sc-purple">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="stat-sub">فترة التقييم الحالية</div>
+              <div className="stat-val" style={{ fontSize: '18px', letterSpacing: 0 }}>{stats.activePeriod}</div>
             </div>
-          </CardBody>
-        </Card>
+            <div className="stat-icon-box"><Calendar className="h-5 w-5" /></div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">تقييمات المديرين الأخيرة</h2>
+            <h2 className="text-lg font-semibold text-ds-text">تقييمات المديرين الأخيرة</h2>
           </CardHeader>
           <CardBody>
             <RecentDirectorEvaluations />
@@ -169,7 +145,7 @@ export const CeoDashboard: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">إحصائيات أداء المديرين</h2>
+            <h2 className="text-lg font-semibold text-ds-text">إحصائيات أداء المديرين</h2>
           </CardHeader>
           <CardBody>
             <DirectorPerformanceStats />
@@ -223,17 +199,17 @@ const RecentDirectorEvaluations: React.FC = () => {
   };
 
   if (evaluations.length === 0) {
-    return <p className="text-gray-500 text-center py-4">لا توجد تقييمات حديثة</p>;
+    return <p className="text-ds-faint text-center py-4">لا توجد تقييمات حديثة</p>;
   }
 
   return (
     <div className="space-y-3">
       {evaluations.map((evaluation) => (
-        <div key={evaluation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div key={evaluation.id} className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
           <div className="flex-1">
-            <p className="font-medium text-gray-900">{evaluation.director?.full_name}</p>
+            <p className="font-medium text-ds-text">{evaluation.director?.full_name}</p>
             {evaluation.percentage > 0 && (
-              <p className="text-sm text-gray-600">{evaluation.percentage}% - {evaluation.general_rating}</p>
+              <p className="text-sm text-ds-muted">{evaluation.percentage}% - {evaluation.general_rating}</p>
             )}
           </div>
           <Badge variant={getStatusVariant(evaluation.status)}>
@@ -283,7 +259,7 @@ const DirectorPerformanceStats: React.FC = () => {
   const total = stats.reduce((sum, s) => sum + s.count, 0);
 
   if (total === 0) {
-    return <p className="text-gray-500 text-center py-4">لا توجد بيانات متاحة</p>;
+    return <p className="text-ds-faint text-center py-4">لا توجد بيانات متاحة</p>;
   }
 
   return (
@@ -291,13 +267,13 @@ const DirectorPerformanceStats: React.FC = () => {
       {stats.map((stat) => (
         <div key={stat.rating}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-gray-900">{stat.rating}</span>
-            <span className="text-sm text-gray-600">{stat.count} تقييم</span>
+            <span className="text-sm font-medium text-ds-text">{stat.rating}</span>
+            <span className="text-sm text-ds-muted">{stat.count} تقييم</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full rounded-full h-2" style={{ background: 'var(--bg-overlay)' }}>
             <div
-              className="bg-amber-600 h-2 rounded-full"
-              style={{ width: `${(stat.count / total) * 100}%` }}
+              className="h-2 rounded-full"
+              style={{ width: `${(stat.count / total) * 100}%`, background: 'var(--warning)' }}
             ></div>
           </div>
         </div>

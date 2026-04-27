@@ -339,14 +339,14 @@ export const CeoReports: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-gray-100 p-2 rounded-lg">
-                <Calendar className="h-5 w-5 text-gray-600" />
+              <div className="bg-ds-overlay p-2 rounded-lg">
+                <Calendar className="h-5 w-5 text-ds-muted" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-ds-text">
                   {ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : 'غير محدد'}
                 </h2>
-                {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+                {subtitle && <p className="text-xs text-ds-faint">{subtitle}</p>}
               </div>
             </div>
             <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
@@ -372,7 +372,7 @@ export const CeoReports: React.FC = () => {
               <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
               {ev.general_rating ? (
                 <Badge variant={getRatingVariant(ev.general_rating)}>{ev.general_rating}</Badge>
-              ) : <span className="text-gray-400 text-sm">-</span>}
+              ) : <span className="text-ds-faint text-sm">-</span>}
             </div>
           </div>
 
@@ -392,15 +392,15 @@ export const CeoReports: React.FC = () => {
                       <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-ds-border-subtle">
                     {generalScores.map((s, i) => (
                       <tr key={i}>
                         <td className="px-4 py-2">
-                          <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                          <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                          <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                          <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                         </td>
-                        <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                        <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                        <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                        <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                         <td className="px-4 py-2 font-bold text-blue-600">{s.weighted_result?.toFixed(1)}</td>
                       </tr>
                     ))}
@@ -426,15 +426,15 @@ export const CeoReports: React.FC = () => {
                       <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-ds-border-subtle">
                     {specificScores.map((s, i) => (
                       <tr key={i}>
                         <td className="px-4 py-2">
-                          <p className="font-medium text-gray-900">{s.criterion_title}</p>
-                          <p className="text-xs text-gray-500">{s.criterion_description}</p>
+                          <p className="font-medium text-ds-text">{s.criterion_title}</p>
+                          <p className="text-xs text-ds-faint">{s.criterion_description}</p>
                         </td>
-                        <td className="px-4 py-2 text-gray-700">{s.criterion_weight}%</td>
-                        <td className="px-4 py-2 font-bold text-gray-900">{s.score}/5</td>
+                        <td className="px-4 py-2 text-ds-muted">{s.criterion_weight}%</td>
+                        <td className="px-4 py-2 font-bold text-ds-text">{s.score}/5</td>
                         <td className="px-4 py-2 font-bold text-emerald-600">{s.weighted_result?.toFixed(1)}</td>
                       </tr>
                     ))}
@@ -452,7 +452,7 @@ export const CeoReports: React.FC = () => {
                   <p className="text-xs font-medium text-blue-700 mb-1 flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" /> {evaluatorLabel}
                   </p>
-                  <p className="text-sm text-gray-800">{evaluatorNote}</p>
+                  <p className="text-sm text-ds-text">{evaluatorNote}</p>
                 </div>
               )}
               {subjectNote && (
@@ -460,7 +460,7 @@ export const CeoReports: React.FC = () => {
                   <p className="text-xs font-medium text-teal-700 mb-1 flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" /> {subjectLabel}
                   </p>
-                  <p className="text-sm text-gray-800">{subjectNote}</p>
+                  <p className="text-sm text-ds-text">{subjectNote}</p>
                 </div>
               )}
               {ev.ceo_comment && (
@@ -468,7 +468,7 @@ export const CeoReports: React.FC = () => {
                   <p className="text-xs font-medium text-red-700 mb-1 flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" /> ملاحظات الإدارة العليا
                   </p>
-                  <p className="text-sm text-gray-800">{ev.ceo_comment}</p>
+                  <p className="text-sm text-ds-text">{ev.ceo_comment}</p>
                 </div>
               )}
             </div>
@@ -494,13 +494,20 @@ export const CeoReports: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقارير الأداء</h1>
-        <p className="text-gray-600 mt-2">تقارير مفصلة عن أداء مديري الإدارات والموظفين</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>تقارير الأداء</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>تقارير مفصلة عن أداء مديري الإدارات والموظفين</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-0">
+      <div className="flex gap-2 border-b border-ds-border pb-0">
         {([
           { key: 'directors' as ViewTab, label: 'مديري الإدارات', icon: <Crown className="h-4 w-4" /> },
           { key: 'employees' as ViewTab, label: 'الموظفين', icon: <UserCheck className="h-4 w-4" /> },
@@ -511,7 +518,7 @@ export const CeoReports: React.FC = () => {
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeTab === tab.key
                 ? 'border-blue-600 text-blue-600 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                : 'border-transparent text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
             }`}
           >
             {tab.icon}
@@ -526,7 +533,7 @@ export const CeoReports: React.FC = () => {
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
             <div className="relative flex-1 min-w-[280px]">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{selectedLabel}</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">{selectedLabel}</label>
               <div className="relative">
                 <input
                   type="text"
@@ -543,17 +550,17 @@ export const CeoReports: React.FC = () => {
                   }}
                   onFocus={() => setDropdownOpen(true)}
                   placeholder="ابحث بالاسم..."
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 pr-10 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
+                <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
               </div>
 
               {dropdownOpen && !selectedPerson && !selectedEmployee && (
-                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute z-20 mt-1 w-full bg-ds-surface border border-ds-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                   {activeTab === 'employees' ? (
                     filteredEmployees.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">لا توجد نتائج</div>
+                      <div className="px-4 py-3 text-sm text-ds-faint">لا توجد نتائج</div>
                     ) : (
                       filteredEmployees.map(emp => (
                         <button
@@ -569,15 +576,15 @@ export const CeoReports: React.FC = () => {
                             {emp.full_name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{emp.full_name}</p>
-                            <p className="text-xs text-gray-500">{emp.job_title} {emp.department?.name ? `— ${emp.department.name}` : ''}</p>
+                            <p className="text-sm font-medium text-ds-text truncate">{emp.full_name}</p>
+                            <p className="text-xs text-ds-faint">{emp.job_title} {emp.department?.name ? `— ${emp.department.name}` : ''}</p>
                           </div>
                         </button>
                       ))
                     )
                   ) : (
                     filteredPeople.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">لا توجد نتائج</div>
+                      <div className="px-4 py-3 text-sm text-ds-faint">لا توجد نتائج</div>
                     ) : (
                       filteredPeople.map(person => (
                         <button
@@ -593,8 +600,8 @@ export const CeoReports: React.FC = () => {
                             {person.full_name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{person.full_name}</p>
-                            <p className="text-xs text-gray-500">{person.job_title}</p>
+                            <p className="text-sm font-medium text-ds-text truncate">{person.full_name}</p>
+                            <p className="text-xs text-ds-faint">{person.job_title}</p>
                           </div>
                         </button>
                       ))
@@ -606,11 +613,11 @@ export const CeoReports: React.FC = () => {
 
             {/* Year */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">السنة</label>
+              <label className="block text-sm font-medium text-ds-muted mb-1">السنة</label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {years.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -618,8 +625,8 @@ export const CeoReports: React.FC = () => {
 
             {/* Period mode */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نوع التقرير</label>
-              <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              <label className="block text-sm font-medium text-ds-muted mb-1">نوع التقرير</label>
+              <div className="flex rounded-lg border border-ds-border overflow-hidden">
                 {([
                   { key: 'monthly' as PeriodMode, label: 'شهري' },
                   { key: 'quarterly' as PeriodMode, label: 'ربعي' },
@@ -635,7 +642,7 @@ export const CeoReports: React.FC = () => {
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       periodMode === tab.key
                         ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                        : 'bg-ds-surface text-ds-muted hover:bg-ds-bg'
                     }`}
                   >
                     {tab.label}
@@ -646,11 +653,11 @@ export const CeoReports: React.FC = () => {
 
             {periodMode === 'monthly' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">الشهر</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1">الشهر</label>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value={0}>جميع الأشهر</option>
                   {Object.entries(monthLabels).map(([m, label]) => (
@@ -662,11 +669,11 @@ export const CeoReports: React.FC = () => {
 
             {periodMode === 'quarterly' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">الربع</label>
+                <label className="block text-sm font-medium text-ds-muted mb-1">الربع</label>
                 <select
                   value={selectedQuarter}
                   onChange={(e) => setSelectedQuarter(Number(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value={0}>جميع الأرباع</option>
                   {Object.entries(quarterLabels).map(([q, label]) => (
@@ -684,7 +691,7 @@ export const CeoReports: React.FC = () => {
         <Card>
           <CardBody className="text-center py-16">
             <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">{emptyLabel}</p>
+            <p className="text-ds-faint text-lg">{emptyLabel}</p>
           </CardBody>
         </Card>
       )}
@@ -732,7 +739,7 @@ export const CeoReports: React.FC = () => {
             <Card>
               <CardBody className="text-center py-16">
                 <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">لا توجد تقييمات في الفترة المحددة</p>
+                <p className="text-ds-faint text-lg">لا توجد تقييمات في الفترة المحددة</p>
               </CardBody>
             </Card>
           ) : (
@@ -777,14 +784,14 @@ export const CeoReports: React.FC = () => {
 
                       {/* Performance trend */}
                       <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-3">مسار الأداء</h3>
+                        <h3 className="text-sm font-medium text-ds-muted mb-3">مسار الأداء</h3>
                         <div className="flex items-end gap-2 h-32">
                           {currentEvals
                             .slice()
                             .sort((a, b) => (a.period?.month || 0) - (b.period?.month || 0))
                             .map(ev => (
                               <div key={ev.id} className="flex-1 flex flex-col items-center gap-1">
-                                <span className="text-xs font-bold text-gray-700">{ev.percentage.toFixed(0)}%</span>
+                                <span className="text-xs font-bold text-ds-muted">{ev.percentage.toFixed(0)}%</span>
                                 <div
                                   className={`w-full rounded-t-md transition-all ${
                                     ev.percentage >= 90 ? 'bg-green-500' :
@@ -793,7 +800,7 @@ export const CeoReports: React.FC = () => {
                                   }`}
                                   style={{ height: `${Math.max(ev.percentage * 0.9, 10)}%` }}
                                 ></div>
-                                <span className="text-[10px] text-gray-500">
+                                <span className="text-[10px] text-ds-faint">
                                   {ev.period ? monthLabels[ev.period.month] : ''}
                                 </span>
                               </div>

@@ -108,17 +108,24 @@ export const MyNotes: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">ملاحظاتي</h1>
-        <p className="text-gray-600 mt-2">اطلع على ملاحظات المدير وأضف ردك على كل تقييم</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>ملاحظاتي</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>اطلع على ملاحظات المدير وأضف ردك على كل تقييم</p>
       </div>
 
       {evaluations.length === 0 ? (
         <Card>
           <CardBody className="text-center py-16">
             <ClipboardList className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">لا توجد تقييمات متاحة حاليا</p>
-            <p className="text-gray-400 text-sm mt-2">ستظهر ملاحظات المدير هنا بمجرد اعتماد التقييم</p>
+            <p className="text-ds-faint text-lg">لا توجد تقييمات متاحة حاليا</p>
+            <p className="text-ds-faint text-sm mt-2">ستظهر ملاحظات المدير هنا بمجرد اعتماد التقييم</p>
           </CardBody>
         </Card>
       ) : (
@@ -131,11 +138,11 @@ export const MyNotes: React.FC = () => {
                     <Badge variant={getStatusBadgeVariant(ev.general_rating)} size="sm">
                       {ev.general_rating}
                     </Badge>
-                    <span className="text-sm text-gray-500">{ev.percentage?.toFixed(1)}%</span>
+                    <span className="text-sm text-ds-faint">{ev.percentage?.toFixed(1)}%</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-700">
+                  <div className="flex items-center gap-2 text-ds-muted">
                     <span className="font-semibold">{monthLabels[ev.period?.month || 1]} {ev.period?.year}</span>
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-ds-faint" />
                   </div>
                 </div>
               </CardHeader>
@@ -143,18 +150,18 @@ export const MyNotes: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <MessageSquare className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-sm font-semibold text-gray-900">ملاحظات المدير ({ev.manager?.full_name})</h3>
+                    <h3 className="text-sm font-semibold text-ds-text">ملاحظات المدير ({ev.manager?.full_name})</h3>
                   </div>
                   {ev.manager_note ? (
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                       <p className="text-blue-900 leading-relaxed text-sm">{ev.manager_note}</p>
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-sm italic">لم يتم إضافة ملاحظات من المدير</p>
+                    <p className="text-ds-faint text-sm italic">لم يتم إضافة ملاحظات من المدير</p>
                   )}
                 </div>
 
-                <div className="border-t border-gray-100 pt-4">
+                <div className="border-t border-ds-border-subtle pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       {ev.employee_note && editingId !== ev.id && (
@@ -168,7 +175,7 @@ export const MyNotes: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-teal-600" />
-                      <h3 className="text-sm font-semibold text-gray-900">ردي على التقييم</h3>
+                      <h3 className="text-sm font-semibold text-ds-text">ردي على التقييم</h3>
                     </div>
                   </div>
 
@@ -206,10 +213,10 @@ export const MyNotes: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => startEditing(ev)}
-                      className="w-full border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-blue-300 hover:bg-blue-50/50 transition-colors group"
+                      className="w-full border-2 border-dashed border-ds-border rounded-lg p-4 text-center hover:border-blue-300 hover:bg-blue-50/50 transition-colors group"
                     >
                       <MessageSquare className="h-5 w-5 text-gray-300 mx-auto mb-1 group-hover:text-blue-400 transition-colors" />
-                      <p className="text-sm text-gray-400 group-hover:text-blue-500 transition-colors">
+                      <p className="text-sm text-ds-faint group-hover:text-blue-500 transition-colors">
                         اضغط لإضافة ملاحظاتك على هذا التقييم
                       </p>
                     </button>
@@ -217,7 +224,7 @@ export const MyNotes: React.FC = () => {
                 </div>
 
                 {ev.submitted_at && (
-                  <p className="text-xs text-gray-400 text-right pt-1">
+                  <p className="text-xs text-ds-faint text-right pt-1">
                     تاريخ الإرسال: {new Date(ev.submitted_at).toLocaleDateString('ar-SA')}
                   </p>
                 )}

@@ -109,12 +109,19 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-amber-grad)',
+          border: '1px solid var(--sc-amber-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div className="flex items-center gap-3 mb-1">
-          <Crown className="h-8 w-8 text-amber-500" />
-          <h1 className="text-3xl font-bold text-gray-900">مديري الإدارات</h1>
+          <Crown className="h-8 w-8" style={{ color: 'var(--sc-amber-icon-c)' }} />
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>مديري الإدارات</h1>
         </div>
-        <p className="text-gray-600 mt-2">عرض وإدارة تقييمات مديري الإدارات</p>
+        <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>عرض وإدارة تقييمات مديري الإدارات</p>
       </div>
 
       {/* Stats Cards */}
@@ -123,8 +130,8 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">إجمالي المديرين</p>
-                <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
+                <p className="text-sm text-ds-muted mb-1">إجمالي المديرين</p>
+                <p className="text-2xl font-bold text-ds-text">{totalCount}</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                 <Users className="h-6 w-6" />
@@ -136,7 +143,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">تم تقييمهم</p>
+                <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                 <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
               </div>
               <div className="bg-green-50 text-green-600 p-3 rounded-xl">
@@ -149,7 +156,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">بانتظار التقييم</p>
+                <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                 <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
               </div>
               <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
@@ -166,7 +173,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
           {directors.length === 0 ? (
             <EmptyState
               message="لا يوجد مديري إدارات حاليًا"
-              icon={<Users className="h-12 w-12 text-gray-400" />}
+              icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -191,14 +198,14 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                           <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
                             {director.full_name.charAt(0)}
                           </div>
-                          <span className="font-medium text-gray-900">{director.full_name}</span>
+                          <span className="font-medium text-ds-text">{director.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm">{director.email}</span>
+                        <span className="text-ds-faint text-sm">{director.email}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600 text-sm">{director.job_title}</span>
+                        <span className="text-ds-muted text-sm">{director.job_title}</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={getEvalStatusVariant(evalStatus)} size="sm">

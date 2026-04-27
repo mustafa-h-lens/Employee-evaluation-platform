@@ -647,10 +647,17 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   if (!employeeId) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div
+          className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-4"
+          style={{
+            background: 'var(--sc-blue-grad)',
+            border: '1px solid var(--sc-blue-border)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">موظفو الإدارات</h1>
-            <p className="text-gray-600 mt-2">عرض وتقييم الموظفين التابعين لإداراتك</p>
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>موظفو الإدارات</h1>
+            <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>عرض وتقييم الموظفين التابعين لإداراتك</p>
           </div>
           <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
             <Calendar className="h-5 w-5 text-blue-600" />
@@ -673,8 +680,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">إجمالي الموظفين</p>
-                  <p className="text-2xl font-bold text-gray-900">{dirFilteredEmployees.length}</p>
+                  <p className="text-sm text-ds-muted mb-1">إجمالي الموظفين</p>
+                  <p className="text-2xl font-bold text-ds-text">{dirFilteredEmployees.length}</p>
                 </div>
                 <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                   <Users className="h-6 w-6" />
@@ -686,7 +693,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">تم تقييمهم</p>
+                  <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                   <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
                 </div>
                 <div className="bg-green-50 text-green-600 p-3 rounded-xl">
@@ -699,7 +706,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">بانتظار التقييم</p>
+                  <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                   <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
                 </div>
                 <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
@@ -721,20 +728,20 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           <CardBody>
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ds-faint" />
                 <input
                   type="text"
                   placeholder="بحث بالاسم أو البريد أو الإدارة..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10 pl-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  className="w-full pr-10 pl-4 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                 />
               </div>
               {myDirectorates.length > 1 && (
                 <select
                   value={selectedDirectorateId}
                   onChange={(e) => setSelectedDirectorateId(e.target.value)}
-                  className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="px-3 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="all">جميع الإدارات</option>
                   {myDirectorates.map(d => (
@@ -747,7 +754,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             {filteredEmployees.length === 0 ? (
               <EmptyState
                 message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد موظفون تابعون لإدارتك حاليًا'}
-                icon={<Users className="h-12 w-12 text-gray-400" />}
+                icon={<Users className="h-12 w-12 text-ds-faint" />}
               />
             ) : (
               <Table>
@@ -770,21 +777,21 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                             {emp.full_name.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900">{emp.full_name}</span>
+                            <span className="font-medium text-ds-text">{emp.full_name}</span>
                             {emp.job_title && (
-                              <p className="text-xs text-gray-500">{emp.job_title}</p>
+                              <p className="text-xs text-ds-faint">{emp.job_title}</p>
                             )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm font-mono">{emp.employee_number || '-'}</span>
+                        <span className="text-ds-faint text-sm font-mono">{emp.employee_number || '-'}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm">{emp.email}</span>
+                        <span className="text-ds-faint text-sm">{emp.email}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600 text-sm">{emp.department_name}</span>
+                        <span className="text-ds-muted text-sm">{emp.department_name}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -796,7 +803,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                       <TableCell>
                         {(!emp.eval_status || emp.eval_status === 'مسودة') && !hasSpecificCriteria ? (
                           <div className="text-center">
-                            <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-gray-400 cursor-not-allowed">
+                            <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed">
                               <ClipboardEdit className="h-4 w-4" />
                               <span>تقييم</span>
                             </button>
@@ -808,7 +815,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                               !emp.eval_status || emp.eval_status === 'مسودة' || emp.eval_status === 'مرفوض'
                                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
                             }`}
                           >
                             {!emp.eval_status || emp.eval_status === 'مسودة' || emp.eval_status === 'مرفوض' ? (
@@ -858,15 +865,15 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         </button>
       </div>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">تقييم الموظف</h1>
-        <p className="text-gray-600 mt-2">تقييم أداء الموظف للفترة الحالية</p>
+        <h1 className="text-3xl font-bold text-ds-text">تقييم الموظف</h1>
+        <p className="text-ds-muted mt-2">تقييم أداء الموظف للفترة الحالية</p>
       </div>
 
       {/* Period Selector */}
       <Card>
         <CardBody>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">فترة التقييم</label>
+            <label className="block text-sm font-medium text-ds-muted mb-2">فترة التقييم</label>
             <select
               value={activePeriod?.id || ''}
               onChange={(e) => {
@@ -877,7 +884,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                   setSpecificWeight((p as any).specific_weight ?? 50);
                 }
               }}
-              className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full max-w-md px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {allPeriods.map(p => (
                 <option key={p.id} value={p.id}>
@@ -899,8 +906,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         <Card>
           <CardBody className="text-center py-16">
             <AlertTriangle className="h-16 w-16 text-amber-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">لا توجد فترة تقييم نشطة حالياً</p>
-            <p className="text-gray-400 text-sm mt-2">يرجى التواصل مع مسؤول النظام لتفعيل فترة التقييم</p>
+            <p className="text-ds-faint text-lg">لا توجد فترة تقييم نشطة حالياً</p>
+            <p className="text-ds-faint text-sm mt-2">يرجى التواصل مع مسؤول النظام لتفعيل فترة التقييم</p>
           </CardBody>
         </Card>
       )}
@@ -974,7 +981,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             <div className="flex items-center gap-2 mb-4">
               <div className="w-3 h-3 rounded-full bg-blue-500" />
               <h3 className="text-lg font-bold text-blue-900">معايير التقييم العامة</h3>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-ds-faint">
                 ({scoredCount}/{criteria.length} تم تقييمها)
               </span>
             </div>
@@ -984,8 +991,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                   <CardHeader className="bg-blue-50/50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{criterion.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{criterion.description}</p>
+                        <h3 className="text-lg font-semibold text-ds-text">{criterion.title}</h3>
+                        <p className="text-sm text-ds-muted mt-1">{criterion.description}</p>
                       </div>
                       <Badge variant="primary" size="sm">
                         الوزن: {criterion.weight}%
@@ -1000,7 +1007,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                       disabled={isReadOnly}
                     />
                     {scores[criterion.id] && (
-                      <div className="mt-3 text-sm text-gray-600">
+                      <div className="mt-3 text-sm text-ds-muted">
                         <p>
                           الدرجة: <span className="font-semibold text-blue-600">{scores[criterion.id]}</span> / 5
                           {' — '}
@@ -1019,7 +1026,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           <Card>
             <CardBody className="text-center py-12">
               <AlertTriangle className="h-12 w-12 text-amber-400 mx-auto mb-3" />
-              <p className="text-gray-500">لا توجد معايير تقييم مفعّلة حالياً</p>
+              <p className="text-ds-faint">لا توجد معايير تقييم مفعّلة حالياً</p>
             </CardBody>
           </Card>
         )}
@@ -1030,7 +1037,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             <div className="flex items-center gap-2 mb-4">
               <div className="w-3 h-3 rounded-full bg-emerald-500" />
               <h3 className="text-lg font-bold text-emerald-900">معايير التقييم الخاصة</h3>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-ds-faint">
                 ({specificCriteria.filter(c => specificScores[c.id] && specificScores[c.id] > 0).length}/{specificCriteria.length} تم تقييمها)
               </span>
             </div>
@@ -1040,8 +1047,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                   <CardHeader className="bg-emerald-50/50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{criterion.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{criterion.description}</p>
+                        <h3 className="text-lg font-semibold text-ds-text">{criterion.title}</h3>
+                        <p className="text-sm text-ds-muted mt-1">{criterion.description}</p>
                       </div>
                       <Badge variant="success" size="sm">
                         الوزن: {criterion.weight}%
@@ -1056,7 +1063,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                       disabled={isReadOnly}
                     />
                     {specificScores[criterion.id] && (
-                      <div className="mt-3 text-sm text-gray-600">
+                      <div className="mt-3 text-sm text-ds-muted">
                         <p>
                           الدرجة: <span className="font-semibold text-emerald-600">{specificScores[criterion.id]}</span> / 5
                           {' — '}
@@ -1077,24 +1084,24 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         {(criteria.length > 0 || specificCriteria.length > 0) && (
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900">النتيجة النهائية</h2>
+              <h2 className="text-lg font-semibold text-ds-text">النتيجة النهائية</h2>
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">الدرجة من 500</p>
+                  <p className="text-sm text-ds-muted mb-1">الدرجة من 500</p>
                   <p className="text-3xl font-bold text-blue-600">{results.finalScore500.toFixed(0)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">التقييم من 5</p>
+                  <p className="text-sm text-ds-muted mb-1">التقييم من 5</p>
                   <p className="text-3xl font-bold text-blue-600">{results.finalScore5.toFixed(2)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">النسبة المئوية</p>
+                  <p className="text-sm text-ds-muted mb-1">النسبة المئوية</p>
                   <p className="text-3xl font-bold text-blue-600">{results.percentage.toFixed(1)}%</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">التقدير العام</p>
+                  <p className="text-sm text-ds-muted mb-1">التقدير العام</p>
                   <Badge
                     variant={results.percentage >= 90 ? 'success' : results.percentage >= 75 ? 'info' : 'warning'}
                     size="lg"
@@ -1110,7 +1117,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         {/* Evaluator Notes */}
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">ملاحظات المقيّم</h2>
+            <h2 className="text-lg font-semibold text-ds-text">ملاحظات المقيّم</h2>
           </CardHeader>
           <CardBody>
             <TextArea
@@ -1131,7 +1138,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                 <MessageSquare className="h-4 w-4 text-teal-600" />
                 <h2 className="text-sm font-bold text-teal-800">رد الموظف على التقييم</h2>
               </div>
-              <p className="text-gray-800 leading-relaxed">{employeeReply}</p>
+              <p className="text-ds-text leading-relaxed">{employeeReply}</p>
             </CardBody>
           </Card>
         )}

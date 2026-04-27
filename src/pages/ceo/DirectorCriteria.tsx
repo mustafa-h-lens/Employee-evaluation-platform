@@ -316,10 +316,17 @@ export const DirectorCriteria: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة بتقييم المديرين</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>المعايير الخاصة بتقييم المديرين</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>
             معايير التقييم الخاصة بمديري الإدارات
             {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
           </p>
@@ -335,8 +342,8 @@ export const DirectorCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
-                <p className="text-xl font-bold text-gray-900">{activeCount}</p>
+                <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
+                <p className="text-xl font-bold text-ds-text">{activeCount}</p>
               </div>
               <div className="bg-green-50 text-green-600 p-3 rounded-xl">
                 <ClipboardList className="h-6 w-6" />
@@ -348,10 +355,10 @@ export const DirectorCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
-                <p className="text-xl font-bold text-gray-900">{inactiveCount}</p>
+                <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
+                <p className="text-xl font-bold text-ds-text">{inactiveCount}</p>
               </div>
-              <div className="bg-gray-100 text-gray-500 p-3 rounded-xl">
+              <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
                 <EyeOff className="h-6 w-6" />
               </div>
             </div>
@@ -361,7 +368,7 @@ export const DirectorCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
                 <p className={`text-xl font-bold ${totalWeight === specificWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
                   {totalWeight}% / {specificWeightLimit}%
                 </p>
@@ -388,7 +395,7 @@ export const DirectorCriteria: React.FC = () => {
           {criteria.length === 0 ? (
             <EmptyState
               message="لا توجد معايير خاصة مضافة لتقييم المديرين حاليًا"
-              icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -410,10 +417,10 @@ export const DirectorCriteria: React.FC = () => {
                   return (
                     <React.Fragment key={criterion.id}>
                       <TableRow
-                        className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
+                        className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
                         onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
                       >
-                        <TableCell className="text-gray-400">
+                        <TableCell className="text-ds-faint">
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </TableCell>
                         <TableCell>
@@ -421,11 +428,11 @@ export const DirectorCriteria: React.FC = () => {
                             <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
                               <GripVertical className="h-4 w-4" />
                             </div>
-                            <span className="font-bold text-gray-900">{criterion.title}</span>
+                            <span className="font-bold text-ds-text">{criterion.title}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                          <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
                         </TableCell>
                         <TableCell>
                           <Badge variant={criterion.is_active ? 'success' : 'default'}>
@@ -437,15 +444,15 @@ export const DirectorCriteria: React.FC = () => {
                             <button
                               onClick={() => handleReorder(criterion, 'up')}
                               disabled={index === 0}
-                              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                             >
                               <ArrowUp className="h-4 w-4" />
                             </button>
-                            <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                            <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
                             <button
                               onClick={() => handleReorder(criterion, 'down')}
                               disabled={index === criteria.length - 1}
-                              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                             >
                               <ArrowDown className="h-4 w-4" />
                             </button>
@@ -494,7 +501,7 @@ export const DirectorCriteria: React.FC = () => {
                           <TableCell colSpan={7} className="!whitespace-normal">
                             <div className="px-2 py-1">
                               <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
-                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                              <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -547,13 +554,13 @@ export const DirectorCriteria: React.FC = () => {
               helperText={`مجموع أوزان المعايير الخاصة النشطة الحالي: ${totalWeight}% من ${specificWeightLimit}%`}
             />
             {editingCriterion && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle
                   checked={formData.is_active}
                   onChange={() => setFormData({ ...formData, is_active: !formData.is_active })}
                   size="sm"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-ds-muted">
                   {formData.is_active ? 'المعيار نشط' : 'المعيار معطل'}
                 </span>
               </div>
@@ -579,9 +586,9 @@ export const DirectorCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف معيار <span className="font-bold text-gray-700">{deleteTarget?.title}</span> نهائيًا.
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف معيار <span className="font-bold text-ds-muted">{deleteTarget?.title}</span> نهائيًا.
           </p>
           {deleteError && (
             <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">

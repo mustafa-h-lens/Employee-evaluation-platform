@@ -481,7 +481,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
       <Card>
         <CardBody className="text-center py-16">
           <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">لم يتم تعيينك كمدير لأي إدارة بعد.</p>
+          <p className="text-ds-faint">لم يتم تعيينك كمدير لأي إدارة بعد.</p>
         </CardBody>
       </Card>
     );
@@ -491,10 +491,17 @@ export const DirectorSpecificCriteria: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-3"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>المعايير الخاصة</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>
             معايير التقييم الخاصة بتقييم الموظفين
             {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
           </p>
@@ -523,17 +530,17 @@ export const DirectorSpecificCriteria: React.FC = () => {
         <Card>
           <CardBody className="flex items-center gap-3 flex-wrap py-3">
             <Building2 className="h-5 w-5 text-blue-600" />
-            <label className="text-sm font-medium text-gray-700">الإدارة:</label>
+            <label className="text-sm font-medium text-ds-muted">الإدارة:</label>
             <select
               value={selectedDirectorateId}
               onChange={(e) => setSelectedDirectorateId(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {myDirectorates.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
-            <span className="text-xs text-gray-500">— كل إدارة لها قائمة معاييرها الخاصة، ويتشاركها مدراؤها.</span>
+            <span className="text-xs text-ds-faint">— كل إدارة لها قائمة معاييرها الخاصة، ويتشاركها مدراؤها.</span>
           </CardBody>
         </Card>
       ) : (
@@ -550,17 +557,17 @@ export const DirectorSpecificCriteria: React.FC = () => {
         <Card>
           <CardBody className="flex items-center gap-3 flex-wrap py-3">
             <ClipboardList className="h-5 w-5 text-emerald-600" />
-            <label className="text-sm font-medium text-gray-700">القسم:</label>
+            <label className="text-sm font-medium text-ds-muted">القسم:</label>
             <select
               value={selectedDepartmentId}
               onChange={(e) => setSelectedDepartmentId(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="px-3 py-1.5 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               {departments.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
-            <span className="text-xs text-gray-500">— هذه الإدارة تحتوي على عدة أقسام، ولكل قسم قائمة معاييره الخاصة.</span>
+            <span className="text-xs text-ds-faint">— هذه الإدارة تحتوي على عدة أقسام، ولكل قسم قائمة معاييره الخاصة.</span>
           </CardBody>
         </Card>
       )}
@@ -570,8 +577,8 @@ export const DirectorSpecificCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">معايير نشطة</p>
-                <p className="text-xl font-bold text-gray-900">{activeCount}</p>
+                <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
+                <p className="text-xl font-bold text-ds-text">{activeCount}</p>
               </div>
               <div className="bg-green-50 text-green-600 p-3 rounded-xl">
                 <ClipboardList className="h-6 w-6" />
@@ -583,10 +590,10 @@ export const DirectorSpecificCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">معايير معطلة</p>
-                <p className="text-xl font-bold text-gray-900">{inactiveCount}</p>
+                <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
+                <p className="text-xl font-bold text-ds-text">{inactiveCount}</p>
               </div>
-              <div className="bg-gray-100 text-gray-500 p-3 rounded-xl">
+              <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
                 <EyeOff className="h-6 w-6" />
               </div>
             </div>
@@ -596,7 +603,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">مجموع الأوزان (النشطة)</p>
+                <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
                 <p className={`text-xl font-bold ${totalWeight === specificWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
                   {totalWeight}% / {specificWeightLimit}%
                 </p>
@@ -623,7 +630,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
           {criteria.length === 0 ? (
             <EmptyState
               message="لا توجد معايير خاصة مضافة حاليًا"
-              icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -644,7 +651,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
                   return (
                   <React.Fragment key={criterion.id}>
                   <TableRow
-                    className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                    className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
                     onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
                   >
                     <TableCell>
@@ -652,11 +659,11 @@ export const DirectorSpecificCriteria: React.FC = () => {
                         <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </div>
-                        <span className="font-bold text-gray-900">{criterion.title}</span>
+                        <span className="font-bold text-ds-text">{criterion.title}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                      <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
                     </TableCell>
                     <TableCell>
                       <Badge variant={criterion.is_active ? 'success' : 'default'}>
@@ -668,15 +675,15 @@ export const DirectorSpecificCriteria: React.FC = () => {
                         <button
                           onClick={() => handleReorder(criterion, 'up')}
                           disabled={index === 0}
-                          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                          className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                         >
                           <ArrowUp className="h-4 w-4" />
                         </button>
-                        <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                        <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
                         <button
                           onClick={() => handleReorder(criterion, 'down')}
                           disabled={index === criteria.length - 1}
-                          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                          className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
                         >
                           <ArrowDown className="h-4 w-4" />
                         </button>
@@ -723,18 +730,18 @@ export const DirectorSpecificCriteria: React.FC = () => {
                   {isExpanded && (
                     <tr className="bg-emerald-50/40 border-b border-emerald-100">
                       <td colSpan={6} className="px-6 py-4">
-                        <div className="bg-white rounded-lg border border-emerald-100 p-4 space-y-3">
+                        <div className="bg-ds-surface rounded-lg border border-emerald-100 p-4 space-y-3">
                           <div>
                             <p className="text-xs font-semibold text-emerald-700 mb-1">العنوان</p>
-                            <p className="text-sm font-bold text-gray-900">{criterion.title}</p>
+                            <p className="text-sm font-bold text-ds-text">{criterion.title}</p>
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {criterion.description || <span className="text-gray-400 italic">لا يوجد وصف</span>}
+                            <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-line">
+                              {criterion.description || <span className="text-ds-faint italic">لا يوجد وصف</span>}
                             </p>
                           </div>
-                          <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                          <div className="flex flex-wrap gap-4 text-xs text-ds-faint pt-2 border-t border-ds-border-subtle">
                             <span><span className="font-semibold">الوزن:</span> {criterion.weight}%</span>
                             <span><span className="font-semibold">الترتيب:</span> {criterion.order}</span>
                             <span><span className="font-semibold">الحالة:</span> {criterion.is_active ? 'نشط' : 'معطل'}</span>
@@ -795,13 +802,13 @@ export const DirectorSpecificCriteria: React.FC = () => {
             />
 
             {editingCriterion && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle
                   checked={formData.is_active}
                   onChange={() => setFormData({ ...formData, is_active: !formData.is_active })}
                   size="sm"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-ds-muted">
                   {formData.is_active ? 'المعيار نشط' : 'المعيار معطل'}
                 </span>
               </div>
@@ -828,12 +835,12 @@ export const DirectorSpecificCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">
+          <p className="text-ds-text text-lg font-medium mb-2">
             هل أنت متأكد من حذف هذا المعيار؟
           </p>
-          <p className="text-gray-500 text-sm">
+          <p className="text-ds-faint text-sm">
             سيتم حذف معيار{' '}
-            <span className="font-bold text-gray-700">
+            <span className="font-bold text-ds-muted">
               {deleteTarget?.title}
             </span>{' '}
             نهائيًا.
@@ -869,9 +876,9 @@ export const DirectorSpecificCriteria: React.FC = () => {
             </div>
           )}
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ds-muted">
             اختر قسماً مصدراً لنسخ معاييره إلى القسم الحالي:{' '}
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-ds-text">
               {departments.find(d => d.id === selectedDepartmentId)?.name}
             </span>
           </p>
@@ -885,10 +892,10 @@ export const DirectorSpecificCriteria: React.FC = () => {
                   key={d.id}
                   className={`flex items-center justify-between gap-3 p-3 border rounded-lg ${
                     disabled
-                      ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                      ? 'opacity-50 cursor-not-allowed border-ds-border bg-ds-bg'
                       : cloneSourceDeptId === d.id
                       ? 'border-blue-400 bg-blue-50 cursor-pointer'
-                      : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
+                      : 'border-ds-border hover:bg-ds-bg cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -900,8 +907,8 @@ export const DirectorSpecificCriteria: React.FC = () => {
                       disabled={disabled}
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{d.name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-ds-text">{d.name}</p>
+                      <p className="text-xs text-ds-faint">
                         {count > 0 ? `${count} معيار متاح` : 'لا توجد معايير في هذا القسم'}
                       </p>
                     </div>

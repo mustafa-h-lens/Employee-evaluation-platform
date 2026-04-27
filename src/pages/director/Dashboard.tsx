@@ -140,94 +140,92 @@ export const DirectorDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>
           مرحباً، {user?.full_name}
         </h1>
-        <p className="text-gray-600 mt-2">لوحة تحكم مدير الإدارة</p>
+        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>لوحة تحكم مدير الإدارة</p>
       </div>
 
       {activePeriod && (
-        <Card>
-          <CardBody className="bg-blue-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">فترة التقييم الحالية</p>
-                <p className="text-lg font-bold text-blue-900">
-                  {monthLabels[activePeriod.month]} - {activePeriod.year}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-blue-600">ينتهي في</p>
-                <p className="font-medium text-blue-900">{new Date(activePeriod.end_date).toLocaleDateString('ar-SA')}</p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+        <div
+          className="p-5 rounded-ds-lg flex items-center justify-between"
+          style={{
+            background: 'var(--accent-glow)',
+            border: '1px solid var(--accent-glow-md)',
+          }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--accent)' }}>فترة التقييم الحالية</p>
+            <p className="text-lg font-bold" style={{ color: 'var(--accent-lighter)' }}>
+              {monthLabels[activePeriod.month]} - {activePeriod.year}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm" style={{ color: 'var(--accent)' }}>ينتهي في</p>
+            <p className="font-medium" style={{ color: 'var(--accent-lighter)' }}>{new Date(activePeriod.end_date).toLocaleDateString('ar-SA')}</p>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">الموظفون</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalEmployees}</p>
-              </div>
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
-                <Users className="h-8 w-8" />
-              </div>
+        <div className="stat-card sc-blue">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="stat-sub">الموظفون</div>
+              <div className="stat-val">{stats.totalEmployees}</div>
             </div>
-          </CardBody>
-        </Card>
+            <div className="stat-icon-box"><Users className="h-5 w-5" /></div>
+          </div>
+        </div>
 
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">تم تقييمهم</p>
-                <p className="text-3xl font-bold text-green-600">{stats.evaluated}</p>
-              </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
-                <FileCheck className="h-8 w-8" />
-              </div>
+        <div className="stat-card sc-green">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="stat-sub">تم تقييمهم</div>
+              <div className="stat-val">{stats.evaluated}</div>
             </div>
-          </CardBody>
-        </Card>
+            <div className="stat-icon-box"><FileCheck className="h-5 w-5" /></div>
+          </div>
+        </div>
 
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">المتبقي</p>
-                <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
-              </div>
-              <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
-                <FileClock className="h-8 w-8" />
-              </div>
+        <div className="stat-card sc-amber">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="stat-sub">المتبقي</div>
+              <div className="stat-val">{stats.pending}</div>
             </div>
-          </CardBody>
-        </Card>
+            <div className="stat-icon-box"><FileClock className="h-5 w-5" /></div>
+          </div>
+        </div>
       </div>
 
       {/* Progress Bar */}
       <Card>
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">نسبة الإنجاز</h2>
+          <h2 className="text-lg font-semibold text-ds-text">نسبة الإنجاز</h2>
         </CardHeader>
         <CardBody>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">التقدم الكلي</span>
+              <span className="text-sm text-ds-muted">التقدم الكلي</span>
               <span className="text-sm font-medium">
                 {stats.totalEmployees > 0 ? Math.round((stats.evaluated / stats.totalEmployees) * 100) : 0}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-4">
+            <div className="w-full rounded-full h-4" style={{ background: 'var(--bg-overlay)' }}>
               <div
-                className="bg-blue-600 h-4 rounded-full transition-all"
+                className="h-4 rounded-full transition-all"
                 style={{
-                  width: `${stats.totalEmployees > 0 ? (stats.evaluated / stats.totalEmployees) * 100 : 0}%`
+                  width: `${stats.totalEmployees > 0 ? (stats.evaluated / stats.totalEmployees) * 100 : 0}%`,
+                  background: 'var(--accent)',
                 }}
               ></div>
             </div>
@@ -239,16 +237,19 @@ export const DirectorDashboard: React.FC = () => {
       {latestEvaluation && (
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">آخر تقييم تلقيته</h2>
+            <h2 className="text-lg font-semibold text-ds-text">آخر تقييم تلقيته</h2>
           </CardHeader>
           <CardBody>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                <div
+                  className="p-3 rounded-xl"
+                  style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
+                >
                   <TrendingUp className="h-8 w-8" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-3xl font-bold" style={{ color: 'var(--accent)' }}>
                     {latestEvaluation.percentage.toFixed(1)}%
                   </p>
                   <Badge variant={ratingVariant(latestEvaluation.general_rating)}>
@@ -257,7 +258,7 @@ export const DirectorDashboard: React.FC = () => {
                 </div>
               </div>
               {latestEvaluation.period && (
-                <div className="flex items-center gap-2 text-gray-500">
+                <div className="flex items-center gap-2 text-ds-faint">
                   <Calendar className="h-5 w-5" />
                   <span>{monthLabels[latestEvaluation.period.month]} - {latestEvaluation.period.year}</span>
                 </div>

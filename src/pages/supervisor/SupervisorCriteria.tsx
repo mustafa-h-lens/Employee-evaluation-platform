@@ -530,10 +530,10 @@ export const SupervisorCriteria: React.FC = () => {
   if (assignments.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة بالمشرف</h1>
+        <h1 className="text-3xl font-bold text-ds-text">المعايير الخاصة بالمشرف</h1>
         <Card>
           <CardBody>
-            <EmptyState message="لا توجد مهام إشراف نشطة حالياً" icon={<Shield className="h-12 w-12 text-gray-400" />} />
+            <EmptyState message="لا توجد مهام إشراف نشطة حالياً" icon={<Shield className="h-12 w-12 text-ds-faint" />} />
           </CardBody>
         </Card>
       </div>
@@ -544,10 +544,17 @@ export const SupervisorCriteria: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div
+        className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-3"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">المعايير الخاصة بالمشرف</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>المعايير الخاصة بالمشرف</h1>
+          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>
             معايير التقييم الخاصة بمهمة الإشراف
             {currentAssignment && (
               <span className="font-semibold text-orange-700"> — {currentAssignment.title || 'مهمة إشراف'}</span>
@@ -564,11 +571,11 @@ export const SupervisorCriteria: React.FC = () => {
       {/* Assignment selector if multiple */}
       {assignments.length > 1 && (
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700">مهمة الإشراف:</label>
+          <label className="text-sm font-medium text-ds-muted">مهمة الإشراف:</label>
           <select
             value={selectedAssignment}
             onChange={e => setSelectedAssignment(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            className="border border-ds-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             {assignments.map(a => (
               <option key={a.id} value={a.id}>{a.title || 'مهمة إشراف'}</option>
@@ -599,7 +606,7 @@ export const SupervisorCriteria: React.FC = () => {
           <CardBody>
             <EmptyState
               message="لا توجد مجموعات معايير بعد. أنشئ مجموعة وحدّد الموظفين المشمولين بها."
-              icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
             />
           </CardBody>
         </Card>
@@ -613,16 +620,16 @@ export const SupervisorCriteria: React.FC = () => {
         return (
           <Card key={group.id}>
             <CardBody className="p-0">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4 flex-wrap">
+              <div className="px-6 py-4 border-b border-ds-border-subtle flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                    <h2 className="text-lg font-bold text-gray-900">{group.name}</h2>
+                    <h2 className="text-lg font-bold text-ds-text">{group.name}</h2>
                     {group.is_default && (
                       <Badge variant="info" size="sm">افتراضية</Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-ds-muted">
                     <Users className="h-4 w-4" />
                     {groupMembers.length === 0 ? (
                       <span className="text-amber-600">لا يوجد موظفون مرتبطون بهذه المجموعة</span>
@@ -651,7 +658,7 @@ export const SupervisorCriteria: React.FC = () => {
               </div>
 
               {list.length === 0 ? (
-                <div className="px-6 py-8 text-center text-gray-500 text-sm">
+                <div className="px-6 py-8 text-center text-ds-faint text-sm">
                   لا توجد معايير في هذه المجموعة بعد
                 </div>
               ) : (
@@ -673,7 +680,7 @@ export const SupervisorCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-gray-50' : ''} ${isExpanded ? 'bg-orange-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-orange-50/40' : ''}`}
                             onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
                           >
                             <TableCell>
@@ -681,11 +688,11 @@ export const SupervisorCriteria: React.FC = () => {
                                 <div className="w-9 h-9 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
                                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                 </div>
-                                <span className="font-bold text-gray-900">{criterion.title}</span>
+                                <span className="font-bold text-ds-text">{criterion.title}</span>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <p className="text-gray-500 text-sm max-w-xs truncate">{criterion.description}</p>
+                              <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
                             </TableCell>
                             <TableCell>
                               <Badge variant={criterion.is_active ? 'success' : 'default'}>
@@ -695,12 +702,12 @@ export const SupervisorCriteria: React.FC = () => {
                             <TableCell>
                               <div className="flex items-center gap-1" onClick={stop}>
                                 <button onClick={() => handleReorderCriterion(criterion, 'up')} disabled={index === 0}
-                                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500">
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
                                   <ArrowUp className="h-4 w-4" />
                                 </button>
-                                <span className="text-gray-400 text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
                                 <button onClick={() => handleReorderCriterion(criterion, 'down')} disabled={index === list.length - 1}
-                                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500">
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
                                   <ArrowDown className="h-4 w-4" />
                                 </button>
                               </div>
@@ -729,10 +736,10 @@ export const SupervisorCriteria: React.FC = () => {
                           {isExpanded && (
                             <tr className="bg-orange-50/40 border-b border-orange-100">
                               <td colSpan={6} className="px-6 py-4">
-                                <div className="bg-white rounded-lg border border-orange-100 p-4">
+                                <div className="bg-ds-surface rounded-lg border border-orange-100 p-4">
                                   <p className="text-xs font-semibold text-orange-700 mb-1">الوصف الكامل</p>
-                                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                                    {criterion.description || <span className="text-gray-400 italic">لا يوجد وصف</span>}
+                                  <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-line">
+                                    {criterion.description || <span className="text-ds-faint italic">لا يوجد وصف</span>}
                                   </p>
                                 </div>
                               </td>
@@ -768,29 +775,29 @@ export const SupervisorCriteria: React.FC = () => {
               required
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-ds-muted mb-2">
                 الموظفون المشمولون
-                <span className="text-xs text-gray-500 mr-2">— اختر من بين موظفي مهمة الإشراف</span>
+                <span className="text-xs text-ds-faint mr-2">— اختر من بين موظفي مهمة الإشراف</span>
               </label>
-              <div className="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
+              <div className="border border-ds-border rounded-lg max-h-64 overflow-y-auto">
                 {members.length === 0 && (
-                  <p className="p-4 text-sm text-gray-500 text-center">لا يوجد موظفون في هذه المهمة بعد</p>
+                  <p className="p-4 text-sm text-ds-faint text-center">لا يوجد موظفون في هذه المهمة بعد</p>
                 )}
                 {members.map(m => {
                   const checked = groupForm.memberIds.has(m.employee_id);
                   const otherGroupId = groupMembership[m.employee_id];
                   const otherGroup = otherGroupId && otherGroupId !== editingGroup?.id ? groups.find(g => g.id === otherGroupId) : null;
                   return (
-                    <label key={m.employee_id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                    <label key={m.employee_id} className="flex items-center gap-3 px-3 py-2 hover:bg-ds-bg cursor-pointer border-b border-ds-border-subtle last:border-b-0">
                       <input
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleMemberInForm(m.employee_id)}
-                        className="rounded border-gray-300"
+                        className="rounded border-ds-border"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{m.full_name}</p>
-                        {m.job_title && <p className="text-xs text-gray-500 truncate">{m.job_title}</p>}
+                        <p className="text-sm font-medium text-ds-text truncate">{m.full_name}</p>
+                        {m.job_title && <p className="text-xs text-ds-faint truncate">{m.job_title}</p>}
                       </div>
                       {otherGroup && (
                         <Badge variant="warning" size="sm">حالياً في: {otherGroup.name}</Badge>
@@ -799,7 +806,7 @@ export const SupervisorCriteria: React.FC = () => {
                   );
                 })}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-ds-faint mt-1">
                 إضافة موظف إلى هذه المجموعة سيخرجه من مجموعته السابقة (موظف واحد لمجموعة واحدة فقط لكل مهمة).
               </p>
             </div>
@@ -817,9 +824,9 @@ export const SupervisorCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذه المجموعة؟</p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف مجموعة <span className="font-bold text-gray-700">{deleteGroupTarget?.name}</span> وجميع معاييرها نهائياً.
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذه المجموعة؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف مجموعة <span className="font-bold text-ds-muted">{deleteGroupTarget?.name}</span> وجميع معاييرها نهائياً.
             الموظفون المرتبطون بها سيصبحون غير مصنّفين، ولن يتم تقييمهم بمعايير خاصة حتى يتم إضافتهم إلى مجموعة أخرى.
           </p>
         </div>
@@ -852,9 +859,9 @@ export const SupervisorCriteria: React.FC = () => {
               onChange={e => setCriterionForm({ ...criterionForm, weight: e.target.value })}
               placeholder="مثال: 10" min={1} max={specificWeightLimit} required />
             {editingCriterion && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle checked={criterionForm.is_active} onChange={() => setCriterionForm({ ...criterionForm, is_active: !criterionForm.is_active })} />
-                <span className="text-sm font-medium text-gray-700">{criterionForm.is_active ? 'المعيار نشط' : 'المعيار معطل'}</span>
+                <span className="text-sm font-medium text-ds-muted">{criterionForm.is_active ? 'المعيار نشط' : 'المعيار معطل'}</span>
               </div>
             )}
           </div>
@@ -871,9 +878,9 @@ export const SupervisorCriteria: React.FC = () => {
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
-          <p className="text-gray-900 text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
-          <p className="text-gray-500 text-sm">
-            سيتم حذف معيار <span className="font-bold text-gray-700">{deleteCriterionTarget?.title}</span> نهائياً.
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف معيار <span className="font-bold text-ds-muted">{deleteCriterionTarget?.title}</span> نهائياً.
           </p>
         </div>
         <ModalFooter className="justify-center">

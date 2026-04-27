@@ -253,9 +253,16 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">الموظفون</h1>
-        <p className="text-gray-600 mt-2">عرض وتقييم الموظفين التابعين لإدارتك</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-green-grad)',
+          border: '1px solid var(--sc-green-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>الموظفون</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>عرض وتقييم الموظفين التابعين لإدارتك</p>
       </div>
 
       {!hasSpecificCriteria && (
@@ -272,8 +279,8 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">إجمالي الموظفين</p>
-                <p className="text-2xl font-bold text-gray-900">{dirFiltered.length}</p>
+                <p className="text-sm text-ds-muted mb-1">إجمالي الموظفين</p>
+                <p className="text-2xl font-bold text-ds-text">{dirFiltered.length}</p>
               </div>
               <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
                 <Users className="h-6 w-6" />
@@ -285,7 +292,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">تم تقييمهم</p>
+                <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                 <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
               </div>
               <div className="bg-green-50 text-green-600 p-3 rounded-xl">
@@ -298,7 +305,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">بانتظار التقييم</p>
+                <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                 <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
               </div>
               <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
@@ -313,22 +320,22 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
         <CardBody>
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ds-faint" />
               <input
                 type="text"
                 placeholder="بحث بالاسم أو البريد أو الإدارة..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pr-10 pl-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                className="w-full pr-10 pl-4 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
               />
             </div>
             {myDirectorates.length > 1 && (
               <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-gray-400" />
+                <Building2 className="h-5 w-5 text-ds-faint" />
                 <select
                   value={selectedDirectorateId}
                   onChange={(e) => setSelectedDirectorateId(e.target.value)}
-                  className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="px-3 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="all">جميع الإدارات</option>
                   {myDirectorates.map(d => (
@@ -338,11 +345,11 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
               </div>
             )}
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-gray-400" />
+              <Calendar className="h-5 w-5 text-ds-faint" />
               <select
                 value={selectedPeriodId}
                 onChange={(e) => setSelectedPeriodId(e.target.value)}
-                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="px-3 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 {allPeriods.map(p => (
                   <option key={p.id} value={p.id}>
@@ -356,7 +363,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
           {filtered.length === 0 ? (
             <EmptyState
               message={searchQuery ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد موظفون تابعون لإدارتك حاليًا'}
-              icon={<Users className="h-12 w-12 text-gray-400" />}
+              icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
             <Table>
@@ -383,21 +390,21 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                             {emp.full_name.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900">{emp.full_name}</span>
+                            <span className="font-medium text-ds-text">{emp.full_name}</span>
                             {emp.job_title && (
-                              <p className="text-xs text-gray-500">{emp.job_title}</p>
+                              <p className="text-xs text-ds-faint">{emp.job_title}</p>
                             )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm font-mono">{emp.employee_number || '-'}</span>
+                        <span className="text-ds-faint text-sm font-mono">{emp.employee_number || '-'}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 text-sm">{emp.email}</span>
+                        <span className="text-ds-faint text-sm">{emp.email}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600 text-sm">{emp.department_name}</span>
+                        <span className="text-ds-muted text-sm">{emp.department_name}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -412,10 +419,10 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                           disabled={isEvalDisabled}
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             isEvalDisabled
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              ? 'bg-ds-overlay text-ds-faint cursor-not-allowed'
                               : isPending
                                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
                           }`}
                         >
                           {isPending ? (

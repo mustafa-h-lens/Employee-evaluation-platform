@@ -176,41 +176,52 @@ export const EmployeeDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">لوحة التحكم</h1>
-        <p className="text-gray-600 mt-2">مرحبًا {user?.full_name}</p>
+      <div
+        className="rounded-ds-xl p-8"
+        style={{
+          background: 'var(--sc-blue-grad)',
+          border: '1px solid var(--sc-blue-border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>لوحة التحكم</h1>
+        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>مرحبًا {user?.full_name}</p>
       </div>
 
       {employeeData && (
-        <Card>
-          <CardBody className="bg-blue-50">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm text-blue-600">المسمى الوظيفي</p>
-                <p className="font-semibold text-blue-900">{employeeData.job_title}</p>
-              </div>
-              <div>
-                <p className="text-sm text-blue-600">الإدارة</p>
-                <p className="font-semibold text-blue-900">
-                  {(() => {
-                    const dirName = employeeData.assignment_directorate_name || employeeData.directorate?.name || '';
-                    const deptName = employeeData.assignment_department_name || employeeData.department?.name || '';
-                    if (dirName && deptName) return `${dirName} — ${deptName}`;
-                    return dirName || deptName || '—';
-                  })()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-blue-600">المدير المباشر</p>
-                <p className="font-semibold text-blue-900">{resolveManagerLabel() || '—'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-blue-600">رقم الموظف</p>
-                <p className="font-semibold text-blue-900">{employeeData.employee_number}</p>
-              </div>
+        <div
+          className="p-5 rounded-ds-lg"
+          style={{
+            background: 'var(--accent-glow)',
+            border: '1px solid var(--accent-glow-md)',
+          }}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm" style={{ color: 'var(--accent)' }}>المسمى الوظيفي</p>
+              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>{employeeData.job_title}</p>
             </div>
-          </CardBody>
-        </Card>
+            <div>
+              <p className="text-sm" style={{ color: 'var(--accent)' }}>الإدارة</p>
+              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>
+                {(() => {
+                  const dirName = employeeData.assignment_directorate_name || employeeData.directorate?.name || '';
+                  const deptName = employeeData.assignment_department_name || employeeData.department?.name || '';
+                  if (dirName && deptName) return `${dirName} — ${deptName}`;
+                  return dirName || deptName || '—';
+                })()}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm" style={{ color: 'var(--accent)' }}>المدير المباشر</p>
+              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>{resolveManagerLabel() || '—'}</p>
+            </div>
+            <div>
+              <p className="text-sm" style={{ color: 'var(--accent)' }}>رقم الموظف</p>
+              <p className="font-semibold" style={{ color: 'var(--accent-lighter)' }}>{employeeData.employee_number}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {latestEvaluation ? (
@@ -219,9 +230,9 @@ export const EmployeeDashboard: React.FC = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">آخر تقييم</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    من: <span className="font-medium text-gray-700">{latestEvaluation.is_combined ? 'الإدارة العليا' : (latestEvaluation.manager?.full_name || '')}</span>
+                  <h2 className="text-lg font-semibold text-ds-text">آخر تقييم</h2>
+                  <p className="text-sm text-ds-faint mt-1">
+                    من: <span className="font-medium text-ds-muted">{latestEvaluation.is_combined ? 'الإدارة العليا' : (latestEvaluation.manager?.full_name || '')}</span>
                   </p>
                 </div>
                 <Badge variant="info">
@@ -231,20 +242,20 @@ export const EmployeeDashboard: React.FC = () => {
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-600 mb-2">الدرجة من 500</p>
-                  <p className="text-4xl font-bold text-blue-600">{latestEvaluation.final_score_500?.toFixed(0)}</p>
+                <div className="stat-card sc-blue text-center">
+                  <div className="stat-sub">الدرجة من 500</div>
+                  <div className="stat-val">{latestEvaluation.final_score_500?.toFixed(0)}</div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-600 mb-2">التقييم من 5</p>
-                  <p className="text-4xl font-bold text-green-600">{latestEvaluation.final_score_5?.toFixed(2)}</p>
+                <div className="stat-card sc-green text-center">
+                  <div className="stat-sub">التقييم من 5</div>
+                  <div className="stat-val">{latestEvaluation.final_score_5?.toFixed(2)}</div>
                 </div>
-                <div className="text-center p-4 bg-indigo-50 rounded-lg">
-                  <p className="text-sm text-indigo-600 mb-2">النسبة المئوية</p>
-                  <p className="text-4xl font-bold text-indigo-600">{latestEvaluation.percentage?.toFixed(1)}%</p>
+                <div className="stat-card sc-blue text-center">
+                  <div className="stat-sub">النسبة المئوية</div>
+                  <div className="stat-val">{latestEvaluation.percentage?.toFixed(1)}%</div>
                 </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-sm text-purple-600 mb-2">التقدير العام</p>
+                <div className="stat-card sc-purple text-center flex flex-col items-center justify-center">
+                  <div className="stat-sub mb-2">التقدير العام</div>
                   <Badge
                     variant={
                       latestEvaluation.percentage >= 90 ? 'success' :
@@ -263,7 +274,7 @@ export const EmployeeDashboard: React.FC = () => {
             (latestEvaluation.managers || []).some((m: any) => m.note) && (
               <Card>
                 <CardHeader>
-                  <h2 className="text-lg font-semibold text-gray-900">ملاحظات المدير المباشر</h2>
+                  <h2 className="text-lg font-semibold text-ds-text">ملاحظات المدير المباشر</h2>
                 </CardHeader>
                 <CardBody>
                   <div className="space-y-4">
@@ -272,7 +283,7 @@ export const EmployeeDashboard: React.FC = () => {
                       .map((m: any) => (
                         <div key={m.id} className="border-r-4 border-blue-400 pr-4">
                           <p className="text-sm font-semibold text-blue-700 mb-1">{m.name}</p>
-                          <p className="text-gray-700 leading-relaxed">{m.note}</p>
+                          <p className="text-ds-muted leading-relaxed">{m.note}</p>
                         </div>
                       ))}
                   </div>
@@ -283,10 +294,10 @@ export const EmployeeDashboard: React.FC = () => {
             latestEvaluation.manager_note && (
               <Card>
                 <CardHeader>
-                  <h2 className="text-lg font-semibold text-gray-900">ملاحظات المدير المباشر</h2>
+                  <h2 className="text-lg font-semibold text-ds-text">ملاحظات المدير المباشر</h2>
                 </CardHeader>
                 <CardBody>
-                  <p className="text-gray-700 leading-relaxed">{latestEvaluation.manager_note}</p>
+                  <p className="text-ds-muted leading-relaxed">{latestEvaluation.manager_note}</p>
                 </CardBody>
               </Card>
             )
@@ -297,26 +308,29 @@ export const EmployeeDashboard: React.FC = () => {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">خطة التطوير</h2>
+                  <h2 className="text-lg font-semibold text-ds-text">خطة التطوير</h2>
                 </div>
               </CardHeader>
               <CardBody>
                 <div className="space-y-4">
                   {developmentPlans.map((plan, index) => (
-                    <div key={plan.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div key={plan.id} className="p-4 rounded-lg" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
+                        <div
+                          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold"
+                          style={{ background: 'var(--accent)', color: '#ffffff' }}
+                        >
                           {index + 1}
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-2">{plan.development_goal}</h3>
-                          <p className="text-sm text-gray-700 mb-2">{plan.action_plan}</p>
+                          <h3 className="font-semibold text-ds-text mb-2">{plan.development_goal}</h3>
+                          <p className="text-sm text-ds-muted mb-2">{plan.action_plan}</p>
                           <div className="flex items-center gap-4 text-sm">
-                            <span className="text-gray-600">
+                            <span className="text-ds-muted">
                               <span className="font-medium">المدة:</span> {plan.duration}
                             </span>
                             {plan.notes && (
-                              <span className="text-gray-600">
+                              <span className="text-ds-muted">
                                 <span className="font-medium">ملاحظات:</span> {plan.notes}
                               </span>
                             )}
@@ -333,9 +347,9 @@ export const EmployeeDashboard: React.FC = () => {
       ) : (
         <Card>
           <CardBody className="text-center py-12">
-            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">لا يوجد تقييم متاح حاليًا</p>
-            <p className="text-gray-400 text-sm mt-2">سيتم عرض التقييم هنا بمجرد إتمامه من قبل مديرك المباشر</p>
+            <FileText className="h-16 w-16 text-ds-faint mx-auto mb-4" />
+            <p className="text-ds-faint text-lg">لا يوجد تقييم متاح حاليًا</p>
+            <p className="text-ds-faint text-sm mt-2">سيتم عرض التقييم هنا بمجرد إتمامه من قبل مديرك المباشر</p>
           </CardBody>
         </Card>
       )}
