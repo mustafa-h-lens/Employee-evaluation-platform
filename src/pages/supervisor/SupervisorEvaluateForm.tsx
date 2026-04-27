@@ -11,6 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptySta
 import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, Search, Users, FileCheck, FileClock, Calendar, Shield, Clock, MessageSquare } from 'lucide-react';
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 import { UserAvatar } from '../../components/ui/UserAvatar';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface EmployeeInfo {
   id: string;
@@ -641,20 +642,18 @@ export const SupervisorEvaluateForm: React.FC = () => {
             <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>التقييم كمشرف</h1>
             <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>تقييم أعضاء الفريق المعين لك كمشرف</p>
           </div>
-          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
-            <Calendar className="h-5 w-5 text-blue-600" />
-            <select
-              value={tablePeriodId}
-              onChange={(e) => setTablePeriodId(e.target.value)}
-              className="bg-transparent text-blue-800 font-semibold text-sm border-none focus:ring-0 cursor-pointer"
-            >
-              {tablePeriods.map(p => (
-                <option key={p.id} value={p.id}>
-                  {monthLabels[p.month]} {p.year} {p.status === 'نشطة' ? '(نشطة)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+          <ModernSelect
+            value={tablePeriodId}
+            onChange={setTablePeriodId}
+            icon={<Calendar className="h-4 w-4" />}
+            ariaLabel="فترة التقييم"
+            className="min-w-[220px]"
+            options={tablePeriods.map(p => ({
+              value: p.id,
+              label: `${monthLabels[p.month]} ${p.year}`,
+              hint: p.status === 'نشطة' ? 'نشطة' : undefined,
+            }))}
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -859,24 +858,25 @@ export const SupervisorEvaluateForm: React.FC = () => {
         <CardBody>
           <div>
             <label className="block text-sm font-medium text-ds-muted mb-2">فترة التقييم</label>
-            <select
-              value={activePeriod?.id || ''}
-              onChange={(e) => {
-                const p = allPeriods.find(pr => pr.id === e.target.value);
-                if (p) {
-                  setActivePeriod(p);
-                  setGeneralWeight((p as any).general_weight ?? 50);
-                  setSpecificWeight((p as any).specific_weight ?? 50);
-                }
-              }}
-              className="w-full max-w-md px-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {allPeriods.map(p => (
-                <option key={p.id} value={p.id}>
-                  {monthLabels[p.month]} {p.year} {p.status === 'نشطة' ? '(نشطة)' : `— ${p.status}`}
-                </option>
-              ))}
-            </select>
+            <div className="max-w-md">
+              <ModernSelect
+                value={activePeriod?.id || ''}
+                onChange={(v) => {
+                  const p = allPeriods.find(pr => pr.id === v);
+                  if (p) {
+                    setActivePeriod(p);
+                    setGeneralWeight((p as any).general_weight ?? 50);
+                    setSpecificWeight((p as any).specific_weight ?? 50);
+                  }
+                }}
+                ariaLabel="فترة التقييم"
+                options={allPeriods.map(p => ({
+                  value: p.id,
+                  label: `${monthLabels[p.month]} ${p.year}`,
+                  hint: p.status === 'نشطة' ? 'نشطة' : p.status,
+                }))}
+              />
+            </div>
           </div>
         </CardBody>
       </Card>

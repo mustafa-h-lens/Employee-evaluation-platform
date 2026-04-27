@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
 import { Users, Search, Mail, Briefcase, FileCheck, FileClock, Clipboard as ClipboardEdit, Eye, Calendar, AlertTriangle, Building2 } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface EmployeeInfo {
   id: string;
@@ -348,20 +349,18 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                 </select>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-ds-faint" />
-              <select
-                value={selectedPeriodId}
-                onChange={(e) => setSelectedPeriodId(e.target.value)}
-                className="px-3 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              >
-                {allPeriods.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {monthLabels[p.month]} {p.year} {p.status === 'نشطة' ? '(نشطة)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ModernSelect
+              value={selectedPeriodId}
+              onChange={setSelectedPeriodId}
+              icon={<Calendar className="h-4 w-4" />}
+              ariaLabel="فترة التقييم"
+              className="min-w-[220px]"
+              options={allPeriods.map(p => ({
+                value: p.id,
+                label: `${monthLabels[p.month]} ${p.year}`,
+                hint: p.status === 'نشطة' ? 'نشطة' : undefined,
+              }))}
+            />
           </div>
 
           {filtered.length === 0 ? (

@@ -9,6 +9,7 @@ import { Crown, Users, Eye, Filter, Star, Shield, ArrowUp } from 'lucide-react';
 import { percentageToRating } from '../../lib/scoring';
 import { AllCeoEvaluations } from './AllCeoEvaluations';
 import { UserAvatar } from '../../components/ui/UserAvatar';
+import { ModernSelect } from '../../components/ui/ModernSelect';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -590,27 +591,27 @@ export const AllEvaluations: React.FC = () => {
               <Filter className="h-4 w-4" />
               <span className="text-sm font-medium">تصفية:</span>
             </div>
-            <select
+            <ModernSelect
               value={filterPeriod}
-              onChange={(e) => setFilterPeriod(e.target.value)}
-              className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">جميع الفترات</option>
-              {periods.map(p => (
-                <option key={p.id} value={p.id}>{monthLabels[p.month]} {p.year}</option>
-              ))}
-            </select>
+              onChange={setFilterPeriod}
+              ariaLabel="تصفية بالفترة"
+              className="min-w-[200px]"
+              options={[
+                { value: '', label: 'جميع الفترات' },
+                ...periods.map(p => ({ value: p.id, label: `${monthLabels[p.month]} ${p.year}` })),
+              ]}
+            />
             {activeTab === 'directors' && (
-              <select
+              <ModernSelect
                 value={filterDirectorate}
-                onChange={(e) => setFilterDirectorate(e.target.value)}
-                className="px-3 py-2 border border-ds-border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">جميع الإدارات</option>
-                {directoratesFilter.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
+                onChange={setFilterDirectorate}
+                ariaLabel="تصفية بالإدارة"
+                className="min-w-[200px]"
+                options={[
+                  { value: '', label: 'جميع الإدارات' },
+                  ...directoratesFilter.map(d => ({ value: d.id, label: d.name })),
+                ]}
+              />
             )}
             {(filterPeriod || filterDepartment || filterDirectorate) && (
               <button
