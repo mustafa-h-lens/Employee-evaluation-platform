@@ -23,7 +23,7 @@ CREATE POLICY "director_insert_department_criteria"
       SELECT 1 FROM departments dep
       JOIN directorates d ON d.id = dep.directorate_id
       WHERE dep.id = department_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   );
 
@@ -35,7 +35,7 @@ CREATE POLICY "director_update_department_criteria"
       SELECT 1 FROM departments dep
       JOIN directorates d ON d.id = dep.directorate_id
       WHERE dep.id = department_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   )
   WITH CHECK (
@@ -44,7 +44,7 @@ CREATE POLICY "director_update_department_criteria"
       SELECT 1 FROM departments dep
       JOIN directorates d ON d.id = dep.directorate_id
       WHERE dep.id = department_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   );
 
@@ -56,7 +56,7 @@ CREATE POLICY "director_delete_department_criteria"
       SELECT 1 FROM departments dep
       JOIN directorates d ON d.id = dep.directorate_id
       WHERE dep.id = department_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   );
 
@@ -69,7 +69,7 @@ CREATE POLICY "director_insert_directorate_criteria"
     AND EXISTS (
       SELECT 1 FROM directorates d
       WHERE d.id = directorate_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   );
 
@@ -81,7 +81,7 @@ CREATE POLICY "director_update_directorate_criteria"
     AND EXISTS (
       SELECT 1 FROM directorates d
       WHERE d.id = directorate_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   )
   WITH CHECK (
@@ -90,7 +90,7 @@ CREATE POLICY "director_update_directorate_criteria"
     AND EXISTS (
       SELECT 1 FROM directorates d
       WHERE d.id = directorate_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   );
 
@@ -102,6 +102,6 @@ CREATE POLICY "director_delete_directorate_criteria"
     AND EXISTS (
       SELECT 1 FROM directorates d
       WHERE d.id = directorate_id
-        AND (d.director_id = get_user_id() OR d.secondary_director_id = get_user_id())
+        AND (d.director_id = private.get_user_id() OR d.secondary_director_id = private.get_user_id())
     )
   );
