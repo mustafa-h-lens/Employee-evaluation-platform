@@ -195,7 +195,7 @@ export const DirectorMyEvaluations: React.FC = () => {
           .select(`
             id, score_1_to_5, weighted_result, criterion_type, evaluation_id,
             criterion:evaluation_criteria(title, weight),
-            department_criterion:department_criteria(title, weight)
+            department_criterion:department_criteria(title, weight, group:department_criteria_groups(name))
           `)
           .in('evaluation_id', allIds);
 

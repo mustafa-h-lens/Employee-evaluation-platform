@@ -357,7 +357,7 @@ export const PendingApprovals: React.FC = () => {
       .select(`
         score_1_to_5, weighted_result, criterion_type,
         criterion:evaluation_criteria(title, description, weight),
-        dept_criterion:department_criteria(title, description, weight)
+        dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
       `)
       .eq('evaluation_id', ev.id);
 
@@ -428,7 +428,7 @@ export const PendingApprovals: React.FC = () => {
         score_1_to_5, weighted_result, criterion_type,
         criterion_id, department_criterion_id,
         criterion:evaluation_criteria(title, description, weight),
-        dept_criterion:department_criteria(title, description, weight)
+        dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
       `)
       .in('evaluation_id', group.ids);
 
@@ -467,7 +467,7 @@ export const PendingApprovals: React.FC = () => {
       .select(`
         score_1_to_5, weighted_result, criterion_type,
         criterion:evaluation_criteria(title, description, weight),
-        dept_criterion:department_criteria(title, description, weight)
+        dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
       `)
       .eq('evaluation_id', ev.id);
 
@@ -656,7 +656,7 @@ export const PendingApprovals: React.FC = () => {
       .select(`
         evaluation_id, score_1_to_5, weighted_result, criterion_type,
         criterion:evaluation_criteria(title, description, weight),
-        dept_criterion:department_criteria(title, description, weight)
+        dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
       `)
       .in('evaluation_id', allIds);
 

@@ -80,7 +80,7 @@ interface ScoreDetail {
   weighted_result: number;
   criterion_type: string;
   criterion: { title: string; weight: number } | null;
-  dept_criterion: { title: string; weight: number } | null;
+  dept_criterion: { title: string; weight: number; group?: { name: string } | null } | null;
 }
 
 export const MyEvaluations: React.FC = () => {
@@ -251,7 +251,7 @@ export const MyEvaluations: React.FC = () => {
               id, score_1_to_5, weighted_result, criterion_type,
               criterion_id, department_criterion_id,
               criterion:evaluation_criteria(title, weight),
-              dept_criterion:department_criteria(title, weight)
+              dept_criterion:department_criteria(title, weight, group:department_criteria_groups(name))
             `)
             .in('evaluation_id', idsToFetch);
 
@@ -543,10 +543,15 @@ export const MyEvaluations: React.FC = () => {
                                   const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-blue-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
                                   return (
                                     <div key={score.id} className="bg-ds-surface rounded-xl border border-ds-border p-4 hover:shadow-sm transition-shadow">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
+                                      <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                           <Star className="h-4 w-4 text-emerald-400" />
                                           <p className="font-medium text-ds-text text-sm">{score.dept_criterion?.title || '—'}</p>
+                                          {score.dept_criterion?.group?.name && (
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                              {score.dept_criterion.group.name}
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="flex items-center gap-3">
                                           <span className="text-xs text-ds-faint">الوزن: {score.dept_criterion?.weight || 0}%</span>

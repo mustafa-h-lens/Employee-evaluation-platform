@@ -322,7 +322,7 @@ export const AllEvaluations: React.FC = () => {
       .select(`
         score_1_to_5, weighted_result, criterion_type,
         criterion:evaluation_criteria(title, description, weight),
-        dept_criterion:department_criteria(title, description, weight)
+        dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
       `)
       .eq('evaluation_id', ev.id);
 
