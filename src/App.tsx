@@ -17,6 +17,7 @@ import { AdminSettings } from './pages/admin/Settings';
 import { Directorates } from './pages/admin/Directorates';
 import { AllEvaluations } from './pages/admin/AllEvaluations';
 import { SupervisorAssignments } from './pages/admin/SupervisorAssignments';
+import { LeaveTypes } from './pages/admin/LeaveTypes';
 
 import { CeoDashboard } from './pages/ceo/Dashboard';
 import { CeoDirectors } from './pages/ceo/Directors';
@@ -203,6 +204,8 @@ function AppContent() {
           return <EvaluationPeriods />;
         case '/criteria':
           return <EvaluationCriteria />;
+        case '/leave-types':
+          return <LeaveTypes />;
         case '/audit':
           return <AuditLog />;
         case '/directorates':

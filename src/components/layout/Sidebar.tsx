@@ -22,7 +22,8 @@ import {
   Shield,
   Lock,
   Network,
-  Star
+  Star,
+  CalendarOff
 } from 'lucide-react';
 
 interface MenuItem {
@@ -42,6 +43,7 @@ const menuItems: MenuItem[] = [
   { label: 'جميع التقييمات', icon: <FileText className="h-5 w-5" />, path: '/all-evaluations', roles: ['admin'] },
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/reports', roles: ['admin'] },
   { label: 'تعيين مشرف', icon: <Shield className="h-5 w-5" />, path: '/supervisor-assignments', roles: ['admin'] },
+  { label: 'أنواع الإجازات', icon: <CalendarOff className="h-5 w-5" />, path: '/leave-types', roles: ['admin'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/org-structure', roles: ['admin'] },
   { label: 'سجل النشاط', icon: <Activity className="h-5 w-5" />, path: '/audit', roles: ['admin'] },
   { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/ceo-directors', roles: ['ceo'] },
