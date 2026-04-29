@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { BarChart3, Search, User, Building2, Calendar, Star, Target, MessageSquare, FileText, ChevronDown } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { getEvaluableMonths, getLeavesForEmployeeInRange, annualRange, quarterlyRange, totalMonthsBetween, LeaveSummary } from '../../lib/leaves';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -110,6 +111,12 @@ export const Reports: React.FC = () => {
   const [devPlans, setDevPlans] = useState<Record<string, DevPlan[]>>({});
   const [loading, setLoading] = useState(false);
   const [years, setYears] = useState<number[]>([]);
+
+  // Leave-aware denominator: how many months in the selected window the
+  // employee was actually evaluable. Falls back to evaluations.length when
+  // the RPC hasn't returned yet.
+  const [evaluableMonths, setEvaluableMonths] = useState<number | null>(null);
+  const [windowLeaves, setWindowLeaves] = useState<LeaveSummary[]>([]);
 
   // Fetch all employees
   useEffect(() => {
@@ -242,37 +249,74 @@ export const Reports: React.FC = () => {
     e.department_name.includes(searchQuery)
   );
 
-  // Annual summary calculation
-  const annualSummary = periodMode === 'annual' && evaluations.length > 0
-    ? {
-        avgPercentage: evaluations.reduce((s, e) => s + e.percentage, 0) / evaluations.length,
-        avgScore5: evaluations.reduce((s, e) => s + e.final_score_5, 0) / evaluations.length,
-        avgScore500: evaluations.reduce((s, e) => s + e.final_score_500, 0) / evaluations.length,
-        count: evaluations.length,
-        get generalRating() {
-          if (this.avgPercentage >= 90) return 'ممتاز';
-          if (this.avgPercentage >= 80) return 'جيد جدًا';
-          if (this.avgPercentage >= 70) return 'جيد';
-          return 'يحتاج تحسين';
-        },
+  // Annual / quarterly: pull "evaluable months" + the employee's leaves in
+  // that window so the summary card divides by months actually worked, not
+  // by 12 / 3, and we can show "تم التقييم في 9 من 12 شهر" beside the avg.
+  useEffect(() => {
+    const run = async () => {
+      if (!selectedEmployee || (periodMode !== 'annual' && periodMode !== 'quarterly')) {
+        setEvaluableMonths(null);
+        setWindowLeaves([]);
+        return;
       }
-    : null;
+      if (periodMode === 'quarterly' && selectedQuarter === 0) {
+        setEvaluableMonths(null);
+        setWindowLeaves([]);
+        return;
+      }
+      const range = periodMode === 'annual'
+        ? annualRange(selectedYear)
+        : quarterlyRange(selectedYear, selectedQuarter);
+      const [n, leaves] = await Promise.all([
+        getEvaluableMonths(selectedEmployee.id, range.from, range.to),
+        getLeavesForEmployeeInRange(selectedEmployee.id, range.from, range.to),
+      ]);
+      setEvaluableMonths(n);
+      setWindowLeaves(leaves);
+    };
+    run();
+  }, [selectedEmployee, periodMode, selectedYear, selectedQuarter]);
 
-  // Quarterly summary
-  const quarterlySummary = periodMode === 'quarterly' && selectedQuarter > 0 && evaluations.length > 0
-    ? {
-        avgPercentage: evaluations.reduce((s, e) => s + e.percentage, 0) / evaluations.length,
-        avgScore5: evaluations.reduce((s, e) => s + e.final_score_5, 0) / evaluations.length,
-        avgScore500: evaluations.reduce((s, e) => s + e.final_score_500, 0) / evaluations.length,
-        count: evaluations.length,
-        get generalRating() {
-          if (this.avgPercentage >= 90) return 'ممتاز';
-          if (this.avgPercentage >= 80) return 'جيد جدًا';
-          if (this.avgPercentage >= 70) return 'جيد';
-          return 'يحتاج تحسين';
-        },
-      }
-    : null;
+  // Effective denominator: prefer the leave-aware count from the RPC; fall
+  // back to evaluations.length while the RPC is still in flight (or 0).
+  const denominator = (evaluableMonths !== null && evaluableMonths > 0)
+    ? evaluableMonths
+    : evaluations.length;
+
+  const buildSummary = () => {
+    if (evaluations.length === 0 || denominator === 0) return null;
+    const sum = evaluations.reduce(
+      (acc, e) => ({
+        pct: acc.pct + e.percentage,
+        s5: acc.s5 + e.final_score_5,
+        s500: acc.s500 + e.final_score_500,
+      }),
+      { pct: 0, s5: 0, s500: 0 },
+    );
+    const avgPercentage = sum.pct / denominator;
+    return {
+      avgPercentage,
+      avgScore5: sum.s5 / denominator,
+      avgScore500: sum.s500 / denominator,
+      count: evaluations.length,
+      evaluableMonths: evaluableMonths ?? evaluations.length,
+      totalMonths: periodMode === 'annual'
+        ? 12
+        : (periodMode === 'quarterly' && selectedQuarter > 0 ? 3 : evaluations.length),
+      get generalRating() {
+        if (avgPercentage >= 90) return 'ممتاز';
+        if (avgPercentage >= 80) return 'جيد جدًا';
+        if (avgPercentage >= 70) return 'جيد';
+        return 'يحتاج تحسين';
+      },
+    };
+  };
+
+  const annualSummary = periodMode === 'annual' ? buildSummary() : null;
+  const quarterlySummary = periodMode === 'quarterly' && selectedQuarter > 0 ? buildSummary() : null;
+  const fullyOnLeave = (periodMode === 'annual' || (periodMode === 'quarterly' && selectedQuarter > 0))
+    && evaluableMonths === 0
+    && windowLeaves.length > 0;
 
   return (
     <div className="space-y-6">
@@ -472,8 +516,25 @@ export const Reports: React.FC = () => {
             </Card>
           ) : (
             <>
+              {/* Full-window leave: render a friendly chip and skip the summary */}
+              {fullyOnLeave && (
+                <Card className="border-amber-200">
+                  <CardBody>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-amber-600" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-amber-900">موظف في إجازة طوال هذه الفترة — لا يوجد تقييم</p>
+                        <p className="text-xs text-amber-800">
+                          {windowLeaves.map(l => l.type_name).join('، ')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+
               {/* Annual/Quarterly Summary */}
-              {(annualSummary || quarterlySummary) && (
+              {!fullyOnLeave && (annualSummary || quarterlySummary) && (
                 <Card className="border-blue-200">
                   <CardHeader className="bg-blue-50">
                     <div className="flex items-center gap-2">
@@ -488,6 +549,17 @@ export const Reports: React.FC = () => {
                       const summary = annualSummary || quarterlySummary!;
                       return (
                         <div className="space-y-4">
+                          {windowLeaves.length > 0 && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                              <Calendar className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <p className="text-xs text-amber-900">
+                                تم احتساب المتوسط على <span className="font-bold">{summary.evaluableMonths}</span> من <span className="font-bold">{summary.totalMonths}</span> شهر — استُبعدت أشهر الإجازة:{' '}
+                                <span className="font-medium">
+                                  {windowLeaves.map(l => l.type_name).join('، ')}
+                                </span>
+                              </p>
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div className="bg-blue-50 rounded-lg p-4 text-center">
                               <p className="text-xs text-blue-600 mb-1">عدد التقييمات</p>
