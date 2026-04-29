@@ -41,6 +41,7 @@ interface DeptCriterion {
   id: string;
   department_id: string | null;
   directorate_id: string | null;
+  group_id: string | null;
   title: string;
   description: string;
   weight: number;
@@ -48,15 +49,24 @@ interface DeptCriterion {
   is_active: boolean;
 }
 
+interface DirCriteriaGroup {
+  id: string;
+  directorate_id: string;
+  name: string;
+  order: number;
+  is_default: boolean;
+}
+
+interface DirEmployee {
+  id: string;
+  full_name: string;
+  job_title: string | null;
+  department_name: string | null;
+}
+
 interface Directorate {
   id: string;
   name: string;
-}
-
-interface DepartmentLite {
-  id: string;
-  name: string;
-  directorate_id: string;
 }
 
 interface SupervisorAssignment {
@@ -117,12 +127,37 @@ export const EvaluationCriteria: React.FC = () => {
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
   const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo' | 'supervisors' | 'ceo-eval'>('general');
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
-  const [allDepartments, setAllDepartments] = useState<DepartmentLite[]>([]);
-  const [dirCriteriaMap, setDirCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
-  const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
+  const [groupsByDirectorate, setGroupsByDirectorate] = useState<Record<string, DirCriteriaGroup[]>>({});
+  const [criteriaByGroup, setCriteriaByGroup] = useState<Record<string, DeptCriterion[]>>({});
+  const [membersByGroup, setMembersByGroup] = useState<Record<string, DirEmployee[]>>({});
+  const [employeesByDirectorate, setEmployeesByDirectorate] = useState<Record<string, DirEmployee[]>>({});
+  const [groupMembershipByDir, setGroupMembershipByDir] = useState<Record<string, Record<string, string>>>({});
   const [selectedDirId, setSelectedDirId] = useState<string>('all');
   const [expandedCriterionId, setExpandedCriterionId] = useState<string | null>(null);
   const [ceoCriteria, setCeoCriteria] = useState<DeptCriterion[]>([]);
+
+  // Directorate group CRUD state
+  const [isDirGroupModalOpen, setIsDirGroupModalOpen] = useState(false);
+  const [dirGroupCrudDirectorateId, setDirGroupCrudDirectorateId] = useState<string>('');
+  const [editingDirGroup, setEditingDirGroup] = useState<DirCriteriaGroup | null>(null);
+  const [dirGroupForm, setDirGroupForm] = useState<{ name: string; memberIds: Set<string> }>({ name: '', memberIds: new Set() });
+  const [savingDirGroup, setSavingDirGroup] = useState(false);
+  const [dirGroupError, setDirGroupError] = useState('');
+  const [dirGroupDeleteTarget, setDirGroupDeleteTarget] = useState<DirCriteriaGroup | null>(null);
+  const [isDirGroupDeleteOpen, setIsDirGroupDeleteOpen] = useState(false);
+  const [deletingDirGroup, setDeletingDirGroup] = useState(false);
+
+  // Directorate criterion CRUD state
+  const [isDirCriterionModalOpen, setIsDirCriterionModalOpen] = useState(false);
+  const [dirCriterionGroupId, setDirCriterionGroupId] = useState<string>('');
+  const [dirCriterionDirectorateId, setDirCriterionDirectorateId] = useState<string>('');
+  const [editingDirCriterion, setEditingDirCriterion] = useState<DeptCriterion | null>(null);
+  const [dirCriterionForm, setDirCriterionForm] = useState<FormData>(defaultFormData);
+  const [savingDirCriterion, setSavingDirCriterion] = useState(false);
+  const [dirCriterionError, setDirCriterionError] = useState('');
+  const [dirCriterionDeleteTarget, setDirCriterionDeleteTarget] = useState<DeptCriterion | null>(null);
+  const [isDirCriterionDeleteOpen, setIsDirCriterionDeleteOpen] = useState(false);
+  const [deletingDirCriterion, setDeletingDirCriterion] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<Criterion | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -174,28 +209,59 @@ export const EvaluationCriteria: React.FC = () => {
   }, []);
 
   const fetchDepartmentsAndCriteria = useCallback(async () => {
-    const [dirsRes, deptsRes, dirCriteriaRes, deptCriteriaRes, ceoCriteriaRes] = await Promise.all([
+    const [dirsRes, groupsRes, allDirCriteriaRes, ceoCriteriaRes, membershipRes, employeesRes] = await Promise.all([
       supabase.from('directorates').select('id, name').order('name'),
-      supabase.from('departments').select('id, name, directorate_id').eq('status', 'active').order('name'),
-      supabase.from('department_criteria').select('*').is('department_id', null).not('directorate_id', 'is', null).order('order'),
-      supabase.from('department_criteria').select('*').not('department_id', 'is', null).order('order'),
+      supabase.from('department_criteria_groups').select('*').order('order'),
+      supabase.from('department_criteria').select('*').not('directorate_id', 'is', null).order('order'),
       supabase.from('department_criteria').select('*').is('department_id', null).is('directorate_id', null).order('order'),
+      supabase.from('department_criteria_group_members').select('group_id, directorate_id, employee_id'),
+      supabase.from('employees')
+        .select('id, full_name, job_title, directorate_id, department:departments(name)')
+        .eq('status', 'active')
+        .order('full_name'),
     ]);
     const dirsList = (dirsRes.data as unknown as Directorate[]) || [];
     setDirectorates(dirsList);
-    setAllDepartments((deptsRes.data as unknown as DepartmentLite[]) || []);
-    const dirMap: Record<string, DeptCriterion[]> = {};
-    (dirCriteriaRes.data || []).forEach((c: any) => {
-      if (!dirMap[c.directorate_id]) dirMap[c.directorate_id] = [];
-      dirMap[c.directorate_id].push(c);
+
+    const employeeMap = new Map<string, DirEmployee>();
+    const empByDir: Record<string, DirEmployee[]> = {};
+    (employeesRes.data || []).forEach((e: any) => {
+      const emp: DirEmployee = {
+        id: e.id,
+        full_name: e.full_name || 'موظف',
+        job_title: e.job_title || null,
+        department_name: e.department?.name || null,
+      };
+      employeeMap.set(e.id, emp);
+      if (e.directorate_id) (empByDir[e.directorate_id] ||= []).push(emp);
     });
-    setDirCriteriaMap(dirMap);
-    const deptMap: Record<string, DeptCriterion[]> = {};
-    (deptCriteriaRes.data || []).forEach((c: any) => {
-      if (!deptMap[c.department_id]) deptMap[c.department_id] = [];
-      deptMap[c.department_id].push(c);
+    setEmployeesByDirectorate(empByDir);
+
+    const dirGroupsMap: Record<string, DirCriteriaGroup[]> = {};
+    (groupsRes.data || []).forEach((g: any) => {
+      (dirGroupsMap[g.directorate_id] ||= []).push(g as DirCriteriaGroup);
     });
-    setDeptCriteriaMap(deptMap);
+    Object.values(dirGroupsMap).forEach(arr => arr.sort((a, b) => a.order - b.order));
+    setGroupsByDirectorate(dirGroupsMap);
+
+    const cByGroup: Record<string, DeptCriterion[]> = {};
+    (allDirCriteriaRes.data || []).forEach((c: any) => {
+      if (!c.group_id) return;
+      (cByGroup[c.group_id] ||= []).push(c as DeptCriterion);
+    });
+    Object.values(cByGroup).forEach(arr => arr.sort((a, b) => a.order - b.order));
+    setCriteriaByGroup(cByGroup);
+
+    const mByGroup: Record<string, DirEmployee[]> = {};
+    const memByDir: Record<string, Record<string, string>> = {};
+    (membershipRes.data || []).forEach((row: any) => {
+      const emp = employeeMap.get(row.employee_id);
+      if (emp) (mByGroup[row.group_id] ||= []).push(emp);
+      ((memByDir[row.directorate_id] ||= {}))[row.employee_id] = row.group_id;
+    });
+    setMembersByGroup(mByGroup);
+    setGroupMembershipByDir(memByDir);
+
     setCeoCriteria((ceoCriteriaRes.data || []) as DeptCriterion[]);
   }, []);
 
@@ -555,6 +621,328 @@ export const EvaluationCriteria: React.FC = () => {
     });
     setCeoFormError('');
     setIsCeoModalOpen(true);
+  };
+
+  // ===== Directorate group CRUD (admin) =====
+
+  const openDirGroupCreateModal = (directorateId: string) => {
+    setDirGroupCrudDirectorateId(directorateId);
+    setEditingDirGroup(null);
+    const allEmps = employeesByDirectorate[directorateId] || [];
+    const memMap = groupMembershipByDir[directorateId] || {};
+    const unassigned = allEmps.filter(e => !memMap[e.id]).map(e => e.id);
+    setDirGroupForm({ name: '', memberIds: new Set(unassigned) });
+    setDirGroupError('');
+    setIsDirGroupModalOpen(true);
+  };
+
+  const openDirGroupEditModal = (group: DirCriteriaGroup) => {
+    setDirGroupCrudDirectorateId(group.directorate_id);
+    setEditingDirGroup(group);
+    const ids = (membersByGroup[group.id] || []).map(m => m.id);
+    setDirGroupForm({ name: group.name, memberIds: new Set(ids) });
+    setDirGroupError('');
+    setIsDirGroupModalOpen(true);
+  };
+
+  const toggleDirGroupMember = (employeeId: string) => {
+    setDirGroupForm(prev => {
+      const next = new Set(prev.memberIds);
+      if (next.has(employeeId)) next.delete(employeeId); else next.add(employeeId);
+      return { ...prev, memberIds: next };
+    });
+  };
+
+  const handleSaveDirGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDirGroupError('');
+    if (!dirGroupForm.name.trim()) { setDirGroupError('يرجى إدخال اسم المجموعة'); return; }
+    if (!dirGroupCrudDirectorateId) { setDirGroupError('لم يتم تحديد الإدارة'); return; }
+    setSavingDirGroup(true);
+    try {
+      let groupId = editingDirGroup?.id;
+      if (editingDirGroup) {
+        const { error } = await supabase
+          .from('department_criteria_groups')
+          .update({ name: dirGroupForm.name.trim() })
+          .eq('id', editingDirGroup.id);
+        if (error) { setDirGroupError(error.message); setSavingDirGroup(false); return; }
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'تحديث مجموعة معايير الإدارة',
+            entity_type: 'department_criteria_groups',
+            entity_id: editingDirGroup.id,
+            details: { name: dirGroupForm.name.trim(), directorate_id: dirGroupCrudDirectorateId },
+          });
+        }
+      } else {
+        const existing = groupsByDirectorate[dirGroupCrudDirectorateId] || [];
+        const maxOrder = existing.length > 0 ? Math.max(...existing.map(g => g.order)) : 0;
+        const { data, error } = await supabase
+          .from('department_criteria_groups')
+          .insert({
+            directorate_id: dirGroupCrudDirectorateId,
+            name: dirGroupForm.name.trim(),
+            order: maxOrder + 1,
+            is_default: false,
+            created_by: user?.id || null,
+          })
+          .select().single();
+        if (error || !data) { setDirGroupError(error?.message || 'فشل إنشاء المجموعة'); setSavingDirGroup(false); return; }
+        groupId = data.id;
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'إنشاء مجموعة معايير الإدارة',
+            entity_type: 'department_criteria_groups',
+            entity_id: data.id,
+            details: { name: dirGroupForm.name.trim(), directorate_id: dirGroupCrudDirectorateId },
+          });
+        }
+      }
+
+      const desired = dirGroupForm.memberIds;
+      const previously = new Set((membersByGroup[groupId!] || []).map(m => m.id));
+      const toAdd = [...desired].filter(id => !previously.has(id));
+      const toRemove = [...previously].filter(id => !desired.has(id));
+
+      if (toRemove.length > 0) {
+        await supabase
+          .from('department_criteria_group_members')
+          .delete()
+          .eq('group_id', groupId!)
+          .in('employee_id', toRemove);
+      }
+      if (toAdd.length > 0) {
+        await supabase
+          .from('department_criteria_group_members')
+          .delete()
+          .eq('directorate_id', dirGroupCrudDirectorateId)
+          .in('employee_id', toAdd);
+        await supabase
+          .from('department_criteria_group_members')
+          .insert(toAdd.map(eid => ({
+            group_id: groupId!,
+            directorate_id: dirGroupCrudDirectorateId,
+            employee_id: eid,
+          })));
+      }
+
+      if (user && (toAdd.length > 0 || toRemove.length > 0)) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'تحديث أعضاء مجموعة معايير الإدارة',
+          entity_type: 'department_criteria_group_members',
+          entity_id: groupId!,
+          details: { added: toAdd, removed: toRemove, directorate_id: dirGroupCrudDirectorateId },
+        });
+      }
+
+      setIsDirGroupModalOpen(false);
+      setEditingDirGroup(null);
+      fetchDepartmentsAndCriteria();
+    } catch (err) {
+      console.error(err);
+      setDirGroupError('حدث خطأ أثناء الحفظ');
+    } finally {
+      setSavingDirGroup(false);
+    }
+  };
+
+  const confirmDeleteDirGroup = (group: DirCriteriaGroup) => {
+    setDirGroupDeleteTarget(group);
+    setIsDirGroupDeleteOpen(true);
+  };
+
+  const handleDeleteDirGroup = async () => {
+    if (!dirGroupDeleteTarget) return;
+    setDeletingDirGroup(true);
+    try {
+      const { error } = await supabase
+        .from('department_criteria_groups').delete().eq('id', dirGroupDeleteTarget.id);
+      if (error) { setDirGroupError(error.message); return; }
+      if (user) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'حذف مجموعة معايير الإدارة',
+          entity_type: 'department_criteria_groups',
+          entity_id: dirGroupDeleteTarget.id,
+          details: { name: dirGroupDeleteTarget.name, directorate_id: dirGroupDeleteTarget.directorate_id },
+        });
+      }
+      setIsDirGroupDeleteOpen(false);
+      setDirGroupDeleteTarget(null);
+      fetchDepartmentsAndCriteria();
+    } finally {
+      setDeletingDirGroup(false);
+    }
+  };
+
+  // ===== Directorate criterion CRUD (admin) =====
+
+  const openDirCriterionAddModal = (group: DirCriteriaGroup) => {
+    setDirCriterionGroupId(group.id);
+    setDirCriterionDirectorateId(group.directorate_id);
+    setEditingDirCriterion(null);
+    setDirCriterionForm(defaultFormData);
+    setDirCriterionError('');
+    setIsDirCriterionModalOpen(true);
+  };
+
+  const openDirCriterionEditModal = (criterion: DeptCriterion) => {
+    setDirCriterionGroupId(criterion.group_id || '');
+    setDirCriterionDirectorateId(criterion.directorate_id || '');
+    setEditingDirCriterion(criterion);
+    setDirCriterionForm({
+      title: criterion.title,
+      description: criterion.description,
+      weight: criterion.weight.toString(),
+      is_active: criterion.is_active,
+    });
+    setDirCriterionError('');
+    setIsDirCriterionModalOpen(true);
+  };
+
+  const handleSaveDirCriterion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDirCriterionError('');
+    const weight = parseFloat(dirCriterionForm.weight);
+    if (!dirCriterionForm.title.trim()) { setDirCriterionError('يرجى إدخال عنوان المعيار'); return; }
+    if (!dirCriterionForm.description.trim()) { setDirCriterionError('يرجى إدخال وصف المعيار'); return; }
+    if (!weight || weight < 1 || weight > 100) { setDirCriterionError('يرجى إدخال وزن صحيح (1-100)'); return; }
+    if (!dirCriterionGroupId) { setDirCriterionError('لم يتم تحديد المجموعة'); return; }
+
+    if (dirCriterionForm.is_active) {
+      const groupCriteria = (criteriaByGroup[dirCriterionGroupId] || []).filter(c => c.id !== editingDirCriterion?.id);
+      const othersActive = groupCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+      const projected = othersActive + weight;
+      if (projected > specificWeightLimit) {
+        setDirCriterionError(`لا يمكن تجاوز الحد المسموح (${specificWeightLimit}%) في هذه المجموعة. المجموع بعد الإضافة سيصبح ${projected}%.`);
+        return;
+      }
+    }
+
+    setSavingDirCriterion(true);
+    try {
+      if (editingDirCriterion) {
+        const { error } = await supabase.from('department_criteria').update({
+          title: dirCriterionForm.title.trim(),
+          description: dirCriterionForm.description.trim(),
+          weight,
+          is_active: dirCriterionForm.is_active,
+        }).eq('id', editingDirCriterion.id);
+        if (error) { setDirCriterionError(error.message); setSavingDirCriterion(false); return; }
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'تحديث معيار خاص بالإدارة',
+            entity_type: 'department_criteria',
+            entity_id: editingDirCriterion.id,
+            details: { title: dirCriterionForm.title, weight, group_id: dirCriterionGroupId, directorate_id: dirCriterionDirectorateId },
+          });
+        }
+      } else {
+        const groupList = criteriaByGroup[dirCriterionGroupId] || [];
+        const maxOrder = groupList.length > 0 ? Math.max(...groupList.map(c => c.order)) : 0;
+        const { data, error } = await supabase.from('department_criteria').insert({
+          directorate_id: dirCriterionDirectorateId,
+          department_id: null,
+          group_id: dirCriterionGroupId,
+          title: dirCriterionForm.title.trim(),
+          description: dirCriterionForm.description.trim(),
+          weight,
+          order: maxOrder + 1,
+          is_active: dirCriterionForm.is_active,
+          created_by: user?.id || null,
+        }).select().single();
+        if (error) { setDirCriterionError(error.message); setSavingDirCriterion(false); return; }
+        if (user && data) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'إضافة معيار خاص بالإدارة',
+            entity_type: 'department_criteria',
+            entity_id: data.id,
+            details: { title: dirCriterionForm.title, weight, group_id: dirCriterionGroupId, directorate_id: dirCriterionDirectorateId },
+          });
+        }
+      }
+      setIsDirCriterionModalOpen(false);
+      setEditingDirCriterion(null);
+      fetchDepartmentsAndCriteria();
+    } finally {
+      setSavingDirCriterion(false);
+    }
+  };
+
+  const handleDirCriterionToggle = async (criterion: DeptCriterion) => {
+    const newActive = !criterion.is_active;
+    if (newActive) {
+      const groupCriteria = (criteriaByGroup[criterion.group_id || ''] || []).filter(c => c.id !== criterion.id);
+      const othersActive = groupCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+      const projected = othersActive + criterion.weight;
+      if (projected > specificWeightLimit) {
+        alert(`لا يمكن تفعيل هذا المعيار — المجموع في هذه المجموعة سيصبح ${projected}% ويتجاوز ${specificWeightLimit}%.`);
+        return;
+      }
+    }
+    const { error } = await supabase.from('department_criteria')
+      .update({ is_active: newActive }).eq('id', criterion.id);
+    if (!error) {
+      if (user) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: newActive ? 'تفعيل معيار خاص بالإدارة' : 'تعطيل معيار خاص بالإدارة',
+          entity_type: 'department_criteria',
+          entity_id: criterion.id,
+          details: { title: criterion.title, is_active: newActive },
+        });
+      }
+      fetchDepartmentsAndCriteria();
+    }
+  };
+
+  const handleDirCriterionReorder = async (criterion: DeptCriterion, direction: 'up' | 'down') => {
+    const list = criteriaByGroup[criterion.group_id || ''] || [];
+    const idx = list.findIndex(c => c.id === criterion.id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= list.length) return;
+    const swap = list[swapIdx];
+    await Promise.all([
+      supabase.from('department_criteria').update({ order: swap.order }).eq('id', criterion.id),
+      supabase.from('department_criteria').update({ order: criterion.order }).eq('id', swap.id),
+    ]);
+    fetchDepartmentsAndCriteria();
+  };
+
+  const confirmDeleteDirCriterion = (criterion: DeptCriterion) => {
+    setDirCriterionDeleteTarget(criterion);
+    setIsDirCriterionDeleteOpen(true);
+  };
+
+  const handleDeleteDirCriterion = async () => {
+    if (!dirCriterionDeleteTarget) return;
+    setDeletingDirCriterion(true);
+    try {
+      const { error } = await supabase.from('department_criteria')
+        .delete().eq('id', dirCriterionDeleteTarget.id);
+      if (!error) {
+        if (user) {
+          await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            action: 'حذف معيار خاص بالإدارة',
+            entity_type: 'department_criteria',
+            entity_id: dirCriterionDeleteTarget.id,
+            details: { title: dirCriterionDeleteTarget.title, group_id: dirCriterionDeleteTarget.group_id },
+          });
+        }
+        setIsDirCriterionDeleteOpen(false);
+        setDirCriterionDeleteTarget(null);
+        fetchDepartmentsAndCriteria();
+      }
+    } finally {
+      setDeletingDirCriterion(false);
+    }
   };
 
   const handleCeoSubmit = async (e: React.FormEvent) => {
@@ -1026,113 +1414,170 @@ export const EvaluationCriteria: React.FC = () => {
             </p>
           </div>
 
-          {filteredDirs.flatMap(dir => {
-            const dirDepts = allDepartments.filter(d => d.directorate_id === dir.id);
-            // For each directorate, emit one card per department (multi-dept) or a single
-            // directorate-level card (single/no-dept). Each card has its own weight cap.
-            const groups: Array<{ key: string; title: string; subtitle?: string; list: DeptCriterion[] }> =
-              dirDepts.length >= 2
-                ? dirDepts.map(dep => ({
-                    key: `dep-${dep.id}`,
-                    title: dir.name,
-                    subtitle: dep.name,
-                    list: deptCriteriaMap[dep.id] || [],
-                  }))
-                : [{
-                    key: `dir-${dir.id}`,
-                    title: dir.name,
-                    list: dirCriteriaMap[dir.id] || [],
-                  }];
+          {filteredDirs.map(dir => {
+            const dirGroups = groupsByDirectorate[dir.id] || [];
+            return (
+              <div key={dir.id} className="space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-5 w-5 text-emerald-600" />
+                    <h2 className="text-xl font-bold text-ds-text">{dir.name}</h2>
+                    <Badge variant="info" size="sm">{dirGroups.length} مجموعة</Badge>
+                  </div>
+                  <Button size="sm" onClick={() => openDirGroupCreateModal(dir.id)} className="flex items-center gap-1">
+                    <Plus className="h-4 w-4" /><span>إضافة مجموعة</span>
+                  </Button>
+                </div>
 
-            return groups.map(group => {
-              const active = group.list.filter(c => c.is_active);
-              const total = active.reduce((s, c) => s + c.weight, 0);
-              return (
-                <Card key={group.key}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                        <div>
-                          <h2 className="text-lg font-bold text-ds-text">{group.title}</h2>
-                          {group.subtitle && (
-                            <p className="text-sm text-ds-faint mt-0.5">قسم: {group.subtitle}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={total === specificWeightLimit ? 'success' : 'warning'} size="sm">
-                          المجموع: {total}% / {specificWeightLimit}%
-                        </Badge>
-                        <Badge variant="info" size="sm">
-                          {active.length} معيار
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardBody className="p-0">
-                    {group.list.length === 0 ? (
-                      <div className="p-6 text-center text-ds-faint text-sm">
-                        لم يتم تحديد معايير خاصة لهذا القسم بعد
-                      </div>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-8"> </TableHead>
-                            <TableHead>المعيار</TableHead>
-                            <TableHead>الوصف</TableHead>
-                            <TableHead>الحالة</TableHead>
-                            <TableHead>الوزن</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {group.list.map(c => {
-                            const isExpanded = expandedCriterionId === c.id;
-                            return (
-                              <React.Fragment key={c.id}>
-                                <TableRow
-                                  className={!c.is_active ? 'opacity-60 bg-ds-bg' : ''}
-                                  onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
-                                >
-                                  <TableCell className="text-ds-faint">
-                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                  </TableCell>
-                                  <TableCell>
-                                    <span className="font-bold text-ds-text">{c.title}</span>
-                                  </TableCell>
-                                  <TableCell>
-                                    <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
-                                      {c.is_active ? 'نشط' : 'معطل'}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <span className="font-bold text-emerald-600">{c.weight}%</span>
-                                  </TableCell>
-                                </TableRow>
-                                {isExpanded && (
-                                  <TableRow className="bg-emerald-50/40">
-                                    <TableCell colSpan={5} className="!whitespace-normal">
-                                      <div className="px-2 py-1">
-                                        <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
-                                        <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
+                {dirGroups.length === 0 ? (
+                  <Card>
+                    <CardBody>
+                      <p className="text-sm text-ds-faint text-center py-4">
+                        لم يتم تكوين أي مجموعة معايير لهذه الإدارة بعد
+                      </p>
+                    </CardBody>
+                  </Card>
+                ) : (
+                  dirGroups.map(group => {
+                    const list = criteriaByGroup[group.id] || [];
+                    const groupMembers = membersByGroup[group.id] || [];
+                    const active = list.filter(c => c.is_active);
+                    const total = active.reduce((s, c) => s + c.weight, 0);
+                    return (
+                      <Card key={group.id}>
+                        <CardBody className="p-0">
+                          <div className="px-6 py-4 border-b border-ds-border-subtle flex items-start justify-between gap-4 flex-wrap">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                <h3 className="text-lg font-bold text-ds-text">{group.name}</h3>
+                                {group.is_default && <Badge variant="info" size="sm">افتراضية</Badge>}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-ds-muted">
+                                <Shield className="h-4 w-4" />
+                                {groupMembers.length === 0 ? (
+                                  <span className="text-amber-600">لا يوجد موظفون مرتبطون</span>
+                                ) : (
+                                  <span>{groupMembers.length} موظف: {groupMembers.map(m => m.full_name).join('، ')}</span>
                                 )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardBody>
-                </Card>
-              );
-            });
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant={total === specificWeightLimit ? 'success' : 'warning'} size="sm">
+                                المجموع: {total}% / {specificWeightLimit}%
+                              </Badge>
+                              <Badge variant="info" size="sm">{active.length} معيار نشط</Badge>
+                              <Button size="sm" variant="outline" onClick={() => openDirGroupEditModal(group)} className="flex items-center gap-1">
+                                <Edit className="h-4 w-4" /><span>تعديل</span>
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openDirCriterionAddModal(group)} className="flex items-center gap-1">
+                                <Plus className="h-4 w-4" /><span>إضافة معيار</span>
+                              </Button>
+                              <Button size="sm" variant="danger" onClick={() => confirmDeleteDirGroup(group)} className="flex items-center gap-1">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {list.length === 0 ? (
+                            <div className="p-6 text-center text-ds-faint text-sm">
+                              لا توجد معايير في هذه المجموعة بعد
+                            </div>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>المعيار</TableHead>
+                                  <TableHead>الوصف</TableHead>
+                                  <TableHead>الحالة</TableHead>
+                                  <TableHead>الترتيب</TableHead>
+                                  <TableHead>الوزن</TableHead>
+                                  <TableHead>الإجراءات</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {list.map((c, index) => {
+                                  const isExpanded = expandedCriterionId === c.id;
+                                  const stop = (e: React.MouseEvent) => e.stopPropagation();
+                                  return (
+                                    <React.Fragment key={c.id}>
+                                      <TableRow
+                                        className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                                        onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
+                                      >
+                                        <TableCell>
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                            </div>
+                                            <span className="font-bold text-ds-text">{c.title}</span>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge variant={c.is_active ? 'success' : 'default'}>
+                                            {c.is_active ? 'نشط' : 'معطل'}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-1" onClick={stop}>
+                                            <button onClick={() => handleDirCriterionReorder(c, 'up')} disabled={index === 0}
+                                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                              <ArrowUp className="h-4 w-4" />
+                                            </button>
+                                            <span className="text-ds-faint text-sm font-mono w-6 text-center">{c.order}</span>
+                                            <button onClick={() => handleDirCriterionReorder(c, 'down')} disabled={index === list.length - 1}
+                                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                              <ArrowDown className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                                              <div className="bg-emerald-500 h-2 rounded-full transition-all"
+                                                style={{ width: `${(c.weight / specificWeightLimit) * 100}%` }} />
+                                            </div>
+                                            <span className="font-bold text-emerald-600">{c.weight}%</span>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-2" onClick={stop}>
+                                            <Button size="sm" variant="outline" onClick={() => openDirCriterionEditModal(c)} className="flex items-center gap-1">
+                                              <Edit className="h-4 w-4" /><span>تعديل</span>
+                                            </Button>
+                                            <Toggle checked={c.is_active} onChange={() => handleDirCriterionToggle(c)} size="sm" />
+                                            <Button size="sm" variant="danger" onClick={() => confirmDeleteDirCriterion(c)} className="flex items-center gap-1">
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                      {isExpanded && (
+                                        <TableRow className="bg-emerald-50/40">
+                                          <TableCell colSpan={6} className="!whitespace-normal">
+                                            <div className="px-2 py-1">
+                                              <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                              <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </CardBody>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            );
           })}
         </>
       )}
@@ -1910,6 +2355,147 @@ export const EvaluationCriteria: React.FC = () => {
               <Trash2 className="h-4 w-4" />
               <span>حذف المعيار</span>
             </span>
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Directorate group create/edit modal (admin) */}
+      <Modal
+        isOpen={isDirGroupModalOpen}
+        onClose={() => setIsDirGroupModalOpen(false)}
+        title={editingDirGroup ? 'تعديل مجموعة معايير الإدارة' : 'إضافة مجموعة معايير الإدارة'}
+      >
+        <form onSubmit={handleSaveDirGroup}>
+          <div className="space-y-4">
+            {dirGroupError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{dirGroupError}</div>
+            )}
+            <Input
+              label="اسم المجموعة"
+              value={dirGroupForm.name}
+              onChange={e => setDirGroupForm({ ...dirGroupForm, name: e.target.value })}
+              placeholder="مثال: فريق التصميم"
+              required
+            />
+            <div>
+              <label className="block text-sm font-medium text-ds-muted mb-2">
+                الموظفون المشمولون
+                <span className="text-xs text-ds-faint mr-2">— من موظفي هذه الإدارة</span>
+              </label>
+              <div className="border border-ds-border rounded-lg max-h-64 overflow-y-auto">
+                {(employeesByDirectorate[dirGroupCrudDirectorateId] || []).length === 0 ? (
+                  <p className="p-4 text-sm text-ds-faint text-center">لا يوجد موظفون في هذه الإدارة بعد</p>
+                ) : (
+                  (employeesByDirectorate[dirGroupCrudDirectorateId] || []).map(m => {
+                    const checked = dirGroupForm.memberIds.has(m.id);
+                    const memMap = groupMembershipByDir[dirGroupCrudDirectorateId] || {};
+                    const otherGroupId = memMap[m.id];
+                    const otherGroup = otherGroupId && otherGroupId !== editingDirGroup?.id
+                      ? (groupsByDirectorate[dirGroupCrudDirectorateId] || []).find(g => g.id === otherGroupId)
+                      : null;
+                    return (
+                      <label key={m.id} className="flex items-center gap-3 px-3 py-2 hover:bg-ds-bg cursor-pointer border-b border-ds-border-subtle last:border-b-0">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleDirGroupMember(m.id)}
+                          className="rounded border-ds-border"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-ds-text truncate">{m.full_name}</p>
+                          <p className="text-xs text-ds-faint truncate">
+                            {[m.job_title, m.department_name].filter(Boolean).join(' — ')}
+                          </p>
+                        </div>
+                        {otherGroup && (
+                          <Badge variant="warning" size="sm">حالياً في: {otherGroup.name}</Badge>
+                        )}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+              <p className="text-xs text-ds-faint mt-1">
+                إضافة موظف إلى هذه المجموعة سيخرجه من مجموعته السابقة (موظف واحد لمجموعة واحدة فقط لكل إدارة).
+              </p>
+            </div>
+          </div>
+          <ModalFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsDirGroupModalOpen(false)}>إلغاء</Button>
+            <Button type="submit" loading={savingDirGroup}>{editingDirGroup ? 'تحديث' : 'إنشاء'}</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Directorate group delete modal */}
+      <Modal isOpen={isDirGroupDeleteOpen} onClose={() => setIsDirGroupDeleteOpen(false)} title="حذف المجموعة">
+        <div className="flex flex-col items-center text-center py-4">
+          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-7 w-7 text-red-600" />
+          </div>
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذه المجموعة؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف مجموعة <span className="font-bold text-ds-muted">{dirGroupDeleteTarget?.name}</span> وجميع معاييرها نهائياً.
+            الموظفون المرتبطون بها سيصبحون غير مصنّفين.
+          </p>
+        </div>
+        <ModalFooter className="justify-center">
+          <Button type="button" variant="secondary" onClick={() => setIsDirGroupDeleteOpen(false)}>إلغاء</Button>
+          <Button type="button" variant="danger" onClick={handleDeleteDirGroup} loading={deletingDirGroup}>
+            <span className="flex items-center gap-1"><Trash2 className="h-4 w-4" /><span>حذف</span></span>
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Directorate criterion create/edit modal */}
+      <Modal
+        isOpen={isDirCriterionModalOpen}
+        onClose={() => setIsDirCriterionModalOpen(false)}
+        title={editingDirCriterion ? 'تعديل معيار خاص بالإدارة' : 'إضافة معيار خاص بالإدارة'}
+      >
+        <form onSubmit={handleSaveDirCriterion}>
+          <div className="space-y-4">
+            {dirCriterionError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{dirCriterionError}</div>
+            )}
+            <Input label="عنوان المعيار" value={dirCriterionForm.title}
+              onChange={e => setDirCriterionForm({ ...dirCriterionForm, title: e.target.value })}
+              placeholder="مثال: جودة العمل" required />
+            <TextArea label="وصف المعيار" value={dirCriterionForm.description}
+              onChange={e => setDirCriterionForm({ ...dirCriterionForm, description: e.target.value })}
+              placeholder="وصف مختصر لما يقيسه هذا المعيار" rows={3} required />
+            <Input label="الوزن (%)" type="number" value={dirCriterionForm.weight}
+              onChange={e => setDirCriterionForm({ ...dirCriterionForm, weight: e.target.value })}
+              placeholder="مثال: 10" min={1} max={specificWeightLimit} step={0.5} required />
+            {editingDirCriterion && (
+              <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
+                <Toggle checked={dirCriterionForm.is_active} onChange={() => setDirCriterionForm({ ...dirCriterionForm, is_active: !dirCriterionForm.is_active })} />
+                <span className="text-sm font-medium text-ds-muted">{dirCriterionForm.is_active ? 'المعيار نشط' : 'المعيار معطل'}</span>
+              </div>
+            )}
+          </div>
+          <ModalFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsDirCriterionModalOpen(false)}>إلغاء</Button>
+            <Button type="submit" loading={savingDirCriterion}>{editingDirCriterion ? 'تحديث' : 'إضافة'}</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Directorate criterion delete modal */}
+      <Modal isOpen={isDirCriterionDeleteOpen} onClose={() => setIsDirCriterionDeleteOpen(false)} title="تأكيد الحذف">
+        <div className="flex flex-col items-center text-center py-4">
+          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-7 w-7 text-red-600" />
+          </div>
+          <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
+          <p className="text-ds-faint text-sm">
+            سيتم حذف معيار <span className="font-bold text-ds-muted">{dirCriterionDeleteTarget?.title}</span> نهائياً.
+          </p>
+        </div>
+        <ModalFooter className="justify-center">
+          <Button type="button" variant="secondary" onClick={() => setIsDirCriterionDeleteOpen(false)}>إلغاء</Button>
+          <Button type="button" variant="danger" onClick={handleDeleteDirCriterion} loading={deletingDirCriterion}>
+            <span className="flex items-center gap-1"><Trash2 className="h-4 w-4" /><span>حذف المعيار</span></span>
           </Button>
         </ModalFooter>
       </Modal>
