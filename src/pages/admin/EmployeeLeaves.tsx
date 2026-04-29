@@ -123,13 +123,13 @@ export const EmployeeLeaves: React.FC = () => {
         .from('employee_leaves')
         .select(`
           id, employee_id, leave_type_id, start_month, end_month, notes, created_at,
-          employee:employees(id, full_name, job_title, avatar_url, department:departments(name)),
+          employee:employees(id, full_name, job_title, user:users(avatar_url), department:departments(name)),
           leave_type:employee_leave_types(name)
         `)
         .order('start_month', { ascending: false }),
       supabase
         .from('employees')
-        .select('id, full_name, job_title, avatar_url, department:departments(name)')
+        .select('id, full_name, job_title, user:users(avatar_url), department:departments(name)')
         .order('full_name'),
       supabase
         .from('employee_leave_types')
@@ -149,7 +149,7 @@ export const EmployeeLeaves: React.FC = () => {
         id: r.employee.id,
         full_name: r.employee.full_name,
         job_title: r.employee.job_title,
-        avatar_url: r.employee.avatar_url,
+        avatar_url: r.employee.user?.avatar_url || null,
         department_name: r.employee.department?.name || null,
       } : null,
       leave_type: r.leave_type,
@@ -159,7 +159,7 @@ export const EmployeeLeaves: React.FC = () => {
       id: e.id,
       full_name: e.full_name,
       job_title: e.job_title,
-      avatar_url: e.avatar_url,
+      avatar_url: e.user?.avatar_url || null,
       department_name: e.department?.name || null,
     })));
 
