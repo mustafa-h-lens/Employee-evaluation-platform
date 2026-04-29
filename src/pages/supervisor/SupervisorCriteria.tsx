@@ -389,7 +389,7 @@ export const SupervisorCriteria: React.FC = () => {
   const handleSaveCriterion = async (e: React.FormEvent) => {
     e.preventDefault();
     setCriterionError('');
-    const weight = parseInt(criterionForm.weight);
+    const weight = parseFloat(criterionForm.weight);
     if (!criterionForm.title.trim()) { setCriterionError('يرجى إدخال عنوان المعيار'); return; }
     if (!criterionForm.description.trim()) { setCriterionError('يرجى إدخال وصف المعيار'); return; }
     if (!weight || weight < 1 || weight > 100) { setCriterionError('يرجى إدخال وزن صحيح (1-100)'); return; }
@@ -856,7 +856,7 @@ export const SupervisorCriteria: React.FC = () => {
               placeholder="وصف مختصر لما يقيسه هذا المعيار" rows={3} required />
             <Input label="الوزن (%)" type="number" value={criterionForm.weight}
               onChange={e => setCriterionForm({ ...criterionForm, weight: e.target.value })}
-              placeholder="مثال: 10" min={1} max={specificWeightLimit} required />
+              placeholder="مثال: 10" min={1} max={specificWeightLimit} step={0.5} required />
             {editingCriterion && (
               <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle checked={criterionForm.is_active} onChange={() => setCriterionForm({ ...criterionForm, is_active: !criterionForm.is_active })} />

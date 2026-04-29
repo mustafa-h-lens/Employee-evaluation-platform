@@ -300,7 +300,7 @@ export const EvaluationCriteria: React.FC = () => {
     setFormError('');
     setSaving(true);
 
-    const weight = parseInt(formData.weight);
+    const weight = parseFloat(formData.weight);
 
     if (!formData.title.trim()) {
       setFormError('يرجى إدخال عنوان المعيار');
@@ -478,7 +478,7 @@ export const EvaluationCriteria: React.FC = () => {
     e.preventDefault();
     setCeoEvalFormError('');
     setCeoEvalSaving(true);
-    const weight = parseInt(ceoEvalFormData.weight);
+    const weight = parseFloat(ceoEvalFormData.weight);
     if (!ceoEvalFormData.title.trim()) { setCeoEvalFormError('يرجى إدخال عنوان المعيار'); setCeoEvalSaving(false); return; }
     if (!ceoEvalFormData.description.trim()) { setCeoEvalFormError('يرجى إدخال وصف المعيار'); setCeoEvalSaving(false); return; }
     if (!weight || weight < 1 || weight > 100) { setCeoEvalFormError('يرجى إدخال وزن صحيح (1-100)'); setCeoEvalSaving(false); return; }
@@ -562,7 +562,7 @@ export const EvaluationCriteria: React.FC = () => {
     setCeoFormError('');
     setCeoSaving(true);
 
-    const weight = parseInt(ceoFormData.weight);
+    const weight = parseFloat(ceoFormData.weight);
 
     if (!ceoFormData.title.trim()) { setCeoFormError('يرجى إدخال عنوان المعيار'); setCeoSaving(false); return; }
     if (!ceoFormData.description.trim()) { setCeoFormError('يرجى إدخال وصف المعيار'); setCeoSaving(false); return; }
@@ -1653,6 +1653,7 @@ export const EvaluationCriteria: React.FC = () => {
               placeholder="مثال: 40"
               min={1}
               max={100}
+              step={0.5}
               required
               helperText={`مجموع أوزان المعايير النشطة الحالي: ${totalWeight}% من ${generalWeightLimit}%`}
             />
@@ -1755,6 +1756,7 @@ export const EvaluationCriteria: React.FC = () => {
               placeholder="مثال: 10"
               min={1}
               max={specificWeightLimit}
+              step={0.5}
               required
               helperText={`مجموع أوزان المعايير الخاصة النشطة الحالي: ${ceoTotalWeight}% من ${specificWeightLimit}%`}
             />
@@ -1851,6 +1853,7 @@ export const EvaluationCriteria: React.FC = () => {
               placeholder="مثال: 20"
               min={1}
               max={100}
+              step={0.5}
               required
               helperText={`مجموع أوزان المعايير النشطة الحالي: ${ceoEvalTotalWeight}% من 100%`}
             />

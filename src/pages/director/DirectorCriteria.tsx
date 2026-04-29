@@ -313,7 +313,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
     setFormError('');
     setSaving(true);
 
-    const weight = parseInt(formData.weight);
+    const weight = parseFloat(formData.weight);
 
     if (!formData.title.trim()) {
       setFormError('يرجى إدخال عنوان المعيار');
@@ -794,6 +794,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
               placeholder="مثال: 10"
               min={1}
               max={specificWeightLimit}
+              step={0.5}
               required
               helperText={`مجموع أوزان المعايير الخاصة النشطة الحالي: ${totalWeight}% من ${specificWeightLimit}%`}
             />
