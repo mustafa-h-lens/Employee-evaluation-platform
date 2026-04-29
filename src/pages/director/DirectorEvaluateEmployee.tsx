@@ -146,8 +146,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           : supabase
               .from('department_criteria')
               .select('id', { count: 'exact', head: true })
-              .is('department_id', null)
               .in('directorate_id', dirIds)
+              .not('group_id', 'is', null)
               .eq('is_active', true),
         supabase
           .from('evaluation_settings')
@@ -359,25 +359,21 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     // Single-department / no-department directorates: directorate-level list.
     const empRef = employee || allEmployees.find(e => e.id === employeeId);
     const employeeDirectorateId = empRef?.directorate_id || null;
-    const employeeDepartmentId = empRef?.department_id || null;
 
+    // The employee's specific criteria are determined by the group they belong
+    // to within the directorate. If they aren't in any group, they get only
+    // general criteria.
     let specificQuery: any = null;
     if (employeeDirectorateId) {
-      const { count } = await supabase
-        .from('departments')
-        .select('id', { count: 'exact', head: true })
+      const { data: gm } = await supabase
+        .from('department_criteria_group_members')
+        .select('group_id')
         .eq('directorate_id', employeeDirectorateId)
-        .eq('status', 'active');
-      const deptCount = count || 0;
-      if (deptCount >= 2 && employeeDepartmentId) {
+        .eq('employee_id', employeeId)
+        .maybeSingle();
+      if (gm?.group_id) {
         specificQuery = supabase.from('department_criteria').select('*')
-          .eq('department_id', employeeDepartmentId)
-          .eq('is_active', true)
-          .order('order');
-      } else if (deptCount <= 1) {
-        specificQuery = supabase.from('department_criteria').select('*')
-          .is('department_id', null)
-          .eq('directorate_id', employeeDirectorateId)
+          .eq('group_id', gm.group_id)
           .eq('is_active', true)
           .order('order');
       }
