@@ -166,6 +166,26 @@ export type Database = {
     employee_id: string;
     created_at: string;
   };
+  employee_leave_types: {
+    id: string;
+    name: string;
+    description: string;
+    is_active: boolean;
+    order: number;
+    created_at: string;
+    updated_at: string;
+  };
+  employee_leaves: {
+    id: string;
+    employee_id: string;
+    leave_type_id: string;
+    start_month: string;
+    end_month: string;
+    notes: string;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  };
   director_evaluations: {
     id: string;
     director_id: string;
