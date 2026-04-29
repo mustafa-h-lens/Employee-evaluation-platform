@@ -130,7 +130,6 @@ export const EmployeeLeaves: React.FC = () => {
       supabase
         .from('employees')
         .select('id, full_name, job_title, avatar_url, department:departments(name)')
-        .eq('status', 'active')
         .order('full_name'),
       supabase
         .from('employee_leave_types')
