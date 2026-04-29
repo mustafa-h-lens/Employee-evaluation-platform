@@ -558,6 +558,15 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const scoredCount = criteria.filter(c => scores[c.id] && scores[c.id] > 0).length;
   const isReadOnly = evaluationStatus !== '' && evaluationStatus !== 'مسودة' && evaluationStatus !== 'مرفوض';
 
+  // Hooks must run on every render — keep this above the early returns below
+  // so React doesn't crash with "Rendered more hooks than during the previous
+  // render" the moment a loading flag flips.
+  const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
+  const tablePeriodIso = selectedTablePeriod
+    ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
+    : null;
+  const { isOnLeave } = useEmployeeLeaveStatus(tablePeriodIso);
+
   if (employeesLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -622,12 +631,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
   };
   const remainingDays = getRemainingDays();
 
-  // Table view when no employee selected
-  const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
-  const tablePeriodIso = selectedTablePeriod
-    ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
-    : null;
-  const { isOnLeave } = useEmployeeLeaveStatus(tablePeriodIso);
+  // Table view when no employee selected (hook + tablePeriodIso already
+  // computed above the early returns so the hook order stays stable).
   const tablePeriodLabel = selectedTablePeriod
     ? `${monthLabels[selectedTablePeriod.month]} ${selectedTablePeriod.year}`
     : '';

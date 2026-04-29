@@ -618,6 +618,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const scoredCount = criteria.filter(c => scores[c.id] && scores[c.id] > 0).length;
   const isReadOnly = evaluationStatus !== '' && evaluationStatus !== 'مسودة' && evaluationStatus !== 'مرفوض';
 
+  // Hooks must run on every render — do NOT put any hook call after the
+  // `if (employeesLoading)` early return below, or React will crash with
+  // "Rendered more hooks than during the previous render" the moment the
+  // loading flag flips.
+  const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
+  const tablePeriodIso = selectedTablePeriod
+    ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
+    : null;
+  const { isOnLeave } = useEmployeeLeaveStatus(tablePeriodIso);
+
   if (employeesLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -640,15 +650,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     e.job_title.includes(searchQuery)
   );
 
-  // Table view when no employee selected
-  const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
+  // Table view when no employee selected (selectedTablePeriod / tablePeriodIso
+  // already computed above the early return so the hook order is stable).
   const tablePeriodLabel = selectedTablePeriod
     ? `${monthLabels[selectedTablePeriod.month]} ${selectedTablePeriod.year}`
     : '';
-  const tablePeriodIso = selectedTablePeriod
-    ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
-    : null;
-  const { isOnLeave } = useEmployeeLeaveStatus(tablePeriodIso);
 
   if (!employeeId) {
     return (

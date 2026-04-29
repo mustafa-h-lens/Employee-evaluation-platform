@@ -558,14 +558,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
     d.job_title.includes(searchQuery)
   );
 
-  if (directorsLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
+  // Hooks must run on every render — keep this above the
+  // `if (directorsLoading)` early return so React doesn't crash with
+  // "Rendered more hooks than during the previous render" the moment
+  // loading flips false.
   const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
   const tablePeriodIso = selectedTablePeriod
     ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
@@ -574,6 +570,14 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const tablePeriodLabel = selectedTablePeriod
     ? `${monthLabels[selectedTablePeriod.month]} ${selectedTablePeriod.year}`
     : '';
+
+  if (directorsLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   // Table view when no director selected
   if (!directorId) {
