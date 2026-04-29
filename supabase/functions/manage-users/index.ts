@@ -8,6 +8,23 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// Validate a bearer token by hitting the auth REST endpoint directly. The
+// SDK's auth.getUser(token) decodes the JWT locally and currently rejects
+// ES256 (Supabase's new asymmetric signing keys) with "Unsupported JWT
+// algorithm" — this fetch bypasses that and lets the auth server do the
+// verification it already does correctly.
+async function getAuthUser(token: string): Promise<{ id: string; email?: string } | null> {
+  const resp = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    },
+  });
+  if (!resp.ok) return null;
+  const user = await resp.json();
+  return user?.id ? user : null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -95,9 +112,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user: callerAuth },
-      } = await supabaseAdmin.auth.getUser(token);
+      const callerAuth = await getAuthUser(token);
       if (!callerAuth) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
@@ -258,9 +273,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user: callerAuth },
-      } = await supabaseAdmin.auth.getUser(token);
+      const callerAuth = await getAuthUser(token);
       if (!callerAuth) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
@@ -350,7 +363,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const token = authHeader.replace("Bearer ", "");
-      const { data: { user: callerAuth } } = await supabaseAdmin.auth.getUser(token);
+      const callerAuth = await getAuthUser(token);
       if (!callerAuth) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
