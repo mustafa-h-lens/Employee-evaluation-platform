@@ -4,10 +4,11 @@ import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronRight, User } from 'lucide-react';
+import { Save, Scale, RefreshCw, Calendar, CheckCircle, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronRight, User, CalendarOff } from 'lucide-react';
 import { computeFinalScores } from '../../lib/scoring';
 import { AvatarUploader } from '../../components/ui/AvatarUploader';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { LeaveTypes } from './LeaveTypes';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -39,6 +40,7 @@ export const AdminSettings: React.FC = () => {
 
   // Section visibility
   const [showWeights, setShowWeights] = useState(false);
+  const [showLeaveTypes, setShowLeaveTypes] = useState(false);
 
   // Password change state
   const [showPwForm, setShowPwForm] = useState(false);
@@ -494,6 +496,44 @@ export const AdminSettings: React.FC = () => {
           </div>
         </CardBody>
       </Card>
+      )}
+
+      {/* Leave types catalog */}
+      {!showLeaveTypes ? (
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowLeaveTypes(true)}>
+          <CardBody className="flex items-center justify-between py-5 px-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                <CalendarOff className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-ds-text">أنواع الإجازات</h3>
+                <p className="text-sm text-ds-faint">قائمة أنواع الإجازات المعتمدة في النظام — تُستخدم عند إضافة إجازة لموظف</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-ds-faint" />
+          </CardBody>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center">
+                  <CalendarOff className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-ds-text">أنواع الإجازات</h2>
+                  <p className="text-sm text-ds-muted">قائمة أنواع الإجازات المعتمدة في النظام — تُستخدم عند إضافة إجازة لموظف</p>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => setShowLeaveTypes(false)}>إخفاء</Button>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <LeaveTypes hideHero />
+          </CardBody>
+        </Card>
       )}
 
       {/* Name Change */}

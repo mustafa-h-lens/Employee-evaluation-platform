@@ -41,7 +41,11 @@ const defaultFormData: FormData = {
   is_active: true,
 };
 
-export const LeaveTypes: React.FC = () => {
+interface LeaveTypesProps {
+  hideHero?: boolean;
+}
+
+export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
   const { user } = useAuth();
   const toast = useToast();
   const [types, setTypes] = useState<LeaveType[]>([]);
@@ -223,25 +227,34 @@ export const LeaveTypes: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div
-        className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-3"
-        style={{
-          background: 'var(--sc-amber-grad)',
-          border: '1px solid var(--sc-amber-border)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>أنواع الإجازات</h1>
-          <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>
-            قائمة أنواع الإجازات المعتمدة في النظام — تُستخدم عند إضافة إجازة لموظف
-          </p>
+      {!hideHero ? (
+        <div
+          className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-3"
+          style={{
+            background: 'var(--sc-amber-grad)',
+            border: '1px solid var(--sc-amber-border)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
+          <div>
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>أنواع الإجازات</h1>
+            <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>
+              قائمة أنواع الإجازات المعتمدة في النظام — تُستخدم عند إضافة إجازة لموظف
+            </p>
+          </div>
+          <Button onClick={openAdd} className="flex items-center gap-2">
+            <span>إضافة نوع</span>
+            <Plus className="h-5 w-5" />
+          </Button>
         </div>
-        <Button onClick={openAdd} className="flex items-center gap-2">
-          <span>إضافة نوع</span>
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={openAdd} className="flex items-center gap-2">
+            <span>إضافة نوع</span>
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardBody className="p-0">
