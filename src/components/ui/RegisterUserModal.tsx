@@ -143,10 +143,12 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
         }),
       });
 
-      const result = await response.json();
+      let result: any = {};
+      try { result = await response.json(); } catch { /* non-JSON body */ }
 
       if (!response.ok) {
-        throw new Error(result.error || 'فشل في إنشاء المستخدم');
+        const detail = result?.error || result?.message || `HTTP ${response.status} ${response.statusText || 'Error'}`;
+        throw new Error(`فشل في إنشاء المستخدم — ${detail}`);
       }
 
       onSuccess();
