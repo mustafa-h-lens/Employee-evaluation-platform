@@ -12,6 +12,7 @@ import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, 
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
 
 interface EmployeeInfo {
   id: string;
@@ -623,6 +624,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   // Table view when no employee selected
   const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
+  const tablePeriodIso = selectedTablePeriod
+    ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
+    : null;
+  const { isOnLeave } = useEmployeeLeaveStatus(tablePeriodIso);
   const tablePeriodLabel = selectedTablePeriod
     ? `${monthLabels[selectedTablePeriod.month]} ${selectedTablePeriod.year}`
     : '';
@@ -741,8 +746,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEmployees.map((emp) => (
-                    <TableRow key={emp.id}>
+                  {filteredEmployees.map((emp) => {
+                    const leave = isOnLeave(emp.id);
+                    return (
+                    <TableRow key={emp.id} className={leave ? 'opacity-60 bg-ds-bg' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="md" />
@@ -762,13 +769,21 @@ export const SupervisorEvaluateForm: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Badge variant={getEvalStatusVariant(emp.eval_status)} size="sm">
-                            {getEvalStatusLabel(emp.eval_status)}
-                          </Badge>
+                          {leave ? (
+                            <Badge variant="warning" size="sm">في إجازة — {leave.type_name}</Badge>
+                          ) : (
+                            <Badge variant={getEvalStatusVariant(emp.eval_status)} size="sm">
+                              {getEvalStatusLabel(emp.eval_status)}
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {(() => {
+                        {leave ? (
+                          <span className="text-xs text-amber-700" title={formatLeaveChip(leave)}>
+                            لا يمكن التقييم — {leave.type_name}
+                          </span>
+                        ) : (() => {
                           const isPeriodOpen = selectedTablePeriod?.status === 'نشطة';
                           const hasExisting = !!emp.eval_status && emp.eval_status !== 'مسودة';
 
@@ -818,7 +833,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
                         })()}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

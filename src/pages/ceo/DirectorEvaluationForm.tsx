@@ -12,6 +12,7 @@ import { Save, Send, User, Star, AlertTriangle, Lock, MessageSquare, ArrowRight,
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
 
 interface Director {
   id: string;
@@ -566,6 +567,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   }
 
   const selectedTablePeriod = tablePeriods.find(p => p.id === tablePeriodId);
+  const tablePeriodIso = selectedTablePeriod
+    ? `${selectedTablePeriod.year}-${String(selectedTablePeriod.month).padStart(2, '0')}-01`
+    : null;
+  const { isUserOnLeave } = useEmployeeLeaveStatus(tablePeriodIso);
   const tablePeriodLabel = selectedTablePeriod
     ? `${monthLabels[selectedTablePeriod.month]} ${selectedTablePeriod.year}`
     : '';
@@ -682,8 +687,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDirectors.map((dir) => (
-                    <TableRow key={dir.id}>
+                  {filteredDirectors.map((dir) => {
+                    const leave = isUserOnLeave(dir.id);
+                    return (
+                    <TableRow key={dir.id} className={leave ? 'opacity-60 bg-ds-bg' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <UserAvatar name={dir.full_name} avatarUrl={dir.avatar_url} size="md" />
@@ -700,23 +707,31 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                         <span className="text-ds-muted text-sm">{dir.job_title}</span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-ds-faint">أنت:</span>
-                            <Badge variant={getEvalStatusVariant(dir.eval_status)} size="sm">
-                              {getEvalStatusLabel(dir.eval_status, 'me')}
-                            </Badge>
+                        {leave ? (
+                          <Badge variant="warning" size="sm">في إجازة — {leave.type_name}</Badge>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-ds-faint">أنت:</span>
+                              <Badge variant={getEvalStatusVariant(dir.eval_status)} size="sm">
+                                {getEvalStatusLabel(dir.eval_status, 'me')}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-ds-faint">الشريك:</span>
+                              <Badge variant={getEvalStatusVariant(dir.partner_eval_status)} size="sm">
+                                {getEvalStatusLabel(dir.partner_eval_status, 'partner')}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-ds-faint">الشريك:</span>
-                            <Badge variant={getEvalStatusVariant(dir.partner_eval_status)} size="sm">
-                              {getEvalStatusLabel(dir.partner_eval_status, 'partner')}
-                            </Badge>
-                          </div>
-                        </div>
+                        )}
                       </TableCell>
                       <TableCell>
-                        {(() => {
+                        {leave ? (
+                          <span className="text-xs text-amber-700" title={formatLeaveChip(leave)}>
+                            لا يمكن التقييم — {leave.type_name}
+                          </span>
+                        ) : (() => {
                           const isPeriodOpen = selectedTablePeriod?.status === 'نشطة';
                           const hasExisting = !!dir.eval_status && dir.eval_status !== 'مسودة';
 
@@ -767,7 +782,8 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                         })()}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
