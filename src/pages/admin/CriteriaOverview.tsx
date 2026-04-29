@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { ClipboardList, Building2, Scale, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { ClipboardList, Building2, Scale, Filter, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { ModernSelect } from '../../components/ui/ModernSelect';
 
 interface GeneralCriterion {
@@ -17,8 +17,7 @@ interface GeneralCriterion {
 
 interface DeptCriterion {
   id: string;
-  department_id: string | null;
-  directorate_id: string | null;
+  group_id: string | null;
   title: string;
   description: string;
   weight: number;
@@ -26,23 +25,25 @@ interface DeptCriterion {
   is_active: boolean;
 }
 
+interface CriteriaGroup {
+  id: string;
+  directorate_id: string;
+  name: string;
+  order: number;
+  is_default: boolean;
+  member_names: string[];
+}
+
 interface Directorate {
   id: string;
   name: string;
 }
 
-interface Department {
-  id: string;
-  name: string;
-  directorate_id: string;
-}
-
 export const CriteriaOverview: React.FC = () => {
   const [generalCriteria, setGeneralCriteria] = useState<GeneralCriterion[]>([]);
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [dirCriteriaMap, setDirCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
-  const [deptCriteriaMap, setDeptCriteriaMap] = useState<Record<string, DeptCriterion[]>>({});
+  const [groupsByDirectorate, setGroupsByDirectorate] = useState<Record<string, CriteriaGroup[]>>({});
+  const [criteriaByGroup, setCriteriaByGroup] = useState<Record<string, DeptCriterion[]>>({});
   const [selectedDirId, setSelectedDirId] = useState<string>('all');
   const [generalWeight, setGeneralWeight] = useState(50);
   const [specificWeight, setSpecificWeight] = useState(50);
@@ -51,12 +52,14 @@ export const CriteriaOverview: React.FC = () => {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [settingsRes, criteriaRes, dirsRes, deptsRes, deptCriteriaRes] = await Promise.all([
+      const [settingsRes, criteriaRes, dirsRes, groupsRes, deptCriteriaRes, membershipRes, employeesRes] = await Promise.all([
         supabase.from('evaluation_settings').select('*').limit(1).single(),
         supabase.from('evaluation_criteria').select('*').order('order'),
         supabase.from('directorates').select('id, name').order('name'),
-        supabase.from('departments').select('id, name, directorate_id').eq('status', 'active').order('name'),
-        supabase.from('department_criteria').select('*').order('order'),
+        supabase.from('department_criteria_groups').select('*').order('order'),
+        supabase.from('department_criteria').select('id, group_id, title, description, weight, order, is_active').order('order'),
+        supabase.from('department_criteria_group_members').select('group_id, employee_id'),
+        supabase.from('employees').select('id, full_name'),
       ]);
 
       if (settingsRes.data) {
@@ -66,19 +69,39 @@ export const CriteriaOverview: React.FC = () => {
 
       setGeneralCriteria(criteriaRes.data || []);
       setDirectorates((dirsRes.data as unknown as Directorate[]) || []);
-      setDepartments((deptsRes.data as unknown as Department[]) || []);
 
-      const dirMap: Record<string, DeptCriterion[]> = {};
-      const deptMap: Record<string, DeptCriterion[]> = {};
-      (deptCriteriaRes.data || []).forEach((c: DeptCriterion) => {
-        if (c.department_id) {
-          (deptMap[c.department_id] ||= []).push(c);
-        } else if (c.directorate_id) {
-          (dirMap[c.directorate_id] ||= []).push(c);
-        }
+      const empNameMap = new Map<string, string>(
+        (employeesRes.data || []).map((e: any) => [e.id as string, (e.full_name as string) || 'موظف'])
+      );
+      const memberNamesByGroup: Record<string, string[]> = {};
+      (membershipRes.data || []).forEach((row: any) => {
+        const name = empNameMap.get(row.employee_id);
+        if (!name) return;
+        (memberNamesByGroup[row.group_id] ||= []).push(name);
       });
-      setDirCriteriaMap(dirMap);
-      setDeptCriteriaMap(deptMap);
+
+      const dirMap: Record<string, CriteriaGroup[]> = {};
+      (groupsRes.data || []).forEach((g: any) => {
+        const enriched: CriteriaGroup = {
+          id: g.id,
+          directorate_id: g.directorate_id,
+          name: g.name,
+          order: g.order,
+          is_default: g.is_default,
+          member_names: memberNamesByGroup[g.id] || [],
+        };
+        (dirMap[g.directorate_id] ||= []).push(enriched);
+      });
+      Object.values(dirMap).forEach(arr => arr.sort((a, b) => a.order - b.order));
+      setGroupsByDirectorate(dirMap);
+
+      const cMap: Record<string, DeptCriterion[]> = {};
+      (deptCriteriaRes.data || []).forEach((c: any) => {
+        if (!c.group_id) return;
+        (cMap[c.group_id] ||= []).push(c as DeptCriterion);
+      });
+      Object.values(cMap).forEach(arr => arr.sort((a, b) => a.order - b.order));
+      setCriteriaByGroup(cMap);
     } catch (error) {
       console.error('Error fetching criteria overview:', error);
     } finally {
@@ -243,112 +266,124 @@ export const CriteriaOverview: React.FC = () => {
         />
       </div>
 
-      {/* Specific Criteria — per department for multi-dept directorates, per directorate otherwise */}
-      {filteredDirs.flatMap(dir => {
-        const dirDepts = departments.filter(d => d.directorate_id === dir.id);
-        const groups: Array<{ key: string; title: string; subtitle?: string; list: DeptCriterion[] }> =
-          dirDepts.length >= 2
-            ? dirDepts.map(dep => ({
-                key: `dep-${dep.id}`,
-                title: dir.name,
-                subtitle: dep.name,
-                list: deptCriteriaMap[dep.id] || [],
-              }))
-            : [{
-                key: `dir-${dir.id}`,
-                title: dir.name,
-                list: dirCriteriaMap[dir.id] || [],
-              }];
-
-        return groups.map(group => {
-          const active = group.list.filter(c => c.is_active);
-          const total = active.reduce((s, c) => s + c.weight, 0);
-          return (
-            <Card key={group.key}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                    <div>
-                      <h2 className="text-lg font-bold text-ds-text">{group.title}</h2>
-                      {group.subtitle && (
-                        <p className="text-sm text-ds-faint mt-0.5">قسم: {group.subtitle}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={total === specificWeight ? 'success' : 'warning'} size="sm">
-                      المجموع: {total}% / {specificWeight}%
-                    </Badge>
-                    <Badge variant="info" size="sm">
-                      {active.length} معيار
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardBody className="p-0">
-                {group.list.length === 0 ? (
-                  <div className="p-6 text-center text-ds-faint text-sm">
-                    لم يتم تحديد معايير خاصة بعد
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-8"> </TableHead>
-                        <TableHead>الحالة</TableHead>
-                        <TableHead>الوزن</TableHead>
-                        <TableHead>الوصف</TableHead>
-                        <TableHead>المعيار</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {group.list.map(c => {
-                        const isExpanded = expandedId === c.id;
-                        return (
-                          <React.Fragment key={c.id}>
-                            <TableRow
-                              className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
-                              onClick={() => setExpandedId(isExpanded ? null : c.id)}
-                            >
-                              <TableCell className="text-ds-faint">
-                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
-                                  {c.is_active ? 'نشط' : 'معطل'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <span className="font-bold text-emerald-600">{c.weight}%</span>
-                              </TableCell>
-                              <TableCell>
-                                <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
-                              </TableCell>
-                              <TableCell>
-                                <span className="font-bold text-ds-text">{c.title}</span>
-                              </TableCell>
-                            </TableRow>
-                            {isExpanded && (
-                              <TableRow className="bg-emerald-50/40">
-                                <TableCell colSpan={5} className="!whitespace-normal">
-                                  <div className="px-2 py-1">
-                                    <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
-                                    <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
+      {/* Specific criteria per directorate, broken down by group */}
+      {filteredDirs.map(dir => {
+        const dirGroups = groupsByDirectorate[dir.id] || [];
+        return (
+          <div key={dir.id} className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-emerald-600" />
+              <h2 className="text-xl font-bold text-ds-text">{dir.name}</h2>
+              <Badge variant="info" size="sm">{dirGroups.length} مجموعة</Badge>
+            </div>
+            {dirGroups.length === 0 ? (
+              <Card>
+                <CardBody>
+                  <p className="text-sm text-ds-faint text-center py-4">
+                    لم يتم تكوين أي مجموعة معايير لهذه الإدارة بعد
+                  </p>
+                </CardBody>
+              </Card>
+            ) : (
+              dirGroups.map(group => {
+                const list = criteriaByGroup[group.id] || [];
+                const active = list.filter(c => c.is_active);
+                const total = active.reduce((s, c) => s + c.weight, 0);
+                return (
+                  <Card key={group.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <h3 className="text-lg font-bold text-ds-text">{group.name}</h3>
+                            {group.is_default && (
+                              <Badge variant="info" size="sm">افتراضية</Badge>
                             )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardBody>
-            </Card>
-          );
-        });
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-ds-muted">
+                            <Users className="h-4 w-4" />
+                            {group.member_names.length === 0 ? (
+                              <span className="text-amber-600">لا يوجد موظفون مرتبطون</span>
+                            ) : (
+                              <span>{group.member_names.length} موظف: {group.member_names.join('، ')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={total === specificWeight ? 'success' : 'warning'} size="sm">
+                            المجموع: {total}% / {specificWeight}%
+                          </Badge>
+                          <Badge variant="info" size="sm">{active.length} معيار</Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="p-0">
+                      {list.length === 0 ? (
+                        <div className="p-6 text-center text-ds-faint text-sm">
+                          لم يتم تحديد معايير في هذه المجموعة بعد
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-8"> </TableHead>
+                              <TableHead>الحالة</TableHead>
+                              <TableHead>الوزن</TableHead>
+                              <TableHead>الوصف</TableHead>
+                              <TableHead>المعيار</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {list.map(c => {
+                              const isExpanded = expandedId === c.id;
+                              return (
+                                <React.Fragment key={c.id}>
+                                  <TableRow
+                                    className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                                    onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                                  >
+                                    <TableCell className="text-ds-faint">
+                                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant={c.is_active ? 'success' : 'default'} size="sm">
+                                        {c.is_active ? 'نشط' : 'معطل'}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="font-bold text-emerald-600">{c.weight}%</span>
+                                    </TableCell>
+                                    <TableCell>
+                                      <p className="text-ds-faint text-sm max-w-xs truncate">{c.description}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="font-bold text-ds-text">{c.title}</span>
+                                    </TableCell>
+                                  </TableRow>
+                                  {isExpanded && (
+                                    <TableRow className="bg-emerald-50/40">
+                                      <TableCell colSpan={5} className="!whitespace-normal">
+                                        <div className="px-2 py-1">
+                                          <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                          <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardBody>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        );
       })}
     </div>
   );
