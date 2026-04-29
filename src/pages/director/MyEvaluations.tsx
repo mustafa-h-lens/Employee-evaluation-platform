@@ -101,6 +101,7 @@ export const DirectorMyEvaluations: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number>(0);
   const [filterMonth, setFilterMonth] = useState<number>(0);
+  const [leaves, setLeaves] = useState<Array<{ start_month: string; end_month: string; type_name: string }>>([]);
 
   useEffect(() => {
     if (user) fetchEvaluations();
@@ -125,6 +126,23 @@ export const DirectorMyEvaluations: React.FC = () => {
         .order('created_at', { ascending: false });
 
       setRawEvaluations((data || []) as unknown as EvaluationRow[]);
+
+      // Pull this director's leaves so a paused month renders a friendly chip
+      // instead of the bare "لا توجد تقييمات" empty state.
+      const { data: emp } = await supabase
+        .from('employees').select('id').eq('user_id', user.id).maybeSingle();
+      if (emp?.id) {
+        const { data: leaveRows } = await supabase
+          .from('employee_leaves')
+          .select('start_month, end_month, leave_type:employee_leave_types(name)')
+          .eq('employee_id', emp.id)
+          .order('start_month');
+        setLeaves(((leaveRows || []) as any[]).map((r: any) => ({
+          start_month: r.start_month,
+          end_month: r.end_month,
+          type_name: r.leave_type?.name || 'إجازة',
+        })));
+      }
     } catch (error) {
       console.error('Error fetching director evaluations:', error);
     } finally {
@@ -337,14 +355,38 @@ export const DirectorMyEvaluations: React.FC = () => {
         </CardBody>
       </Card>
 
-      {filtered.length === 0 ? (
-        <Card>
-          <CardBody className="text-center py-16">
-            <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-ds-faint text-lg">{combinedEvaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
-          </CardBody>
-        </Card>
-      ) : (
+      {filtered.length === 0 ? (() => {
+        const matchedLeave = (() => {
+          if (!filterYear) return null;
+          const monthIso = filterMonth
+            ? `${filterYear}-${String(filterMonth).padStart(2, '0')}-01`
+            : null;
+          return leaves.find(l => {
+            if (monthIso) return l.start_month <= monthIso && l.end_month >= monthIso;
+            const yearStart = `${filterYear}-01-01`;
+            const yearEnd = `${filterYear}-12-01`;
+            return l.start_month <= yearEnd && l.end_month >= yearStart;
+          }) || null;
+        })();
+        return (
+          <Card>
+            <CardBody className="text-center py-16">
+              {matchedLeave ? (
+                <>
+                  <Calendar className="h-16 w-16 text-amber-300 mx-auto mb-4" />
+                  <p className="text-ds-text text-lg font-medium mb-1">أنت في إجازة خلال هذا الوقت — لا تقييم مطلوب</p>
+                  <p className="text-ds-faint text-sm">{matchedLeave.type_name}</p>
+                </>
+              ) : (
+                <>
+                  <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-ds-faint text-lg">{combinedEvaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
+                </>
+              )}
+            </CardBody>
+          </Card>
+        );
+      })() : (
         <div className="space-y-4">
           {filtered.map(combined => {
             const isExpanded = expandedKey === combined.key;

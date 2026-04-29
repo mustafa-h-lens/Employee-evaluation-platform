@@ -86,6 +86,7 @@ interface ScoreDetail {
 export const MyEvaluations: React.FC = () => {
   const { user } = useAuth();
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [leaves, setLeaves] = useState<Array<{ start_month: string; end_month: string; type_name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [scores, setScores] = useState<Record<string, ScoreDetail[]>>({});
@@ -113,6 +114,19 @@ export const MyEvaluations: React.FC = () => {
       setLoading(false);
       return;
     }
+
+    // Fetch the user's leaves so we can show a friendly "في إجازة" chip in
+    // months that are paused. Cheap query; rarely more than a handful of rows.
+    const { data: leaveRows } = await supabase
+      .from('employee_leaves')
+      .select('start_month, end_month, leave_type:employee_leave_types(name)')
+      .eq('employee_id', employee.id)
+      .order('start_month');
+    setLeaves(((leaveRows || []) as any[]).map((r: any) => ({
+      start_month: r.start_month,
+      end_month: r.end_month,
+      type_name: r.leave_type?.name || 'إجازة',
+    })));
 
     // Fetch director/manager evaluations
     const { data: dirData } = await supabase
@@ -389,14 +403,40 @@ export const MyEvaluations: React.FC = () => {
           if (filterMonth && e.period?.month !== filterMonth) return false;
           return true;
         });
-        return filtered.length === 0 ? (
-          <Card>
-            <CardBody className="text-center py-16">
-              <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-ds-faint text-lg">{evaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
-            </CardBody>
-          </Card>
-        ) : (
+        return filtered.length === 0 ? (() => {
+          // If the filtered window falls entirely inside a leave, surface that
+          // instead of the bare "لا توجد تقييمات" — gives the employee context.
+          const matchedLeave = (() => {
+            if (!filterYear) return null;
+            const monthIso = filterMonth
+              ? `${filterYear}-${String(filterMonth).padStart(2, '0')}-01`
+              : null;
+            return leaves.find(l => {
+              if (monthIso) return l.start_month <= monthIso && l.end_month >= monthIso;
+              const yearStart = `${filterYear}-01-01`;
+              const yearEnd = `${filterYear}-12-01`;
+              return l.start_month <= yearEnd && l.end_month >= yearStart;
+            }) || null;
+          })();
+          return (
+            <Card>
+              <CardBody className="text-center py-16">
+                {matchedLeave ? (
+                  <>
+                    <Calendar className="h-16 w-16 text-amber-300 mx-auto mb-4" />
+                    <p className="text-ds-text text-lg font-medium mb-1">أنت في إجازة خلال هذا الوقت — لا تقييم مطلوب</p>
+                    <p className="text-ds-faint text-sm">{matchedLeave.type_name}</p>
+                  </>
+                ) : (
+                  <>
+                    <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-ds-faint text-lg">{evaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
+                  </>
+                )}
+              </CardBody>
+            </Card>
+          );
+        })() : (
         <div className="space-y-5">
           {filtered.map(ev => {
             const generalScores = scores[ev.id]?.filter(s => s.criterion_type === 'general') || [];
