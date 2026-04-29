@@ -140,6 +140,7 @@ export type Database = {
     id: string;
     department_id: string | null;
     directorate_id: string | null;
+    group_id: string | null;
     title: string;
     description: string;
     weight: number;
@@ -148,6 +149,22 @@ export type Database = {
     created_by: string | null;
     created_at: string;
     updated_at: string;
+  };
+  department_criteria_groups: {
+    id: string;
+    directorate_id: string;
+    name: string;
+    order: number;
+    is_default: boolean;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  department_criteria_group_members: {
+    group_id: string;
+    directorate_id: string;
+    employee_id: string;
+    created_at: string;
   };
   director_evaluations: {
     id: string;
