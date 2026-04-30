@@ -30,6 +30,9 @@ interface EmployeeInfo {
   eval_percentage?: number | null;
   peer_name?: string | null;
   peer_status?: string | null;
+  // Composite "${employee_id}__${directorate_id}" used as the React key
+  // so the same employee can appear in two directorate rows independently.
+  rowKey?: string;
 }
 
 interface Criterion {
@@ -103,6 +106,10 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const toast = useToast();
   const [allEmployees, setAllEmployees] = useState<EmployeeInfo[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(propEmployeeId);
+  // When the same employee is in two directorates the same director manages,
+  // both rows must produce a separate evaluation. selectedDirectorateForEval
+  // tells the form which directorate context this evaluation belongs to.
+  const [selectedDirectorateForEval, setSelectedDirectorateForEval] = useState<string | null>(null);
   const employeeId = selectedEmployeeId;
   const [searchQuery, setSearchQuery] = useState('');
   const [tablePeriods, setTablePeriods] = useState<EvaluationPeriod[]>([]);
@@ -237,31 +244,41 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         dirPeerMap.set(d.id, peerId ? { id: peerId, name: peerName } : null);
       });
 
-      // Find employees assigned to ALL directorates (via junction table + legacy)
+      // Build a list of (employee, directorate) assignments. An employee
+      // assigned to two directorates this director manages produces TWO
+      // entries — one per directorate — so each becomes its own row in
+      // the table and gets evaluated independently.
       const { data: assignmentData } = await supabase
         .from('employee_directorates')
         .select('employee_id, directorate_id, department_id')
         .in('directorate_id', dirIds);
 
-      const empDirMap = new Map<string, { directorate_id: string; department_id: string | null }>();
-      (assignmentData || []).forEach((a: any) => {
-        if (!empDirMap.has(a.employee_id)) {
-          empDirMap.set(a.employee_id, { directorate_id: a.directorate_id, department_id: a.department_id || null });
-        }
-      });
+      type Assignment = { employee_id: string; directorate_id: string; department_id: string | null };
+      const assignments: Assignment[] = ((assignmentData || []) as any[]).map(a => ({
+        employee_id: a.employee_id,
+        directorate_id: a.directorate_id,
+        department_id: a.department_id || null,
+      }));
 
+      // Legacy fallback for employees not yet in the junction table — use
+      // their employees.directorate_id, but only as a single fallback row
+      // (and only when they have no junction-table row at all).
+      const empWithJunction = new Set(assignments.map(a => a.employee_id));
       const { data: legacyEmps } = await supabase
         .from('employees')
         .select('id, directorate_id, department_id')
         .in('directorate_id', dirIds);
-
       (legacyEmps || []).forEach((e: any) => {
-        if (!empDirMap.has(e.id) && e.directorate_id) {
-          empDirMap.set(e.id, { directorate_id: e.directorate_id, department_id: e.department_id || null });
+        if (!empWithJunction.has(e.id) && e.directorate_id) {
+          assignments.push({
+            employee_id: e.id,
+            directorate_id: e.directorate_id,
+            department_id: e.department_id || null,
+          });
         }
       });
 
-      const allEmpIds = [...empDirMap.keys()];
+      const allEmpIds = Array.from(new Set(assignments.map(a => a.employee_id)));
 
       if (allEmpIds.length === 0) {
         setEmployeesLoading(false);
@@ -283,7 +300,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           .in('assignment_id', assignmentIds);
         (members || []).forEach((m: any) => supervisedIds.add(m.employee_id));
       }
-      const unsupervisedIds = allEmpIds.filter(id => !supervisedIds.has(id));
+      const unsupervisedAssignments = assignments.filter(a => !supervisedIds.has(a.employee_id));
+      const unsupervisedIds = Array.from(new Set(unsupervisedAssignments.map(a => a.employee_id)));
 
       if (unsupervisedIds.length === 0) {
         setAllEmployees([]);
@@ -302,48 +320,58 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         return;
       }
 
-      // Get eval statuses for the period — both mine AND any peer director's
-      const empIds = employees.map(e => e.id);
+      const empById = new Map(employees.map((e: any) => [e.id, e]));
+
+      // Eval statuses keyed by `${employee_id}__${directorate_id}` so each
+      // directorate's row gets its own status independently.
       const { data: allEvals } = await supabase
         .from('evaluations')
-        .select('employee_id, manager_id, status, general_rating, percentage')
+        .select('employee_id, directorate_id, manager_id, status, general_rating, percentage')
         .eq('period_id', tablePeriodId)
-        .in('employee_id', empIds);
+        .in('employee_id', unsupervisedIds);
 
+      const evalKey = (empId: string, dirId: string | null) => `${empId}__${dirId || ''}`;
       const myEvalMap = new Map<string, { status: string; rating: string | null; percentage: number | null }>();
       const peerEvalMap = new Map<string, { status: string; manager_id: string }>();
       (allEvals || []).forEach((ev: any) => {
+        const k = evalKey(ev.employee_id, ev.directorate_id || null);
         if (ev.manager_id === user.id) {
-          myEvalMap.set(ev.employee_id, {
+          myEvalMap.set(k, {
             status: ev.status,
             rating: ev.general_rating,
             percentage: ev.percentage,
           });
         } else {
-          peerEvalMap.set(ev.employee_id, { status: ev.status, manager_id: ev.manager_id });
+          peerEvalMap.set(k, { status: ev.status, manager_id: ev.manager_id });
         }
       });
 
-      setAllEmployees(employees.map((e: any) => {
-        const assign = empDirMap.get(e.id);
-        const dId = assign?.directorate_id || e.directorate_id;
-        const deptId = assign?.department_id || e.department_id || null;
-        const peer = dId ? dirPeerMap.get(dId) : null;
-        const peerEval = peerEvalMap.get(e.id);
+      const rows: EmployeeInfo[] = unsupervisedAssignments.map(a => {
+        const e: any = empById.get(a.employee_id);
+        if (!e) return null;
+        const dId = a.directorate_id;
+        const deptId = a.department_id ?? e.department_id ?? null;
+        const peer = dirPeerMap.get(dId) || null;
+        const k = evalKey(e.id, dId);
+        const myEval = myEvalMap.get(k);
+        const peerEval = peerEvalMap.get(k);
         const userJoin = Array.isArray(e.user) ? e.user[0] : e.user;
         return {
           ...e,
+          rowKey: k,
           avatar_url: userJoin?.avatar_url || null,
           directorate_id: dId,
           department_id: deptId,
           department_name: dId ? (dirNameMap.get(dId) || '') : '',
-          eval_status: myEvalMap.get(e.id)?.status || null,
-          eval_rating: myEvalMap.get(e.id)?.rating || null,
-          eval_percentage: myEvalMap.get(e.id)?.percentage || null,
+          eval_status: myEval?.status || null,
+          eval_rating: myEval?.rating || null,
+          eval_percentage: myEval?.percentage || null,
           peer_name: peer?.name || null,
           peer_status: peer && peerEval && peerEval.manager_id === peer.id ? peerEval.status : null,
         };
-      }));
+      }).filter(Boolean) as EmployeeInfo[];
+
+      setAllEmployees(rows);
       setEmployeesLoading(false);
     };
     fetchAllEmployees();
@@ -382,10 +410,12 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
   const fetchCriteria = useCallback(async () => {
     if (!user) return;
-    // Multi-department directorates: criteria scoped per the employee's department.
-    // Single-department / no-department directorates: directorate-level list.
+    // Use the directorate the user picked when clicking "تقييم" (so the
+    // same employee in two directorates gets the right group's criteria
+    // for whichever directorate this evaluation is for). Fall back to the
+    // employee's own directorate_id only if no context was set.
     const empRef = employee || allEmployees.find(e => e.id === employeeId);
-    const employeeDirectorateId = empRef?.directorate_id || null;
+    const employeeDirectorateId = selectedDirectorateForEval || empRef?.directorate_id || null;
 
     // The employee's specific criteria are determined by the group they belong
     // to within the directorate. If they aren't in any group, they get only
@@ -420,7 +450,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       weight: s.weight,
       order: s.order,
     })));
-  }, [user, employee, allEmployees, employeeId]);
+  }, [user, employee, allEmployees, employeeId, selectedDirectorateForEval]);
 
   // Per-scope weights: ask the helper for THIS employee's pair (group
   // weights → active period → 50/50 fallback) instead of one pair for
@@ -428,21 +458,28 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const fetchSettings = useCallback(async () => {
     if (!employeeId) return;
     const { getDirectorateWeightsForEmployee } = await import('../../lib/weights');
-    const w = await getDirectorateWeightsForEmployee(employeeId);
+    // Pass the directorate context so multi-directorate employees pull each
+    // directorate's group weights independently.
+    const w = await getDirectorateWeightsForEmployee(employeeId, selectedDirectorateForEval);
     setGeneralWeight(w.general);
     setSpecificWeight(w.specific);
-  }, [employeeId]);
+  }, [employeeId, selectedDirectorateForEval]);
 
   const loadExistingEvaluation = useCallback(async () => {
     if (!employeeId || !user || !activePeriod) return;
 
-    const { data: evaluation } = await supabase
+    let q = supabase
       .from('evaluations')
       .select('*')
       .eq('employee_id', employeeId)
       .eq('manager_id', user.id)
-      .eq('period_id', activePeriod.id)
-      .maybeSingle();
+      .eq('period_id', activePeriod.id);
+    if (selectedDirectorateForEval) {
+      q = q.eq('directorate_id', selectedDirectorateForEval);
+    } else {
+      q = q.is('directorate_id', null);
+    }
+    const { data: evaluation } = await q.maybeSingle();
 
     if (evaluation) {
       setExistingEvaluationId(evaluation.id);
@@ -560,6 +597,10 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         employee_id: employeeId,
         manager_id: user.id,
         department_id: employee?.department_id || null,
+        // Scope the evaluation to the directorate context the director picked
+        // from the table — so an employee assigned to two directorates gets
+        // two independent evaluations.
+        directorate_id: selectedDirectorateForEval,
         period_id: activePeriod.id,
         status: isDraft ? 'مسودة' : 'تم الإرسال',
         final_score_500: results.finalScore500,
@@ -666,7 +707,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
   const dirFilteredEmployees = selectedDirectorateId === 'all'
     ? allEmployees
-    : allEmployees.filter(e => e.department_name === myDirectorates.find(d => d.id === selectedDirectorateId)?.name);
+    : allEmployees.filter(e => e.directorate_id === selectedDirectorateId);
 
   const evaluatedCount = dirFilteredEmployees.filter(e => e.eval_status && e.eval_status !== 'مسودة').length;
   const pendingCount = dirFilteredEmployees.filter(e => !e.eval_status || e.eval_status === 'مسودة').length;
@@ -810,7 +851,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                   {filteredEmployees.map((emp) => {
                     const leave = isOnLeave(emp.id);
                     return (
-                    <TableRow key={emp.id} className={leave ? 'opacity-60 bg-ds-bg' : ''}>
+                    <TableRow key={emp.rowKey || emp.id} className={leave ? 'opacity-60 bg-ds-bg' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="md" />
@@ -877,7 +918,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
                           return (
                             <button
-                              onClick={() => setSelectedEmployeeId(emp.id)}
+                              onClick={() => { setSelectedDirectorateForEval(emp.directorate_id || null); setSelectedEmployeeId(emp.id); }}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                 canEvaluate
                                   ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -918,6 +959,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         <button
           onClick={() => {
             setSelectedEmployeeId(undefined);
+            setSelectedDirectorateForEval(null);
             setScores({});
             setSpecificScores({});
             setEvaluatorNotes('');

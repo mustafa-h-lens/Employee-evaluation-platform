@@ -10,11 +10,40 @@ const supervisorCache = new Map<string, WeightPair>();
 let highMgmtCache: WeightPair | null = null;
 
 // Per-employee directorate weights — used when a director evaluates an
-// employee. Falls back to the active period's weights, then 50/50, via the
-// PG helper. Cached for the lifetime of the import.
-export async function getDirectorateWeightsForEmployee(employeeId: string): Promise<WeightPair> {
-  const hit = directorateCache.get(employeeId);
+// employee. Falls back to the active period's weights, then 50/50.
+// directorateId is optional: pass it when the employee is in MULTIPLE
+// directorates (the same person can have separate evaluations per
+// directorate, each using the group weights for that specific directorate).
+export async function getDirectorateWeightsForEmployee(
+  employeeId: string,
+  directorateId?: string | null,
+): Promise<WeightPair> {
+  const cacheKey = `${employeeId}:${directorateId || ''}`;
+  const hit = directorateCache.get(cacheKey);
   if (hit) return hit;
+
+  // When a directorate is specified, look up the group ONLY in that
+  // directorate (so two evaluations of the same person under different
+  // directorates pull each directorate's own group weights independently).
+  if (directorateId) {
+    const { data: gm } = await supabase
+      .from('department_criteria_group_members')
+      .select('group:department_criteria_groups(general_weight, specific_weight)')
+      .eq('employee_id', employeeId)
+      .eq('directorate_id', directorateId)
+      .maybeSingle();
+    const group = (gm as any)?.group;
+    const groupRow = Array.isArray(group) ? group[0] : group;
+    if (groupRow) {
+      const pair: WeightPair = {
+        general: Number(groupRow.general_weight ?? 50),
+        specific: Number(groupRow.specific_weight ?? 50),
+      };
+      directorateCache.set(cacheKey, pair);
+      return pair;
+    }
+  }
+
   const { data, error } = await supabase.rpc('get_employee_directorate_weights', { p_employee_id: employeeId });
   if (error) {
     console.error('get_employee_directorate_weights RPC failed', error);
@@ -25,7 +54,7 @@ export async function getDirectorateWeightsForEmployee(employeeId: string): Prom
     general: Number(row?.general_weight ?? 50),
     specific: Number(row?.specific_weight ?? 50),
   };
-  directorateCache.set(employeeId, pair);
+  directorateCache.set(cacheKey, pair);
   return pair;
 }
 
