@@ -173,27 +173,14 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
     })));
   }, [user]);
 
+  // Per-scope weights: CEO → director evaluations use the single
+  // high-management pair stored in high_management_weight_settings. Helper
+  // falls back to the active period and finally 50/50.
   const fetchSettings = useCallback(async () => {
-    // Load weights from active period, fallback to global settings
-    const { data: period } = await supabase
-      .from('evaluation_periods')
-      .select('general_weight, specific_weight')
-      .eq('status', 'نشطة')
-      .maybeSingle();
-    if (period) {
-      setGeneralWeight(period.general_weight);
-      setSpecificWeight(period.specific_weight);
-    } else {
-      const { data: settings } = await supabase
-        .from('evaluation_settings')
-        .select('*')
-        .limit(1)
-        .single();
-      if (settings) {
-        setGeneralWeight(settings.general_weight);
-        setSpecificWeight(settings.specific_weight);
-      }
-    }
+    const { getHighManagementWeights } = await import('../../lib/weights');
+    const w = await getHighManagementWeights();
+    setGeneralWeight(w.general);
+    setSpecificWeight(w.specific);
   }, []);
 
   const loadExistingEvaluation = useCallback(async () => {

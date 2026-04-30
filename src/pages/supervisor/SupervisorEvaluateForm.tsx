@@ -366,27 +366,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
     })));
   }, [employeeId, assignments]);
 
+  // Per-scope weights: pull the supervisor-group weights that apply to THIS
+  // employee. Falls through to the active period and finally 50/50 inside
+  // the helper.
   const fetchSettings = useCallback(async () => {
-    const { data: period } = await supabase
-      .from('evaluation_periods')
-      .select('general_weight, specific_weight')
-      .eq('status', 'نشطة')
-      .maybeSingle();
-    if (period) {
-      setGeneralWeight(period.general_weight);
-      setSpecificWeight(period.specific_weight);
-    } else {
-      const { data: settings } = await supabase
-        .from('evaluation_settings')
-        .select('*')
-        .limit(1)
-        .single();
-      if (settings) {
-        setGeneralWeight(settings.general_weight);
-        setSpecificWeight(settings.specific_weight);
-      }
-    }
-  }, []);
+    if (!employeeId) return;
+    const { getSupervisorWeightsForEmployee } = await import('../../lib/weights');
+    const w = await getSupervisorWeightsForEmployee(employeeId);
+    setGeneralWeight(w.general);
+    setSpecificWeight(w.specific);
+  }, [employeeId]);
 
   const loadExistingEvaluation = useCallback(async () => {
     if (!employeeId || !user || !activePeriod) return;

@@ -422,27 +422,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     })));
   }, [user, employee, allEmployees, employeeId]);
 
+  // Per-scope weights: ask the helper for THIS employee's pair (group
+  // weights → active period → 50/50 fallback) instead of one pair for
+  // every evaluation. The helper is defined in src/lib/weights.ts.
   const fetchSettings = useCallback(async () => {
-    const { data: period } = await supabase
-      .from('evaluation_periods')
-      .select('general_weight, specific_weight')
-      .eq('status', 'نشطة')
-      .maybeSingle();
-    if (period) {
-      setGeneralWeight(period.general_weight);
-      setSpecificWeight(period.specific_weight);
-    } else {
-      const { data: settings } = await supabase
-        .from('evaluation_settings')
-        .select('*')
-        .limit(1)
-        .single();
-      if (settings) {
-        setGeneralWeight(settings.general_weight);
-        setSpecificWeight(settings.specific_weight);
-      }
-    }
-  }, []);
+    if (!employeeId) return;
+    const { getDirectorateWeightsForEmployee } = await import('../../lib/weights');
+    const w = await getDirectorateWeightsForEmployee(employeeId);
+    setGeneralWeight(w.general);
+    setSpecificWeight(w.specific);
+  }, [employeeId]);
 
   const loadExistingEvaluation = useCallback(async () => {
     if (!employeeId || !user || !activePeriod) return;
