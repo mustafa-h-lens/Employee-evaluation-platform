@@ -84,9 +84,13 @@ interface DirectorEval {
 
 interface EvalItem {
   id: string;
-  employee: { full_name: string; job_title: string; employee_number: string } | null;
+  employee_id: string;
+  period_id: string;
+  directorate_id: string | null;
+  employee: { full_name: string; job_title: string; employee_number: string; avatar_url?: string | null } | null;
   manager: { full_name: string } | null;
   department: { name: string } | null;
+  directorate: { id: string; name: string } | null;
   period: { year: number; month: number } | null;
   department_id: string;
   status: string;
@@ -97,6 +101,21 @@ interface EvalItem {
   manager_note: string | null;
   employee_note: string | null;
   submitted_at: string | null;
+}
+
+interface CombinedEmployeeEval {
+  key: string;
+  employee_id: string;
+  period_id: string;
+  employee: EvalItem['employee'];
+  period: EvalItem['period'];
+  evals: EvalItem[];
+  avg_percentage: number;
+  avg_score_5: number;
+  avg_score_500: number;
+  avg_rating: string | null;
+  source_count: number;
+  total_directorates: number;
 }
 
 interface SupervisorEval {
@@ -206,11 +225,13 @@ export const AllEvaluations: React.FC = () => {
     let query = supabase
       .from('evaluations')
       .select(`
-        id, status, final_score_500, final_score_5, percentage, general_rating,
+        id, employee_id, period_id, directorate_id,
+        status, final_score_500, final_score_5, percentage, general_rating,
         manager_note, employee_note, submitted_at, department_id,
-        employee:employees(full_name, job_title, employee_number),
+        employee:employees(full_name, job_title, employee_number, user:users!employees_user_id_fkey(avatar_url)),
         manager:users!evaluations_manager_id_fkey(full_name),
         department:departments(name),
+        directorate:directorates(id, name),
         period:evaluation_periods(year, month)
       `)
       .order('created_at', { ascending: false });
@@ -230,7 +251,24 @@ export const AllEvaluations: React.FC = () => {
 
     const { data } = await query;
 
-    setEmployeeEvals((data as unknown as EvalItem[]) || []);
+    const flat: EvalItem[] = ((data || []) as any[]).map((r: any) => {
+      const empJoin = Array.isArray(r.employee) ? r.employee[0] : r.employee;
+      const userJoin = empJoin?.user
+        ? (Array.isArray(empJoin.user) ? empJoin.user[0] : empJoin.user)
+        : null;
+      return {
+        ...r,
+        employee: empJoin
+          ? {
+              full_name: empJoin.full_name,
+              job_title: empJoin.job_title,
+              employee_number: empJoin.employee_number,
+              avatar_url: userJoin?.avatar_url || null,
+            }
+          : null,
+      };
+    });
+    setEmployeeEvals(flat);
     setLoading(false);
   }, [filterPeriod, filterDirectorate, departments]);
 
@@ -385,6 +423,103 @@ export const AllEvaluations: React.FC = () => {
       evaluatorNote: ev.supervisor_note,
       subjectNote: ev.employee_note,
       status: ev.status,
+    });
+    setDetailLoading(false);
+  };
+
+  // Group employee evaluations by (employee, period) — when an employee is
+  // assigned to multiple directorates, each directorate produces a
+  // separate evaluation row, but the summary listing should show ONE row
+  // whose percentage is the arithmetic mean.
+  const [employeeDirCounts, setEmployeeDirCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const empIds = Array.from(new Set(employeeEvals.map(e => e.employee_id).filter(Boolean)));
+    if (empIds.length === 0) { setEmployeeDirCounts({}); return; }
+    let cancelled = false;
+    (async () => {
+      const counts: Record<string, number> = {};
+      // Pull junction-table assignments in one round-trip; legacy
+      // employees.directorate_id falls back to 1.
+      const { data: assigns } = await supabase
+        .from('employee_directorates')
+        .select('employee_id, directorate_id')
+        .in('employee_id', empIds);
+      const seen = new Map<string, Set<string>>();
+      (assigns || []).forEach((a: any) => {
+        if (!seen.has(a.employee_id)) seen.set(a.employee_id, new Set());
+        seen.get(a.employee_id)!.add(a.directorate_id);
+      });
+      empIds.forEach(id => { counts[id] = Math.max(seen.get(id)?.size || 0, 1); });
+      if (!cancelled) setEmployeeDirCounts(counts);
+    })();
+    return () => { cancelled = true; };
+  }, [employeeEvals]);
+
+  const combinedEmployeeEvals = useMemo<CombinedEmployeeEval[]>(() => {
+    const groups = new Map<string, EvalItem[]>();
+    employeeEvals.forEach(ev => {
+      const key = `${ev.employee_id}__${ev.period_id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(ev);
+    });
+    return Array.from(groups.entries()).map(([key, evals]) => {
+      const avg = (k: keyof EvalItem) => evals.reduce((s, e) => s + Number(e[k] || 0), 0) / evals.length;
+      const avgPct = avg('percentage');
+      return {
+        key,
+        employee_id: evals[0].employee_id,
+        period_id: evals[0].period_id,
+        employee: evals[0].employee,
+        period: evals[0].period,
+        evals,
+        avg_percentage: avgPct,
+        avg_score_5: avg('final_score_5'),
+        avg_score_500: avg('final_score_500'),
+        avg_rating: percentageToRating(avgPct),
+        source_count: evals.length,
+        total_directorates: employeeDirCounts[evals[0].employee_id] || evals.length,
+      };
+    });
+  }, [employeeEvals, employeeDirCounts]);
+
+  const viewCombinedEmployeeDetail = async (combined: CombinedEmployeeEval) => {
+    setDetailLoading(true);
+    setDetailModal(true);
+    // Pre-fetch each source evaluation's scores so the modal can render
+    // a per-directorate breakdown (criteria can differ between groups,
+    // so they can't be averaged at the criterion level).
+    const allIds = combined.evals.map(e => e.id);
+    const { data: scores } = await supabase
+      .from('evaluation_scores')
+      .select(`
+        evaluation_id, score_1_to_5, weighted_result, criterion_type,
+        criterion:evaluation_criteria(title, description, weight),
+        dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
+      `)
+      .in('evaluation_id', allIds);
+
+    const flat: ScoreDetail[] = ((scores || []) as any[]).map((s: any) => ({
+      criterion_title: s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || ''),
+      criterion_description: s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || ''),
+      criterion_weight: s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0),
+      score: s.score_1_to_5,
+      weighted_result: s.weighted_result,
+      type: s.criterion_type || 'general',
+    }));
+
+    setDetailData({
+      name: combined.employee?.full_name || '',
+      jobTitle: combined.employee?.job_title || '',
+      period: combined.period ? `${monthLabels[combined.period.month]} ${combined.period.year}` : '',
+      scores: flat,
+      finalScore500: combined.avg_score_500,
+      finalScore5: combined.avg_score_5,
+      percentage: combined.avg_percentage,
+      generalRating: combined.avg_rating,
+      evaluatorNote: combined.evals.map(e => e.manager_note).filter(Boolean).join(' • '),
+      subjectNote: combined.evals.map(e => e.employee_note).filter(Boolean).join(' • '),
+      status: combined.evals.length === combined.total_directorates ? combined.evals[0]?.status : 'بانتظار الاكتمال',
     });
     setDetailLoading(false);
   };
@@ -701,7 +836,83 @@ export const AllEvaluations: React.FC = () => {
           </CardBody>
         </Card>
       ) : activeTab === 'directors' ? (
-        renderEvalTable(employeeEvals, 'لا توجد تقييمات من مدراء الإدارات')
+        <Card>
+          <CardBody className="p-0">
+            {combinedEmployeeEvals.length === 0 ? (
+              <EmptyState
+                message="لا توجد تقييمات من مدراء الإدارات"
+                icon={<Users className="h-12 w-12 text-ds-faint" />}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الموظف</TableHead>
+                    <TableHead>الإدارات المُقيِّمة</TableHead>
+                    <TableHead>فترة التقييم</TableHead>
+                    <TableHead>النتيجة المُجمَّعة</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>الإجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {combinedEmployeeEvals.map(c => {
+                    const partial = c.source_count < c.total_directorates;
+                    return (
+                      <TableRow key={c.key}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <UserAvatar name={c.employee?.full_name || ''} avatarUrl={c.employee?.avatar_url} size="md" />
+                            <div>
+                              <span className="font-medium text-ds-text">{c.employee?.full_name}</span>
+                              <p className="text-xs text-ds-faint">{c.employee?.job_title}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            {c.evals.map(ev => (
+                              <span key={ev.id} className="text-xs text-ds-muted">
+                                {ev.directorate?.name || '—'} ({(ev.percentage || 0).toFixed(0)}%)
+                              </span>
+                            ))}
+                            <Badge variant={partial ? 'warning' : 'default'} size="sm">
+                              {c.source_count} من {c.total_directorates} إدارات
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {c.period && (
+                            <span className="text-sm text-ds-muted">{monthLabels[c.period.month]} {c.period.year}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-ds-text">{c.avg_percentage.toFixed(0)}%</span>
+                            {c.avg_rating && (
+                              <Badge variant={getRatingVariant(c.avg_rating)} size="sm">
+                                {c.avg_rating}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusVariant(c.evals[0].status)} size="sm">{getStatusLabel(c.evals[0].status)}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="outline" onClick={() => viewCombinedEmployeeDetail(c)} className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" />
+                            <span>عرض التفاصيل</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardBody>
+        </Card>
       ) : activeTab === 'supervisors' ? (
         <Card>
           <CardBody className="p-0">
