@@ -46,6 +46,8 @@ interface CriteriaGroup {
   name: string;
   order: number;
   is_default: boolean;
+  general_weight: number;
+  specific_weight: number;
 }
 
 interface DirectorateMember {
@@ -390,8 +392,9 @@ export const DirectorSpecificCriteria: React.FC = () => {
       const groupCriteria = (criteriaByGroup[criterionGroupId] || []).filter(c => c.id !== editingCriterion?.id);
       const othersActive = groupCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
       const projected = othersActive + weight;
-      if (projected > specificWeightLimit) {
-        setCriterionError(`لا يمكن تجاوز الحد المسموح (${specificWeightLimit}%) في هذه المجموعة. المجموع بعد الإضافة سيصبح ${projected}%.`);
+      const cap = groups.find(g => g.id === criterionGroupId)?.specific_weight ?? specificWeightLimit;
+      if (projected > cap) {
+        setCriterionError(`لا يمكن تجاوز الحد المسموح (${cap}%) في هذه المجموعة. المجموع بعد الإضافة سيصبح ${projected}%.`);
         return;
       }
     }
@@ -454,8 +457,9 @@ export const DirectorSpecificCriteria: React.FC = () => {
       const groupCriteria = (criteriaByGroup[criterion.group_id || ''] || []).filter(c => c.id !== criterion.id);
       const othersActive = groupCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
       const projected = othersActive + criterion.weight;
-      if (projected > specificWeightLimit) {
-        toast.error(`لا يمكن تفعيل هذا المعيار — المجموع في هذه المجموعة سيصبح ${projected}% ويتجاوز الحد المسموح (${specificWeightLimit}%).`);
+      const cap = groups.find(g => g.id === criterion.group_id)?.specific_weight ?? specificWeightLimit;
+      if (projected > cap) {
+        toast.error(`لا يمكن تفعيل هذا المعيار — المجموع في هذه المجموعة سيصبح ${projected}% ويتجاوز الحد المسموح (${cap}%).`);
         return;
       }
     }
@@ -552,7 +556,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
             {currentDirectorate && (
               <span className="font-semibold text-emerald-700"> — {currentDirectorate.name}</span>
             )}
-            {' '}(النسبة المخصصة لكل مجموعة: {specificWeightLimit}% من إجمالي التقييم)
+            {' '}— كل مجموعة لها نسبتها الخاصة (يحددها قسم الموارد البشرية)
           </p>
         </div>
         <Button onClick={openCreateGroupModal} className="flex items-center gap-2">
@@ -626,8 +630,11 @@ export const DirectorSpecificCriteria: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={total === specificWeightLimit ? 'success' : 'warning'} size="sm">
-                    المجموع: {total}% / {specificWeightLimit}%
+                  <Badge variant={total === group.specific_weight ? 'success' : 'warning'} size="sm">
+                    المجموع: {total}% / {group.specific_weight}%
+                  </Badge>
+                  <Badge variant="default" size="sm">
+                    عامة {group.general_weight}% / خاصة {group.specific_weight}%
                   </Badge>
                   <Badge variant="info" size="sm">
                     {list.filter(c => c.is_active).length} معيار نشط
@@ -703,7 +710,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <div className="w-16 bg-gray-200 rounded-full h-2">
                                   <div className="bg-emerald-500 h-2 rounded-full transition-all"
-                                    style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }} />
+                                    style={{ width: `${Math.min(100, (criterion.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
                                 </div>
                                 <span className="font-bold text-emerald-600">{criterion.weight}%</span>
                               </div>
@@ -843,7 +850,9 @@ export const DirectorSpecificCriteria: React.FC = () => {
               placeholder="وصف مختصر لما يقيسه هذا المعيار" rows={3} required />
             <Input label="الوزن (%)" type="number" value={criterionForm.weight}
               onChange={e => setCriterionForm({ ...criterionForm, weight: e.target.value })}
-              placeholder="مثال: 10" min={1} max={specificWeightLimit} step={0.5} required />
+              placeholder="مثال: 10" min={1}
+              max={groups.find(g => g.id === criterionGroupId)?.specific_weight ?? specificWeightLimit}
+              step={0.5} required />
             {editingCriterion && (
               <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle checked={criterionForm.is_active} onChange={() => setCriterionForm({ ...criterionForm, is_active: !criterionForm.is_active })} />

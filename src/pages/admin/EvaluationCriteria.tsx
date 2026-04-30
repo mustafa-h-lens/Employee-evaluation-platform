@@ -55,6 +55,8 @@ interface DirCriteriaGroup {
   name: string;
   order: number;
   is_default: boolean;
+  general_weight: number;
+  specific_weight: number;
 }
 
 interface DirEmployee {
@@ -93,6 +95,8 @@ interface SupCriteriaGroup {
   name: string;
   order: number;
   is_default: boolean;
+  general_weight: number;
+  specific_weight: number;
 }
 
 interface SupGroupMember {
@@ -128,6 +132,14 @@ export const EvaluationCriteria: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'departments' | 'ceo' | 'supervisors' | 'ceo-eval'>('general');
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [groupsByDirectorate, setGroupsByDirectorate] = useState<Record<string, DirCriteriaGroup[]>>({});
+  // Flat (group_id → DirCriteriaGroup) view used by the criterion handlers to
+  // look up a group's per-group specific_weight cap regardless of which
+  // directorate it belongs to.
+  const allDirGroupsById: Record<string, DirCriteriaGroup> = React.useMemo(() => {
+    const map: Record<string, DirCriteriaGroup> = {};
+    Object.values(groupsByDirectorate).forEach(arr => arr.forEach(g => { map[g.id] = g; }));
+    return map;
+  }, [groupsByDirectorate]);
   const [criteriaByGroup, setCriteriaByGroup] = useState<Record<string, DeptCriterion[]>>({});
   const [membersByGroup, setMembersByGroup] = useState<Record<string, DirEmployee[]>>({});
   const [employeesByDirectorate, setEmployeesByDirectorate] = useState<Record<string, DirEmployee[]>>({});
@@ -196,12 +208,17 @@ export const EvaluationCriteria: React.FC = () => {
 
   const { user } = useAuth();
 
+  // The "حد المعايير الخاصة" cap that the CEO-criteria tab and the
+  // CEO-evaluations tab show now comes from the high-management settings,
+  // since those criteria flow through the CEO → director evaluation. The
+  // directorate-criteria tab uses each group's own specific_weight (read
+  // straight from the group object), not this global value.
   const fetchSettings = useCallback(async () => {
     const { data } = await supabase
-      .from('evaluation_settings')
-      .select('*')
+      .from('high_management_weight_settings')
+      .select('general_weight, specific_weight')
       .limit(1)
-      .single();
+      .maybeSingle();
     if (data) {
       setGeneralWeightLimit(data.general_weight);
       setSpecificWeightLimit(data.specific_weight);
@@ -817,8 +834,9 @@ export const EvaluationCriteria: React.FC = () => {
       const groupCriteria = (criteriaByGroup[dirCriterionGroupId] || []).filter(c => c.id !== editingDirCriterion?.id);
       const othersActive = groupCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
       const projected = othersActive + weight;
-      if (projected > specificWeightLimit) {
-        setDirCriterionError(`لا يمكن تجاوز الحد المسموح (${specificWeightLimit}%) في هذه المجموعة. المجموع بعد الإضافة سيصبح ${projected}%.`);
+      const cap = allDirGroupsById[dirCriterionGroupId]?.specific_weight ?? specificWeightLimit;
+      if (projected > cap) {
+        setDirCriterionError(`لا يمكن تجاوز الحد المسموح (${cap}%) في هذه المجموعة. المجموع بعد الإضافة سيصبح ${projected}%.`);
         return;
       }
     }
@@ -881,8 +899,9 @@ export const EvaluationCriteria: React.FC = () => {
       const groupCriteria = (criteriaByGroup[criterion.group_id || ''] || []).filter(c => c.id !== criterion.id);
       const othersActive = groupCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
       const projected = othersActive + criterion.weight;
-      if (projected > specificWeightLimit) {
-        alert(`لا يمكن تفعيل هذا المعيار — المجموع في هذه المجموعة سيصبح ${projected}% ويتجاوز ${specificWeightLimit}%.`);
+      const cap = allDirGroupsById[criterion.group_id || '']?.specific_weight ?? specificWeightLimit;
+      if (projected > cap) {
+        alert(`لا يمكن تفعيل هذا المعيار — المجموع في هذه المجموعة سيصبح ${projected}% ويتجاوز ${cap}%.`);
         return;
       }
     }
@@ -1146,7 +1165,7 @@ export const EvaluationCriteria: React.FC = () => {
               : 'border-transparent text-ds-faint hover:text-ds-muted'
           }`}
         >
-          المعايير الخاصة بالإدارات ({specificWeightLimit}%)
+          المعايير الخاصة بالإدارات
         </button>
         <button
           onClick={() => setActiveTab('supervisors')}
@@ -1368,8 +1387,9 @@ export const EvaluationCriteria: React.FC = () => {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-ds-muted mb-1">وزن المعايير الخاصة</p>
-                    <p className="text-xl font-bold text-emerald-600">{specificWeightLimit}%</p>
+                    <p className="text-sm text-ds-muted mb-1">توزيع الأوزان</p>
+                    <p className="text-xl font-bold text-emerald-600">لكل مجموعة</p>
+                    <p className="text-xs text-ds-faint mt-1">يحدده قسم الموارد البشرية في الإعدادات</p>
                   </div>
                   <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
                     <Scale className="h-6 w-6" />
@@ -1463,8 +1483,11 @@ export const EvaluationCriteria: React.FC = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant={total === specificWeightLimit ? 'success' : 'warning'} size="sm">
-                                المجموع: {total}% / {specificWeightLimit}%
+                              <Badge variant={total === group.specific_weight ? 'success' : 'warning'} size="sm">
+                                المجموع: {total}% / {group.specific_weight}%
+                              </Badge>
+                              <Badge variant="default" size="sm">
+                                عامة {group.general_weight}% / خاصة {group.specific_weight}%
                               </Badge>
                               <Badge variant="info" size="sm">{active.length} معيار نشط</Badge>
                               <Button size="sm" variant="outline" onClick={() => openDirGroupEditModal(group)} className="flex items-center gap-1">
@@ -1538,7 +1561,7 @@ export const EvaluationCriteria: React.FC = () => {
                                           <div className="flex items-center gap-2">
                                             <div className="w-16 bg-gray-200 rounded-full h-2">
                                               <div className="bg-emerald-500 h-2 rounded-full transition-all"
-                                                style={{ width: `${(c.weight / specificWeightLimit) * 100}%` }} />
+                                                style={{ width: `${Math.min(100, (c.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
                                             </div>
                                             <span className="font-bold text-emerald-600">{c.weight}%</span>
                                           </div>
@@ -1837,8 +1860,11 @@ export const EvaluationCriteria: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={total === specificWeightLimit ? 'success' : 'warning'} size="sm">
-                          المجموع: {total}% / {specificWeightLimit}%
+                        <Badge variant={total === group.specific_weight ? 'success' : 'warning'} size="sm">
+                          المجموع: {total}% / {group.specific_weight}%
+                        </Badge>
+                        <Badge variant="default" size="sm">
+                          عامة {group.general_weight}% / خاصة {group.specific_weight}%
                         </Badge>
                         <Badge variant="info" size="sm">
                           {list.filter(c => c.is_active).length} معيار نشط
@@ -2466,7 +2492,9 @@ export const EvaluationCriteria: React.FC = () => {
               placeholder="وصف مختصر لما يقيسه هذا المعيار" rows={3} required />
             <Input label="الوزن (%)" type="number" value={dirCriterionForm.weight}
               onChange={e => setDirCriterionForm({ ...dirCriterionForm, weight: e.target.value })}
-              placeholder="مثال: 10" min={1} max={specificWeightLimit} step={0.5} required />
+              placeholder="مثال: 10" min={1}
+              max={allDirGroupsById[dirCriterionGroupId]?.specific_weight ?? specificWeightLimit}
+              step={0.5} required />
             {editingDirCriterion && (
               <div className="flex items-center justify-between p-3 bg-ds-bg rounded-lg">
                 <Toggle checked={dirCriterionForm.is_active} onChange={() => setDirCriterionForm({ ...dirCriterionForm, is_active: !dirCriterionForm.is_active })} />
