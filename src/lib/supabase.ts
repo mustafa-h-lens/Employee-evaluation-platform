@@ -156,7 +156,16 @@ export type Database = {
     name: string;
     order: number;
     is_default: boolean;
+    general_weight: number;
+    specific_weight: number;
     created_by: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  high_management_weight_settings: {
+    id: string;
+    general_weight: number;
+    specific_weight: number;
     created_at: string;
     updated_at: string;
   };

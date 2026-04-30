@@ -1,0 +1,71 @@
+import { supabase } from './supabase';
+
+export interface WeightPair {
+  general: number;
+  specific: number;
+}
+
+const directorateCache = new Map<string, WeightPair>();
+const supervisorCache = new Map<string, WeightPair>();
+let highMgmtCache: WeightPair | null = null;
+
+// Per-employee directorate weights — used when a director evaluates an
+// employee. Falls back to the active period's weights, then 50/50, via the
+// PG helper. Cached for the lifetime of the import.
+export async function getDirectorateWeightsForEmployee(employeeId: string): Promise<WeightPair> {
+  const hit = directorateCache.get(employeeId);
+  if (hit) return hit;
+  const { data, error } = await supabase.rpc('get_employee_directorate_weights', { p_employee_id: employeeId });
+  if (error) {
+    console.error('get_employee_directorate_weights RPC failed', error);
+    return { general: 50, specific: 50 };
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  const pair: WeightPair = {
+    general: Number(row?.general_weight ?? 50),
+    specific: Number(row?.specific_weight ?? 50),
+  };
+  directorateCache.set(employeeId, pair);
+  return pair;
+}
+
+export async function getSupervisorWeightsForEmployee(employeeId: string): Promise<WeightPair> {
+  const hit = supervisorCache.get(employeeId);
+  if (hit) return hit;
+  const { data, error } = await supabase.rpc('get_employee_supervisor_weights', { p_employee_id: employeeId });
+  if (error) {
+    console.error('get_employee_supervisor_weights RPC failed', error);
+    return { general: 50, specific: 50 };
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  const pair: WeightPair = {
+    general: Number(row?.general_weight ?? 50),
+    specific: Number(row?.specific_weight ?? 50),
+  };
+  supervisorCache.set(employeeId, pair);
+  return pair;
+}
+
+// One global pair for CEO → director evaluations.
+export async function getHighManagementWeights(): Promise<WeightPair> {
+  if (highMgmtCache) return highMgmtCache;
+  const { data, error } = await supabase
+    .from('high_management_weight_settings')
+    .select('general_weight, specific_weight')
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) {
+    console.error('high_management_weight_settings read failed', error);
+    return { general: 50, specific: 50 };
+  }
+  highMgmtCache = { general: Number(data.general_weight), specific: Number(data.specific_weight) };
+  return highMgmtCache;
+}
+
+// Drop cached values when an admin updates weights so the next reader sees
+// the new values without a page reload.
+export function invalidateWeightsCache(): void {
+  directorateCache.clear();
+  supervisorCache.clear();
+  highMgmtCache = null;
+}
