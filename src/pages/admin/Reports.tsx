@@ -188,10 +188,11 @@ export const Reports: React.FC = () => {
     const { data: evals } = await supabase
       .from('evaluations')
       .select(`
-        id, status, final_score_500, final_score_5, percentage, general_rating,
+        id, period_id, directorate_id, status, final_score_500, final_score_5, percentage, general_rating,
         manager_note, employee_note, ceo_comment, submitted_at,
         period:evaluation_periods(year, month),
-        manager:users!evaluations_manager_id_fkey(full_name)
+        manager:users!evaluations_manager_id_fkey(full_name),
+        directorate:directorates(id, name)
       `)
       .eq('employee_id', selectedEmployee.id)
       .in('period_id', periodIds)
@@ -277,15 +278,38 @@ export const Reports: React.FC = () => {
     run();
   }, [selectedEmployee, periodMode, selectedYear, selectedQuarter]);
 
+  // Multi-directorate collapse: when an employee is in two directorates,
+  // they have two evaluation rows for the same period. Take the
+  // arithmetic mean per period BEFORE feeding into the annual / quarterly
+  // average so each month contributes a single value.
+  const collapsedEvaluations = React.useMemo(() => {
+    const byPeriod = new Map<string, EvalRecord[]>();
+    evaluations.forEach(e => {
+      const key = (e as any).period_id || `${e.period?.year}-${e.period?.month}`;
+      if (!byPeriod.has(key)) byPeriod.set(key, []);
+      byPeriod.get(key)!.push(e);
+    });
+    return Array.from(byPeriod.values()).map(group => {
+      const avg = (k: keyof EvalRecord) => group.reduce((s, x) => s + Number(x[k] || 0), 0) / group.length;
+      return {
+        ...group[0],
+        percentage: avg('percentage'),
+        final_score_5: avg('final_score_5'),
+        final_score_500: avg('final_score_500'),
+      } as EvalRecord;
+    });
+  }, [evaluations]);
+
   // Effective denominator: prefer the leave-aware count from the RPC; fall
-  // back to evaluations.length while the RPC is still in flight (or 0).
+  // back to the COUNT OF EVALUATED PERIODS (after collapsing multi-directorate
+  // duplicates) while the RPC is still in flight (or 0).
   const denominator = (evaluableMonths !== null && evaluableMonths > 0)
     ? evaluableMonths
-    : evaluations.length;
+    : collapsedEvaluations.length;
 
   const buildSummary = () => {
-    if (evaluations.length === 0 || denominator === 0) return null;
-    const sum = evaluations.reduce(
+    if (collapsedEvaluations.length === 0 || denominator === 0) return null;
+    const sum = collapsedEvaluations.reduce(
       (acc, e) => ({
         pct: acc.pct + e.percentage,
         s5: acc.s5 + e.final_score_5,
@@ -298,11 +322,11 @@ export const Reports: React.FC = () => {
       avgPercentage,
       avgScore5: sum.s5 / denominator,
       avgScore500: sum.s500 / denominator,
-      count: evaluations.length,
-      evaluableMonths: evaluableMonths ?? evaluations.length,
+      count: collapsedEvaluations.length,
+      evaluableMonths: evaluableMonths ?? collapsedEvaluations.length,
       totalMonths: periodMode === 'annual'
         ? 12
-        : (periodMode === 'quarterly' && selectedQuarter > 0 ? 3 : evaluations.length),
+        : (periodMode === 'quarterly' && selectedQuarter > 0 ? 3 : collapsedEvaluations.length),
       get generalRating() {
         if (avgPercentage >= 90) return 'ممتاز';
         if (avgPercentage >= 80) return 'جيد جدًا';
@@ -589,7 +613,7 @@ export const Reports: React.FC = () => {
                           <div>
                             <h3 className="text-sm font-medium text-ds-muted mb-3">مسار الأداء</h3>
                             <div className="flex items-end gap-2 h-32">
-                              {evaluations
+                              {collapsedEvaluations
                                 .slice()
                                 .sort((a, b) => (a.period?.month || 0) - (b.period?.month || 0))
                                 .map(ev => (

@@ -296,6 +296,29 @@ export const CeoReports: React.FC = () => {
 
   const currentEvals: any[] = activeTab === 'directors' ? directorEvals : employeeEvals;
 
+  // For the employees tab, collapse multi-directorate rows for the same
+  // period into a single per-period entry whose percentage is the
+  // arithmetic mean across directorates. Director evaluations don't carry
+  // directorate_id so the directors tab is a pass-through.
+  const collapsedEvals = React.useMemo(() => {
+    if (activeTab !== 'employees') return currentEvals;
+    const byPeriod = new Map<string, any[]>();
+    currentEvals.forEach((e: any) => {
+      const key = e.period_id || `${e.period?.year}-${e.period?.month}`;
+      if (!byPeriod.has(key)) byPeriod.set(key, []);
+      byPeriod.get(key)!.push(e);
+    });
+    return Array.from(byPeriod.values()).map(group => {
+      const avg = (k: string) => group.reduce((s, x) => s + Number(x[k] || 0), 0) / group.length;
+      return {
+        ...group[0],
+        percentage: avg('percentage'),
+        final_score_5: avg('final_score_5'),
+        final_score_500: avg('final_score_500'),
+      };
+    });
+  }, [currentEvals, activeTab]);
+
   // Resolve the employees.id of the currently selected person so we can call
   // the leave-aware helpers. Directors are picked by users.id (selectedPerson),
   // employees by employees.id (selectedEmployee).
@@ -330,12 +353,12 @@ export const CeoReports: React.FC = () => {
 
   const denominator = (evaluableMonths !== null && evaluableMonths > 0)
     ? evaluableMonths
-    : currentEvals.length;
+    : collapsedEvals.length;
 
   const inWindow = periodMode === 'annual' || (periodMode === 'quarterly' && selectedQuarter > 0);
-  const summary = inWindow && currentEvals.length > 0 && denominator > 0
+  const summary = inWindow && collapsedEvals.length > 0 && denominator > 0
     ? (() => {
-        const sum = currentEvals.reduce(
+        const sum = collapsedEvals.reduce(
           (acc: any, e: any) => ({
             pct: acc.pct + e.percentage,
             s5: acc.s5 + e.final_score_5,
@@ -348,8 +371,8 @@ export const CeoReports: React.FC = () => {
           avgPercentage,
           avgScore5: sum.s5 / denominator,
           avgScore500: sum.s500 / denominator,
-          count: currentEvals.length,
-          evaluableMonths: evaluableMonths ?? currentEvals.length,
+          count: collapsedEvals.length,
+          evaluableMonths: evaluableMonths ?? collapsedEvals.length,
           totalMonths: periodMode === 'annual' ? 12 : 3,
           get generalRating() {
             if (avgPercentage >= 90) return 'ممتاز';
@@ -860,7 +883,7 @@ export const CeoReports: React.FC = () => {
                       <div>
                         <h3 className="text-sm font-medium text-ds-muted mb-3">مسار الأداء</h3>
                         <div className="flex items-end gap-2 h-32">
-                          {currentEvals
+                          {collapsedEvals
                             .slice()
                             .sort((a, b) => (a.period?.month || 0) - (b.period?.month || 0))
                             .map(ev => (
