@@ -128,14 +128,17 @@ export const MyEvaluations: React.FC = () => {
       type_name: r.leave_type?.name || 'إجازة',
     })));
 
-    // Fetch director/manager evaluations
+    // Fetch director/manager evaluations (now includes directorate_id +
+    // directorate name so multi-directorate employees can have their per-
+    // directorate breakdown surfaced in the combined card).
     const { data: dirData } = await supabase
       .from('evaluations')
       .select(`
         id, status, percentage, final_score_5, general_rating,
-        manager_note, employee_note, created_at, period_id,
+        manager_note, employee_note, created_at, period_id, directorate_id,
         period:evaluation_periods(year, month),
-        manager:users!evaluations_manager_id_fkey(full_name)
+        manager:users!evaluations_manager_id_fkey(full_name),
+        directorate:directorates(id, name)
       `)
       .eq('employee_id', employee.id)
       .in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
@@ -143,10 +146,12 @@ export const MyEvaluations: React.FC = () => {
 
     const rawDirEvals: any[] = ((dirData as any[]) || []);
 
-    // Group director evaluations by period_id. Two co-directors of the same
-    // directorate produce two rows for one period — collapse them into one
-    // "الإدارة العليا" entry with averaged scores. Single-director periods
-    // are unchanged.
+    // Group director evaluations by period_id only. Two co-directors of
+    // the same directorate, OR two different directorates evaluating the
+    // same person, both collapse to ONE card per period whose value is the
+    // arithmetic mean. The card's breakdown lists each source row with
+    // its directorate + manager so the employee can see where each
+    // contribution came from.
     const periodGroups = new Map<string, any[]>();
     rawDirEvals.forEach(ev => {
       const pid = ev.period_id || `${ev.period?.year}-${ev.period?.month}`;
@@ -166,12 +171,17 @@ export const MyEvaluations: React.FC = () => {
         ? percentageToScore5(percentage)
         : null;
       const status = pickCombinedStatus(group.map(r => r.status));
-      // Employee reply: take the first non-empty (we keep underlying rows in
-      // sync when the employee submits, so any value is representative).
       const employee_note = group.find(r => r.employee_note)?.employee_note || null;
       const newest = group.reduce((a, b) =>
         new Date(a.created_at).getTime() > new Date(b.created_at).getTime() ? a : b
       );
+      // If all source rows share one directorate, label it as
+      // co-directors of that directorate. Otherwise it's a multi-
+      // directorate average — use a neutral "متوسط التقييمات" label.
+      const distinctDirIds = new Set(group.map(r => r.directorate_id || ''));
+      const headerLabel = distinctDirIds.size > 1
+        ? `متوسط ${distinctDirIds.size} إدارات`
+        : 'الإدارة العليا';
       dirEvals.push({
         id: `combined-${newest.period?.year}-${newest.period?.month}`,
         status,
@@ -182,12 +192,20 @@ export const MyEvaluations: React.FC = () => {
         employee_note,
         created_at: newest.created_at,
         period: newest.period,
-        manager: { full_name: 'الإدارة العليا' },
+        manager: { full_name: headerLabel },
         source: 'director',
         is_combined: true,
         underlying_ids: group.map(r => r.id),
         manager_notes_breakdown: group
-          .map(r => ({ name: r.manager?.full_name || '', note: r.manager_note || '' }))
+          .map(r => ({
+            // Include the directorate name so the breakdown line reads
+            // "إدارة المشاريع — أحمد البركاني: ..." instead of just the
+            // manager's name when sources are different directorates.
+            name: r.directorate?.name
+              ? `${r.directorate.name} — ${r.manager?.full_name || ''}`
+              : (r.manager?.full_name || ''),
+            note: r.manager_note || '',
+          }))
           .filter(m => m.note),
       });
     });
