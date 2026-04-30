@@ -129,20 +129,20 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Per-employee resolver: an employee can only be evaluated when their
-  // group has at least one active specific criterion (or specific_weight
-  // is 0 so general criteria suffice). Half-configured groups must NOT
-  // allow evaluation — that was the bug where "المصممين" group with no
-  // criteria was still evaluable.
+  // group's ACTIVE specific-criteria weights sum to the specific-weight
+  // target. Half-filled groups (sum < target) and ungrouped employees
+  // are NOT evaluable.
+  const [specificWeightTarget, setSpecificWeightTarget] = useState(50);
   const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
   const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
-  const [groupHasCriteria, setGroupHasCriteria] = useState<Record<string, boolean>>({});
+  const [groupCriteriaSum, setGroupCriteriaSum] = useState<Record<string, number>>({});
 
   const canEvaluateEmployee = useCallback((empId: string): boolean => {
     if (noSpecificNeeded) return true;
     const groupId = employeeGroupMembership[empId];
     if (!groupId) return false;
-    return !!groupHasCriteria[groupId];
-  }, [noSpecificNeeded, employeeGroupMembership, groupHasCriteria]);
+    return (groupCriteriaSum[groupId] || 0) >= specificWeightTarget;
+  }, [noSpecificNeeded, employeeGroupMembership, groupCriteriaSum, specificWeightTarget]);
 
   useEffect(() => {
     const checkCriteria = async () => {
@@ -158,7 +158,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       const [{ data: critRows }, { data: members }, { data: weightSettings }] = await Promise.all([
         supabase
           .from('department_criteria')
-          .select('group_id')
+          .select('group_id, weight')
           .in('directorate_id', dirIds)
           .eq('is_active', true)
           .not('group_id', 'is', null),
@@ -172,10 +172,15 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           .limit(1)
           .single(),
       ]);
-      setNoSpecificNeeded(weightSettings?.specific_weight === 0);
-      const groupCriteriaMap: Record<string, boolean> = {};
-      (critRows || []).forEach((r: any) => { if (r.group_id) groupCriteriaMap[r.group_id] = true; });
-      setGroupHasCriteria(groupCriteriaMap);
+      const target = weightSettings?.specific_weight ?? 50;
+      setSpecificWeightTarget(target);
+      setNoSpecificNeeded(target === 0);
+      const sumMap: Record<string, number> = {};
+      (critRows || []).forEach((r: any) => {
+        if (!r.group_id) return;
+        sumMap[r.group_id] = (sumMap[r.group_id] || 0) + Number(r.weight || 0);
+      });
+      setGroupCriteriaSum(sumMap);
       const memMap: Record<string, string> = {};
       (members || []).forEach((m: any) => { memMap[m.employee_id] = m.group_id; });
       setEmployeeGroupMembership(memMap);
@@ -535,14 +540,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const handleSubmit = async (isDraft: boolean) => {
     if (!employeeId || !user || !activePeriod) return;
 
-    // Hard guard: refuse to score an employee whose group has no active
-    // specific criteria (or who isn't in any group). Mirrors the table-row
-    // disable so a user reaching the form via direct URL can't bypass it.
-    if (!noSpecificNeeded && specificCriteria.length === 0) {
-      const inGroup = !!employeeGroupMembership[employeeId];
-      toast.error(inGroup
-        ? 'لا يمكن تقييم هذا الموظف — مجموعته بدون معايير خاصة. أضف معايير المجموعة أولاً.'
-        : 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.');
+    // Hard guard: refuse to score an employee whose group's active
+    // specific-criteria weights don't sum to the target (or who isn't in
+    // any group). Mirrors the table-row disable so a user reaching the
+    // form via direct URL can't bypass it.
+    if (!noSpecificNeeded && !canEvaluateEmployee(employeeId)) {
+      const groupId = employeeGroupMembership[employeeId];
+      const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+      toast.error(!groupId
+        ? 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.'
+        : `لا يمكن تقييم هذا الموظف — مجموع أوزان معايير مجموعته ${sum}% بدلاً من ${specificWeightTarget}%. أكمل المعايير أولاً.`);
       return;
     }
 
@@ -762,7 +769,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id)) && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">بعض الموظفين لا يمكن تقييمهم — مجموعتهم بدون معايير خاصة. أضف معايير لكل مجموعة في صفحة "المعايير الخاصة" قبل تقييم أعضائها.</p>
+            <p className="text-sm text-amber-800">بعض الموظفين لا يمكن تقييمهم — يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً لـ {specificWeightTarget}%. أكمل المعايير في صفحة "المعايير الخاصة".</p>
           </div>
         )}
 
@@ -860,7 +867,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                           }
 
                           if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
-                            const inGroup = !!employeeGroupMembership[emp.id];
+                            const groupId = employeeGroupMembership[emp.id];
+                            const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
                             return (
                               <div className="text-center">
                                 <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed">
@@ -868,7 +876,9 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                                   <span>تقييم</span>
                                 </button>
                                 <p className="text-[10px] text-red-500 mt-1">
-                                  {inGroup ? 'أضف معايير خاصة لهذه المجموعة أولاً' : 'هذا الموظف غير مُصنّف في أي مجموعة'}
+                                  {!groupId
+                                    ? 'هذا الموظف غير مُصنّف في أي مجموعة'
+                                    : `أكمل أوزان معايير المجموعة (${sum}% / ${specificWeightTarget}%)`}
                                 </p>
                               </div>
                             );

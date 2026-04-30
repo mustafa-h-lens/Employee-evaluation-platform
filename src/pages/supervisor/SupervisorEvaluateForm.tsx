@@ -119,20 +119,22 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const [specificWeight, setSpecificWeight] = useState(50);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [noAssignment, setNoAssignment] = useState(false);
-  // Per-employee resolver: true only when the employee's group has at least
-  // one active specific criterion (or specific_weight is 0 so general
-  // criteria suffice). An employee with no group OR a group with no active
-  // criteria CANNOT be evaluated — protects against half-configured groups.
+  // Per-employee resolver: an employee can only be evaluated when their
+  // group's ACTIVE specific-criteria weights sum exactly to the
+  // specific-weight target (or specific_weight is 0 so general criteria
+  // suffice). Half-filled groups (sum < target) and ungrouped employees
+  // are NOT evaluable.
+  const [specificWeightTarget, setSpecificWeightTarget] = useState(50);
   const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
   const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
-  const [groupHasCriteria, setGroupHasCriteria] = useState<Record<string, boolean>>({});
+  const [groupCriteriaSum, setGroupCriteriaSum] = useState<Record<string, number>>({});
 
   const canEvaluateEmployee = useCallback((empId: string): boolean => {
     if (noSpecificNeeded) return true;
     const groupId = employeeGroupMembership[empId];
     if (!groupId) return false;
-    return !!groupHasCriteria[groupId];
-  }, [noSpecificNeeded, employeeGroupMembership, groupHasCriteria]);
+    return (groupCriteriaSum[groupId] || 0) >= specificWeightTarget;
+  }, [noSpecificNeeded, employeeGroupMembership, groupCriteriaSum, specificWeightTarget]);
 
   // Fetch active assignments with their members
   const fetchAssignments = useCallback(async () => {
@@ -185,15 +187,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
         return;
       }
 
-      // Per-group criteria check: fetch every group's active-criteria count
+      // Per-group criteria check: fetch every active criterion (with weight)
       // and every employee→group membership across the supervisor's
       // assignments. The table render uses this to disable the evaluate
-      // button per-employee when their group has no active criteria yet.
+      // button per-employee when their group's active weights don't sum
+      // to the specific-weight target.
       const assignmentIds = assignmentList.map(a => a.id);
       const [{ data: supCriteria }, { data: members }, { data: weightSettings }] = await Promise.all([
         supabase
           .from('supervisor_criteria')
-          .select('group_id')
+          .select('group_id, weight')
           .in('assignment_id', assignmentIds)
           .eq('is_active', true)
           .not('group_id', 'is', null),
@@ -207,11 +210,15 @@ export const SupervisorEvaluateForm: React.FC = () => {
           .limit(1)
           .single(),
       ]);
-      const noSpecific = weightSettings?.specific_weight === 0;
-      setNoSpecificNeeded(noSpecific);
-      const groupCriteriaMap: Record<string, boolean> = {};
-      (supCriteria || []).forEach((r: any) => { if (r.group_id) groupCriteriaMap[r.group_id] = true; });
-      setGroupHasCriteria(groupCriteriaMap);
+      const target = weightSettings?.specific_weight ?? 50;
+      setSpecificWeightTarget(target);
+      setNoSpecificNeeded(target === 0);
+      const sumMap: Record<string, number> = {};
+      (supCriteria || []).forEach((r: any) => {
+        if (!r.group_id) return;
+        sumMap[r.group_id] = (sumMap[r.group_id] || 0) + Number(r.weight || 0);
+      });
+      setGroupCriteriaSum(sumMap);
       const memMap: Record<string, string> = {};
       (members || []).forEach((m: any) => { memMap[m.employee_id] = m.group_id; });
       setEmployeeGroupMembership(memMap);
@@ -473,15 +480,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const handleSubmit = async (isDraft: boolean) => {
     if (!employeeId || !user || !activePeriod) return;
 
-    // Hard guard: block any attempt to score an employee whose group has
-    // no active specific criteria (or who isn't in any group at all). Even
-    // for drafts — the supervisor must define group criteria before
-    // scoring members of that group.
-    if (!noSpecificNeeded && specificCriteria.length === 0) {
-      const inGroup = !!employeeGroupMembership[employeeId];
-      toast.error(inGroup
-        ? 'لا يمكن تقييم هذا الموظف — مجموعته بدون معايير خاصة. أضف معايير المجموعة أولاً.'
-        : 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.');
+    // Hard guard: block any attempt to score an employee whose group's
+    // active criteria weights don't sum to the specific-weight target,
+    // or who isn't in any group. Even for drafts — the supervisor must
+    // complete group criteria before scoring members of that group.
+    if (!noSpecificNeeded && !canEvaluateEmployee(employeeId)) {
+      const groupId = employeeGroupMembership[employeeId];
+      const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+      toast.error(!groupId
+        ? 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.'
+        : `لا يمكن تقييم هذا الموظف — مجموع أوزان معايير مجموعته ${sum}% بدلاً من ${specificWeightTarget}%. أكمل المعايير أولاً.`);
       return;
     }
 
@@ -749,8 +757,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <div>
-              <p className="text-amber-800 text-sm font-medium">بعض الموظفين لا يمكن تقييمهم — مجموعتهم بدون معايير خاصة</p>
-              <p className="text-amber-600 text-xs mt-0.5">انتقل إلى صفحة "معايير المشرف" وأضف معايير لكل مجموعة قبل تقييم أعضائها. الموظفون الذين لا يوجد لهم مجموعة لن يكونوا قابلين للتقييم.</p>
+              <p className="text-amber-800 text-sm font-medium">بعض الموظفين لا يمكن تقييمهم — مجموعتهم لم تكتمل معاييرها الخاصة</p>
+              <p className="text-amber-600 text-xs mt-0.5">يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً لـ {specificWeightTarget}%. انتقل إلى صفحة "معايير المشرف" لإكمالها.</p>
             </div>
           </div>
         )}
@@ -834,7 +842,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
                           }
 
                           if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
-                            const inGroup = !!employeeGroupMembership[emp.id];
+                            const groupId = employeeGroupMembership[emp.id];
+                            const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
                             return (
                               <div className="text-center">
                                 <button
@@ -845,7 +854,9 @@ export const SupervisorEvaluateForm: React.FC = () => {
                                   <span>تقييم</span>
                                 </button>
                                 <p className="text-[10px] text-red-500 mt-1">
-                                  {inGroup ? 'أضف معايير خاصة لهذه المجموعة أولاً' : 'هذا الموظف غير مُصنّف في أي مجموعة'}
+                                  {!groupId
+                                    ? 'هذا الموظف غير مُصنّف في أي مجموعة'
+                                    : `أكمل أوزان معايير المجموعة (${sum}% / ${specificWeightTarget}%)`}
                                 </p>
                               </div>
                             );
