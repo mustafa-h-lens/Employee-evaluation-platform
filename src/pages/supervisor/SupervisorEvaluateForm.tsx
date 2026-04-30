@@ -833,21 +833,18 @@ export const SupervisorEvaluateForm: React.FC = () => {
                           if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
                             const groupId = employeeGroupMembership[emp.id];
                             const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+                            const reason = !groupId
+                              ? 'هذا الموظف غير مُصنّف في أي مجموعة'
+                              : `أكمل أوزان معايير المجموعة (${sum}% / ${specificWeightTarget}%)`;
                             return (
-                              <div className="text-center">
-                                <button
-                                  disabled
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed"
-                                >
-                                  <ClipboardEdit className="h-4 w-4" />
-                                  <span>تقييم</span>
-                                </button>
-                                <p className="text-[10px] text-red-500 mt-1">
-                                  {!groupId
-                                    ? 'هذا الموظف غير مُصنّف في أي مجموعة'
-                                    : `أكمل أوزان معايير المجموعة (${sum}% / ${specificWeightTarget}%)`}
-                                </p>
-                              </div>
+                              <button
+                                disabled
+                                title={reason}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed"
+                              >
+                                <ClipboardEdit className="h-4 w-4" />
+                                <span>تقييم</span>
+                              </button>
                             );
                           }
 
