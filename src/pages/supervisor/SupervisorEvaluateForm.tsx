@@ -119,7 +119,20 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const [specificWeight, setSpecificWeight] = useState(50);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [noAssignment, setNoAssignment] = useState(false);
-  const [hasSupervisorCriteria, setHasSupervisorCriteria] = useState(true);
+  // Per-employee resolver: true only when the employee's group has at least
+  // one active specific criterion (or specific_weight is 0 so general
+  // criteria suffice). An employee with no group OR a group with no active
+  // criteria CANNOT be evaluated — protects against half-configured groups.
+  const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
+  const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
+  const [groupHasCriteria, setGroupHasCriteria] = useState<Record<string, boolean>>({});
+
+  const canEvaluateEmployee = useCallback((empId: string): boolean => {
+    if (noSpecificNeeded) return true;
+    const groupId = employeeGroupMembership[empId];
+    if (!groupId) return false;
+    return !!groupHasCriteria[groupId];
+  }, [noSpecificNeeded, employeeGroupMembership, groupHasCriteria]);
 
   // Fetch active assignments with their members
   const fetchAssignments = useCallback(async () => {
@@ -172,24 +185,36 @@ export const SupervisorEvaluateForm: React.FC = () => {
         return;
       }
 
-      // Check if supervisor has added criteria for any active assignment
+      // Per-group criteria check: fetch every group's active-criteria count
+      // and every employee→group membership across the supervisor's
+      // assignments. The table render uses this to disable the evaluate
+      // button per-employee when their group has no active criteria yet.
       const assignmentIds = assignmentList.map(a => a.id);
-      const [{ data: supCriteria }, { data: weightSettings }] = await Promise.all([
+      const [{ data: supCriteria }, { data: members }, { data: weightSettings }] = await Promise.all([
         supabase
           .from('supervisor_criteria')
-          .select('id')
+          .select('group_id')
           .in('assignment_id', assignmentIds)
           .eq('is_active', true)
-          .limit(1),
+          .not('group_id', 'is', null),
+        supabase
+          .from('supervisor_criteria_group_members')
+          .select('group_id, employee_id')
+          .in('assignment_id', assignmentIds),
         supabase
           .from('evaluation_settings')
           .select('specific_weight')
           .limit(1)
           .single(),
       ]);
-      // If specific weight is 0 (general is 100%), no criteria needed
-      const noSpecificNeeded = weightSettings?.specific_weight === 0;
-      setHasSupervisorCriteria(noSpecificNeeded || (!!supCriteria && supCriteria.length > 0));
+      const noSpecific = weightSettings?.specific_weight === 0;
+      setNoSpecificNeeded(noSpecific);
+      const groupCriteriaMap: Record<string, boolean> = {};
+      (supCriteria || []).forEach((r: any) => { if (r.group_id) groupCriteriaMap[r.group_id] = true; });
+      setGroupHasCriteria(groupCriteriaMap);
+      const memMap: Record<string, string> = {};
+      (members || []).forEach((m: any) => { memMap[m.employee_id] = m.group_id; });
+      setEmployeeGroupMembership(memMap);
 
       const { data: periods } = await supabase
         .from('evaluation_periods')
@@ -447,6 +472,18 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   const handleSubmit = async (isDraft: boolean) => {
     if (!employeeId || !user || !activePeriod) return;
+
+    // Hard guard: block any attempt to score an employee whose group has
+    // no active specific criteria (or who isn't in any group at all). Even
+    // for drafts — the supervisor must define group criteria before
+    // scoring members of that group.
+    if (!noSpecificNeeded && specificCriteria.length === 0) {
+      const inGroup = !!employeeGroupMembership[employeeId];
+      toast.error(inGroup
+        ? 'لا يمكن تقييم هذا الموظف — مجموعته بدون معايير خاصة. أضف معايير المجموعة أولاً.'
+        : 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.');
+      return;
+    }
 
     if (!isDraft) {
       const allGeneralScored = criteria.every(c => scores[c.id] && scores[c.id] > 0);
@@ -708,12 +745,12 @@ export const SupervisorEvaluateForm: React.FC = () => {
           </Card>
         </div>
 
-        {!hasSupervisorCriteria && (
+        {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id)) && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <div>
-              <p className="text-amber-800 text-sm font-medium">يجب إضافة المعايير الخاصة بالمشرف أولاً</p>
-              <p className="text-amber-600 text-xs mt-0.5">لا يمكن تقييم الموظفين بدون إضافة معايير التقييم الخاصة بك. انتقل إلى صفحة "معايير المشرف" لإضافتها.</p>
+              <p className="text-amber-800 text-sm font-medium">بعض الموظفين لا يمكن تقييمهم — مجموعتهم بدون معايير خاصة</p>
+              <p className="text-amber-600 text-xs mt-0.5">انتقل إلى صفحة "معايير المشرف" وأضف معايير لكل مجموعة قبل تقييم أعضائها. الموظفون الذين لا يوجد لهم مجموعة لن يكونوا قابلين للتقييم.</p>
             </div>
           </div>
         )}
@@ -796,7 +833,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
                             return <span className="text-xs text-ds-faint">لا توجد فترة نشطة</span>;
                           }
 
-                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !hasSupervisorCriteria) {
+                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
+                            const inGroup = !!employeeGroupMembership[emp.id];
                             return (
                               <div className="text-center">
                                 <button
@@ -806,7 +844,9 @@ export const SupervisorEvaluateForm: React.FC = () => {
                                   <ClipboardEdit className="h-4 w-4" />
                                   <span>تقييم</span>
                                 </button>
-                                <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
+                                <p className="text-[10px] text-red-500 mt-1">
+                                  {inGroup ? 'أضف معايير خاصة لهذه المجموعة أولاً' : 'هذا الموظف غير مُصنّف في أي مجموعة'}
+                                </p>
                               </div>
                             );
                           }

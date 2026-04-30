@@ -124,43 +124,64 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const [generalWeight, setGeneralWeight] = useState(50);
   const [specificWeight, setSpecificWeight] = useState(50);
   const [employeesLoading, setEmployeesLoading] = useState(true);
-  const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
   const [myDirectorates, setMyDirectorates] = useState<{ id: string; name: string }[]>([]);
   const [selectedDirectorateId, setSelectedDirectorateId] = useState<string>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Check if director has specific criteria (skip if general weight is 100%)
+  // Per-employee resolver: an employee can only be evaluated when their
+  // group has at least one active specific criterion (or specific_weight
+  // is 0 so general criteria suffice). Half-configured groups must NOT
+  // allow evaluation — that was the bug where "المصممين" group with no
+  // criteria was still evaluable.
+  const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
+  const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
+  const [groupHasCriteria, setGroupHasCriteria] = useState<Record<string, boolean>>({});
+
+  const canEvaluateEmployee = useCallback((empId: string): boolean => {
+    if (noSpecificNeeded) return true;
+    const groupId = employeeGroupMembership[empId];
+    if (!groupId) return false;
+    return !!groupHasCriteria[groupId];
+  }, [noSpecificNeeded, employeeGroupMembership, groupHasCriteria]);
+
   useEffect(() => {
     const checkCriteria = async () => {
       if (!user) return;
-      // Count criteria across every directorate the user manages —
-      // criteria are now per-directorate, shared between co-directors.
       const { data: dirs } = await supabase
         .from('directorates')
         .select('id')
         .or(`director_id.eq.${user.id},secondary_director_id.eq.${user.id}`);
       const dirIds = (dirs || []).map((d: any) => d.id);
 
-      const [{ count }, { data: weightSettings }] = await Promise.all([
-        dirIds.length === 0
-          ? Promise.resolve({ count: 0 })
-          : supabase
-              .from('department_criteria')
-              .select('id', { count: 'exact', head: true })
-              .in('directorate_id', dirIds)
-              .not('group_id', 'is', null)
-              .eq('is_active', true),
+      if (dirIds.length === 0) return;
+
+      const [{ data: critRows }, { data: members }, { data: weightSettings }] = await Promise.all([
+        supabase
+          .from('department_criteria')
+          .select('group_id')
+          .in('directorate_id', dirIds)
+          .eq('is_active', true)
+          .not('group_id', 'is', null),
+        supabase
+          .from('department_criteria_group_members')
+          .select('group_id, employee_id')
+          .in('directorate_id', dirIds),
         supabase
           .from('evaluation_settings')
           .select('specific_weight')
           .limit(1)
           .single(),
       ]);
-      const noSpecificNeeded = weightSettings?.specific_weight === 0;
-      setHasSpecificCriteria(noSpecificNeeded || (count ?? 0) > 0);
+      setNoSpecificNeeded(weightSettings?.specific_weight === 0);
+      const groupCriteriaMap: Record<string, boolean> = {};
+      (critRows || []).forEach((r: any) => { if (r.group_id) groupCriteriaMap[r.group_id] = true; });
+      setGroupHasCriteria(groupCriteriaMap);
+      const memMap: Record<string, string> = {};
+      (members || []).forEach((m: any) => { memMap[m.employee_id] = m.group_id; });
+      setEmployeeGroupMembership(memMap);
     };
     checkCriteria();
-  }, [user]);
+  }, [user, refreshKey]);
 
   // Fetch periods for table view
   useEffect(() => {
@@ -514,6 +535,17 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   const handleSubmit = async (isDraft: boolean) => {
     if (!employeeId || !user || !activePeriod) return;
 
+    // Hard guard: refuse to score an employee whose group has no active
+    // specific criteria (or who isn't in any group). Mirrors the table-row
+    // disable so a user reaching the form via direct URL can't bypass it.
+    if (!noSpecificNeeded && specificCriteria.length === 0) {
+      const inGroup = !!employeeGroupMembership[employeeId];
+      toast.error(inGroup
+        ? 'لا يمكن تقييم هذا الموظف — مجموعته بدون معايير خاصة. أضف معايير المجموعة أولاً.'
+        : 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.');
+      return;
+    }
+
     if (!isDraft) {
       const allGeneralScored = criteria.every(c => scores[c.id] && scores[c.id] > 0);
       const allSpecificScored = specificCriteria.every(c => specificScores[c.id] && specificScores[c.id] > 0);
@@ -727,10 +759,10 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           </Card>
         </div>
 
-        {!hasSpecificCriteria && (
+        {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id)) && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم الموظفين. اذهب إلى صفحة "المعايير الخاصة" لإضافتها.</p>
+            <p className="text-sm text-amber-800">بعض الموظفين لا يمكن تقييمهم — مجموعتهم بدون معايير خاصة. أضف معايير لكل مجموعة في صفحة "المعايير الخاصة" قبل تقييم أعضائها.</p>
           </div>
         )}
 
@@ -827,14 +859,17 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                             return <span className="text-xs text-ds-faint">لا توجد فترة نشطة</span>;
                           }
 
-                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !hasSpecificCriteria) {
+                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
+                            const inGroup = !!employeeGroupMembership[emp.id];
                             return (
                               <div className="text-center">
                                 <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed">
                                   <ClipboardEdit className="h-4 w-4" />
                                   <span>تقييم</span>
                                 </button>
-                                <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
+                                <p className="text-[10px] text-red-500 mt-1">
+                                  {inGroup ? 'أضف معايير خاصة لهذه المجموعة أولاً' : 'هذا الموظف غير مُصنّف في أي مجموعة'}
+                                </p>
                               </div>
                             );
                           }
