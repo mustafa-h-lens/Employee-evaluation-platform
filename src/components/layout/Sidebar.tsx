@@ -98,6 +98,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
   const { theme, toggleTheme } = useTheme();
   const { runWithNavReveal } = useNavReveal();
   const handleLogout = () => runWithNavReveal(() => logout());
+  // Logo doubles as a "return to landing" button: it logs the user
+  // out and plays the brand-reveal pinned to its dark palette so the
+  // marketing backdrop reads consistently regardless of theme.
+  const handleLogoClick = () => {
+    runWithNavReveal(() => logout(), { forceDark: true, targetPath: '/' });
+  };
   const [hasSupervisorAccess, setHasSupervisorAccess] = useState(false);
   const [hasDirectorAccess, setHasDirectorAccess] = useState(false);
   // Brief one-shot ripple on the toggle button after click. Re-keyed
@@ -183,11 +189,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
         style={{ borderBottom: '1px solid var(--border-subtle)' }}
       >
         <div className="flex items-center justify-center">
-          <img
-            src={theme === 'dark' ? '/logo-white.png' : '/logo-color.png'}
-            alt="Half Lens"
-            className="h-14 w-auto"
-          />
+          <button
+            type="button"
+            onClick={handleLogoClick}
+            aria-label="العودة إلى الصفحة الرئيسية"
+            className="sidebar-logo-button"
+          >
+            <img
+              src={theme === 'dark' ? '/logo-white.png' : '/logo-color.png'}
+              alt="Half Lens"
+              className="h-14 w-auto"
+              draggable={false}
+            />
+          </button>
         </div>
         <p
           className="text-center text-xs mt-3 font-semibold tracking-wide"

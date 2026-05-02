@@ -3683,6 +3683,33 @@ a.breadcrumb-item:hover { color: var(--text-primary); }
   line-height: 1.7;
 }
 
+/* Sidebar logo doubles as a "return to landing" affordance — it is
+   a borderless transparent button that gently lifts on hover so the
+   logo reads as clickable without competing visually at rest. */
+.sidebar-logo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+}
+.sidebar-logo-button:hover {
+  transform: translateY(-1px) scale(1.04);
+  filter: drop-shadow(0 6px 14px rgba(37, 99, 235, 0.25));
+}
+.sidebar-logo-button:active {
+  transform: translateY(0) scale(0.98);
+}
+.sidebar-logo-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    THEME TOGGLE — sidebar light/dark switch with playful hover.
    The sun (shown in dark mode → click to go light) intensifies its

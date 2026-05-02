@@ -174,6 +174,11 @@ function AppContent() {
   //   idle     → overlay unmounted
   type NavPhase = 'idle' | 'leaving' | 'waiting' | 'exiting';
   const [navPhase, setNavPhase] = useState<NavPhase>('idle');
+  // Pin the brand-reveal overlay to its dark palette for the duration
+  // of one nav cycle. Used by the sidebar logo "back to landing" flow
+  // so the entire transition stays on the marketing backdrop, even
+  // while the user is still authenticated during the leaving phase.
+  const [forceDarkReveal, setForceDarkReveal] = useState(false);
   const pendingNavRef = useRef<string | null>(null);
 
   const navigate = useCallback((path: string) => {
@@ -198,16 +203,22 @@ function AppContent() {
   //   2. run the action — auth state updates underneath the overlay
   //   3. switch to 'waiting' so the polling effect dismisses once the new
   //      screen reports ready (no placeholder)
-  const runWithNavReveal = useCallback(async (action: () => Promise<unknown> | void) => {
+  const runWithNavReveal = useCallback(async (
+    action: () => Promise<unknown> | void,
+    opts?: { forceDark?: boolean; targetPath?: string },
+  ) => {
     const reduced = !!window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || pendingNavRef.current || navPhase !== 'idle') {
+      if (opts?.targetPath) setCurrentPath(opts.targetPath);
       await action();
       return;
     }
     pendingNavRef.current = '__auth__';
+    if (opts?.forceDark) setForceDarkReveal(true);
     setNavPhase('leaving');
     await new Promise(resolve => window.setTimeout(resolve, 300));
+    if (opts?.targetPath) setCurrentPath(opts.targetPath);
     try {
       await action();
     } finally {
@@ -265,6 +276,7 @@ function AppContent() {
     if (navPhase !== 'exiting') return;
     const t = window.setTimeout(() => {
       setNavPhase('idle');
+      setForceDarkReveal(false);
       pendingNavRef.current = null;
     }, 450);
     return () => clearTimeout(t);
@@ -497,7 +509,7 @@ function AppContent() {
           {renderPage()}
         </div>
       </PageLayout>
-      <NavTransitionOverlay phase={navPhase} />
+      <NavTransitionOverlay phase={navPhase} forceDark={forceDarkReveal} />
       <WelcomeChip name={welcomeName} onDismiss={dismissWelcome} />
     </NavRevealProvider>
   );

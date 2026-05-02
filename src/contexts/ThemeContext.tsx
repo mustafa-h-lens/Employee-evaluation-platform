@@ -154,8 +154,22 @@ export const useTheme = (): ThemeContextValue => {
 // Lives next to ThemeContext for convenience — same scope, same
 // "global UI choreography" intent. Lets any child trigger the
 // brand-reveal overlay around an async action like login/logout.
+interface NavRevealOptions {
+  // Pin the brand-reveal overlay to its dark palette regardless of the
+  // current theme — used for flows that always read on the marketing
+  // backdrop (logout to landing, etc).
+  forceDark?: boolean;
+  // Optional path to switch to after the leaving phase completes.
+  // Useful when the action also changes auth state, so the URL/route
+  // is already correct by the time the new screen mounts.
+  targetPath?: string;
+}
+
 interface NavRevealContextValue {
-  runWithNavReveal: (action: () => Promise<unknown> | void) => Promise<void>;
+  runWithNavReveal: (
+    action: () => Promise<unknown> | void,
+    opts?: NavRevealOptions,
+  ) => Promise<void>;
 }
 
 const NavRevealContext = React.createContext<NavRevealContextValue | undefined>(undefined);
@@ -173,7 +187,8 @@ export const useNavReveal = (): NavRevealContextValue => {
     // Allow components to call this safely even when not wrapped — e.g. on
     // the bare Login page before the provider mounts. Fall back to a no-op
     // that just runs the action.
-    return { runWithNavReveal: async (action) => { await action(); } };
+    const noop: NavRevealContextValue['runWithNavReveal'] = async (action) => { await action(); };
+    return { runWithNavReveal: noop };
   }
   return ctx;
 };
