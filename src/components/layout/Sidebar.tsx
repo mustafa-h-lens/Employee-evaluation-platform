@@ -48,14 +48,12 @@ const menuItems: MenuItem[] = [
   { label: 'سجل النشاط', icon: <Activity className="h-5 w-5" />, path: '/audit', roles: ['admin'] },
   { label: 'مديري الإدارات', icon: <Crown className="h-5 w-5" />, path: '/ceo-directors', roles: ['ceo'] },
   { label: 'تقييم المديرين', icon: <FileText className="h-5 w-5" />, path: '/ceo-evaluations', roles: ['ceo'] },
-  { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/ceo-director-criteria', roles: ['ceo'] },
   { label: 'اعتمادية التقييمات', icon: <ClipboardList className="h-5 w-5" />, path: '/ceo-approvals', roles: ['ceo'] },
   { label: 'جميع التقييمات', icon: <FileText className="h-5 w-5" />, path: '/ceo-all-evaluations', roles: ['ceo'] },
   { label: 'التقارير', icon: <BarChart3 className="h-5 w-5" />, path: '/ceo-reports', roles: ['ceo'] },
   { label: 'تقييماتي من الموظفين', icon: <Star className="h-5 w-5" />, path: '/my-ceo-evaluations', roles: ['ceo'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/ceo-org-structure', roles: ['ceo'] },
   { label: 'موظفو الإدارات', icon: <Users className="h-5 w-5" />, path: '/director-evaluate', roles: ['director'] },
-  { label: 'المعايير الخاصة', icon: <ListChecks className="h-5 w-5" />, path: '/director-criteria', roles: ['director'] },
   { label: 'تقييماتي', icon: <FileText className="h-5 w-5" />, path: '/director-evaluations', roles: ['director'] },
   { label: 'تقييم الإدارة العليا', icon: <Star className="h-5 w-5" />, path: '/ceo-evaluate', roles: ['director'] },
   { label: 'الهيكل التنظيمي', icon: <Network className="h-5 w-5" />, path: '/director-org-structure', roles: ['director'] },
@@ -198,7 +196,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
                       {hasDirectorAccess ? (
                         <>
                           {renderNavButton('موظفو الإدارات', <Users className="h-5 w-5" />, '/director-evaluate')}
-                          {renderNavButton('معايير الإدارة', <ListChecks className="h-5 w-5" />, '/director-criteria')}
                         </>
                       ) : (
                         <div

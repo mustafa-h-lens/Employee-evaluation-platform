@@ -24,13 +24,11 @@ import { CeoDirectors } from './pages/ceo/Directors';
 import { DirectorEvaluationForm } from './pages/ceo/DirectorEvaluationForm';
 import { CeoReports } from './pages/ceo/Reports';
 import { PendingApprovals } from './pages/ceo/PendingApprovals';
-import { DirectorCriteria } from './pages/ceo/DirectorCriteria';
 
 
 import { DirectorDashboard } from './pages/director/Dashboard';
 import { DirectorMyEvaluations } from './pages/director/MyEvaluations';
 import { DirectorEvaluateEmployee } from './pages/director/DirectorEvaluateEmployee';
-import { DirectorSpecificCriteria } from './pages/director/DirectorCriteria';
 
 import { EmployeeDashboard } from './pages/employee/Dashboard';
 import { MyEvaluations } from './pages/employee/MyEvaluations';
@@ -240,8 +238,6 @@ function AppContent() {
           return <PendingApprovals />;
         case '/ceo-all-evaluations':
           return <AllEvaluations />;
-        case '/ceo-director-criteria':
-          return <DirectorCriteria />;
         case '/ceo-org-structure':
           return <OrgStructure />;
         case '/my-ceo-evaluations':
@@ -249,8 +245,6 @@ function AppContent() {
         // Director routes for CEO users assigned as department directors
         case '/director-evaluate':
           return <DirectorEvaluateEmployee employeeId={params.get('employee') || undefined} />;
-        case '/director-criteria':
-          return <DirectorSpecificCriteria />;
         case '/settings':
           return <ChangePassword />;
         default:
@@ -267,8 +261,6 @@ function AppContent() {
           return <DirectorDashboard />;
         case '/director-evaluate':
           return <DirectorEvaluateEmployee employeeId={params.get('employee') || undefined} />;
-        case '/director-criteria':
-          return <DirectorSpecificCriteria />;
         case '/director-evaluations':
           return <DirectorMyEvaluations />;
         case '/supervisor-evaluate':

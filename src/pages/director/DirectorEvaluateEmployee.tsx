@@ -13,6 +13,7 @@ import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSele
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
 import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
+import { DirectorCriteriaSection } from './DirectorCriteriaSection';
 
 interface EmployeeInfo {
   id: string;           // employees table id
@@ -419,8 +420,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
     // The employee's specific criteria are determined by the group they belong
     // to within the directorate. If they aren't in any group, they get only
-    // general criteria.
+    // general criteria. The same group_id also gates whether this employee
+    // gets the GOLDEN general set (group_id IS NULL) or a per-group custom
+    // general set (evaluation_criteria.group_id = <their group>).
     let specificQuery: any = null;
+    let employeeGroupId: string | null = null;
     if (employeeDirectorateId) {
       const { data: gm } = await supabase
         .from('department_criteria_group_members')
@@ -429,6 +433,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         .eq('employee_id', employeeId)
         .maybeSingle();
       if (gm?.group_id) {
+        employeeGroupId = gm.group_id;
         specificQuery = supabase.from('department_criteria').select('*')
           .eq('group_id', gm.group_id)
           .eq('is_active', true)
@@ -436,13 +441,32 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       }
     }
 
-    const [{ data: general }, { data: specific }] = await Promise.all([
-      supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
-      specificQuery
-        ? specificQuery
-        : Promise.resolve({ data: [] }),
-    ]);
-    setCriteria(general || []);
+    let generalRows: any[] = [];
+    if (employeeGroupId) {
+      const { data: customGeneral } = await supabase
+        .from('evaluation_criteria')
+        .select('*')
+        .eq('group_id', employeeGroupId)
+        .eq('is_active', true)
+        .order('order');
+      if (customGeneral && customGeneral.length > 0) {
+        generalRows = customGeneral;
+      }
+    }
+    if (generalRows.length === 0) {
+      const { data: golden } = await supabase
+        .from('evaluation_criteria')
+        .select('*')
+        .is('group_id', null)
+        .eq('is_active', true)
+        .order('order');
+      generalRows = golden || [];
+    }
+
+    const { data: specific } = specificQuery
+      ? await specificQuery
+      : { data: [] };
+    setCriteria(generalRows);
     setSpecificCriteria((specific || []).map((s: any) => ({
       id: s.id,
       title: s.title,
@@ -948,6 +972,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             )}
           </CardBody>
         </Card>
+
+        <DirectorCriteriaSection />
       </div>
     );
   }

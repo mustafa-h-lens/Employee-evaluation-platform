@@ -34,6 +34,7 @@ interface Criterion {
   weight: number;
   order: number;
   is_active: boolean;
+  group_id: string | null;
   score_count?: number;
 }
 
@@ -125,6 +126,11 @@ export const EvaluationCriteria: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(null);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
+  // Which section the current add/edit applies to. null = the default golden
+  // section (group_id IS NULL). A directorate-criteria-group id = a custom
+  // per-group general criteria set used when that group's general_weight
+  // differs from the system default.
+  const [formGroupId, setFormGroupId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [generalWeightLimit, setGeneralWeightLimit] = useState(50);
@@ -355,13 +361,17 @@ export const EvaluationCriteria: React.FC = () => {
 
   useEffect(() => { fetchSupCriteria(); }, [fetchSupCriteria]);
 
-  const totalWeight = criteria
+  // Golden-section totals (criteria with no group_id — the system-default
+  // general criteria). Per-group sections compute their own totals inline.
+  const goldenCriteria = criteria.filter(c => !c.group_id);
+  const totalWeight = goldenCriteria
     .filter(c => c.is_active)
     .reduce((sum, c) => sum + c.weight, 0);
 
-  const openAddModal = () => {
+  const openAddModal = (groupId: string | null = null) => {
     setEditingCriterion(null);
     setFormData(defaultFormData);
+    setFormGroupId(groupId);
     setFormError('');
     setIsModalOpen(true);
   };
@@ -374,6 +384,7 @@ export const EvaluationCriteria: React.FC = () => {
       weight: criterion.weight.toString(),
       is_active: criterion.is_active,
     });
+    setFormGroupId(criterion.group_id || null);
     setFormError('');
     setIsModalOpen(true);
   };
@@ -431,8 +442,9 @@ export const EvaluationCriteria: React.FC = () => {
           });
         }
       } else {
-        const maxOrder = criteria.length > 0
-          ? Math.max(...criteria.map(c => c.order))
+        const sectionRows = criteria.filter(c => (c.group_id || null) === formGroupId);
+        const maxOrder = sectionRows.length > 0
+          ? Math.max(...sectionRows.map(c => c.order))
           : 0;
 
         const { data, error } = await supabase
@@ -443,6 +455,7 @@ export const EvaluationCriteria: React.FC = () => {
             weight,
             order: maxOrder + 1,
             is_active: formData.is_active,
+            group_id: formGroupId,
           })
           .select()
           .single();
@@ -539,12 +552,15 @@ export const EvaluationCriteria: React.FC = () => {
   };
 
   const handleReorder = async (criterion: Criterion, direction: 'up' | 'down') => {
-    const currentIndex = criteria.findIndex(c => c.id === criterion.id);
+    const sectionRows = criteria
+      .filter(c => (c.group_id || null) === (criterion.group_id || null))
+      .sort((a, b) => a.order - b.order);
+    const currentIndex = sectionRows.findIndex(c => c.id === criterion.id);
     const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
 
-    if (swapIndex < 0 || swapIndex >= criteria.length) return;
+    if (swapIndex < 0 || swapIndex >= sectionRows.length) return;
 
-    const swapCriterion = criteria[swapIndex];
+    const swapCriterion = sectionRows[swapIndex];
 
     await Promise.all([
       supabase.from('evaluation_criteria').update({ order: swapCriterion.order }).eq('id', criterion.id),
@@ -1117,8 +1133,27 @@ export const EvaluationCriteria: React.FC = () => {
     return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
   }
 
-  const activeCount = criteria.filter(c => c.is_active).length;
-  const inactiveCount = criteria.filter(c => !c.is_active).length;
+  const activeCount = goldenCriteria.filter(c => c.is_active).length;
+  const inactiveCount = goldenCriteria.filter(c => !c.is_active).length;
+
+  // Per-group general criteria sections — one per directorate-criteria-group
+  // whose general_weight differs from the system default. The golden section
+  // (id=null) covers every group whose general_weight === generalWeightLimit.
+  const customGeneralSections = Object.values(groupsByDirectorate)
+    .flat()
+    .filter(g => g.general_weight !== generalWeightLimit)
+    .map(g => ({
+      group: g,
+      directorateName: directorates.find(d => d.id === g.directorate_id)?.name || '',
+      criteria: criteria
+        .filter(c => c.group_id === g.id)
+        .sort((a, b) => a.order - b.order),
+    }))
+    .sort((a, b) => {
+      const dirCmp = a.directorateName.localeCompare(b.directorateName, 'ar');
+      if (dirCmp !== 0) return dirCmp;
+      return a.group.order - b.group.order;
+    });
 
   const filteredDirs = selectedDirId === 'all' ? directorates : directorates.filter(d => d.id === selectedDirId);
 
@@ -1190,193 +1225,304 @@ export const EvaluationCriteria: React.FC = () => {
       </div>
 
       {activeTab === 'general' && (<>
-      <div className="flex items-center justify-end">
-        <Button onClick={openAddModal} className="flex items-center gap-2">
-          <span>إضافة معيار</span>
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
+      {/* Default golden section — applies to any group whose general_weight
+          matches the system default. */}
+      {(() => {
+        const sectionCriteria = goldenCriteria;
+        const sectionTotal = sectionCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+        const target = generalWeightLimit;
+        const isGolden = true;
+        const groupId: string | null = null;
+        return (
+          <Card key="golden">
+            <CardBody className="p-0">
+              <div className="px-6 py-4 border-b border-ds-border-subtle flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(234,179,8,0.12)', color: '#b45309' }}>
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-ds-text">المجموعة الافتراضية (الذهبية)</h2>
+                    <p className="text-xs text-ds-muted">المعايير العامة الأساسية لكل مجموعة بنسبة عامة {target}%</p>
+                  </div>
+                  <Badge variant={isGolden ? 'warning' : 'default'} size="sm">ذهبية</Badge>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={sectionTotal === target ? 'success' : 'warning'} size="sm">
+                    المجموع: {sectionTotal}% / {target}%
+                  </Badge>
+                  <Badge variant="info" size="sm">{sectionCriteria.filter(c => c.is_active).length} نشط</Badge>
+                  <Button onClick={() => openAddModal(groupId)} size="sm" className="flex items-center gap-2">
+                    <span>إضافة معيار</span><Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
-                <p className="text-xl font-bold text-ds-text">{activeCount}</p>
-              </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
-                <ClipboardList className="h-6 w-6" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
-                <p className="text-xl font-bold text-ds-text">{inactiveCount}</p>
-              </div>
-              <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
-                <EyeOff className="h-6 w-6" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
-                <p className={`text-xl font-bold ${totalWeight === generalWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalWeight}% / {generalWeightLimit}%
-                </p>
-              </div>
-              <div className={`p-3 rounded-xl ${totalWeight === generalWeightLimit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                <Scale className="h-6 w-6" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+              {sectionTotal !== target && sectionCriteria.length > 0 && (
+                <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-3">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                  <p className="text-amber-800 text-sm">
+                    مجموع أوزان المعايير النشطة في هذا القسم يجب أن يساوي {target}%. المجموع الحالي: <span className="font-bold">{sectionTotal}%</span>
+                  </p>
+                </div>
+              )}
 
-      {totalWeight !== generalWeightLimit && criteria.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-          <p className="text-amber-800 text-sm">
-            مجموع أوزان المعايير العامة النشطة يجب أن يساوي {generalWeightLimit}% (النسبة المخصصة من الإعدادات). المجموع الحالي: <span className="font-bold">{totalWeight}%</span>
+              {sectionCriteria.length === 0 ? (
+                <EmptyState
+                  message="لا توجد معايير تقييم مضافة في هذا القسم حاليًا"
+                  icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8"> </TableHead>
+                      <TableHead>المعيار</TableHead>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الترتيب</TableHead>
+                      <TableHead>الوزن</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sectionCriteria.map((criterion, index) => {
+                      const isExpanded = expandedCriterionId === criterion.id;
+                      const stop = (e: React.MouseEvent) => e.stopPropagation();
+                      return (
+                        <React.Fragment key={criterion.id}>
+                          <TableRow
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
+                            onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
+                          >
+                            <TableCell className="text-ds-faint">
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <GripVertical className="h-4 w-4" />
+                                </div>
+                                <span className="font-bold text-ds-text">{criterion.title}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={criterion.is_active ? 'success' : 'default'}>
+                                {criterion.is_active ? 'نشط' : 'معطل'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1" onClick={stop}>
+                                <button onClick={() => handleReorder(criterion, 'up')} disabled={index === 0}
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                  <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                <button onClick={() => handleReorder(criterion, 'down')} disabled={index === sectionCriteria.length - 1}
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                  <ArrowDown className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${(criterion.weight / Math.max(1, target)) * 100}%` }} />
+                                </div>
+                                <span className="font-bold text-blue-600">{criterion.weight}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2" onClick={stop}>
+                                <Button size="sm" variant="outline" onClick={() => openEditModal(criterion)} className="flex items-center gap-1">
+                                  <Edit className="h-4 w-4" /><span>تعديل</span>
+                                </Button>
+                                <div className="ml-auto" />
+                                <Toggle checked={criterion.is_active} onChange={() => handleToggleActive(criterion)} size="sm" />
+                                {criterion.score_count === 0 && (
+                                  <Button size="sm" variant="danger" onClick={() => confirmDelete(criterion)} className="flex items-center gap-1">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {isExpanded && (
+                            <TableRow className="bg-blue-50/40">
+                              <TableCell colSpan={7} className="!whitespace-normal">
+                                <div className="px-2 py-1">
+                                  <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardBody>
+          </Card>
+        );
+      })()}
+
+      {/* Per-group sections — auto-shown for every directorate-criteria-group
+          whose general_weight differs from the system default. HR fills these
+          so their sum matches the group's general_weight target. */}
+      {customGeneralSections.length > 0 && (
+        <div className="rounded-lg bg-blue-50/60 border border-blue-100 px-4 py-3 text-sm text-blue-900 flex items-start gap-2">
+          <Filter className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <p>
+            مجموعات ذات أوزان مختلفة عن الافتراضية ({generalWeightLimit}%) — أضف معاييرها العامة الخاصة بها بحيث تساوي مجموع الأوزان النسبة المحددة لكل مجموعة.
           </p>
         </div>
       )}
 
-      <Card>
-        <CardBody className="p-0">
-          {criteria.length === 0 ? (
-            <EmptyState
-              message="لا توجد معايير تقييم مضافة حاليًا"
-              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8"> </TableHead>
-                  <TableHead>المعيار</TableHead>
-                  <TableHead>الوصف</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الترتيب</TableHead>
-                  <TableHead>الوزن</TableHead>
-                  <TableHead>الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {criteria.map((criterion, index) => {
-                  const isExpanded = expandedCriterionId === criterion.id;
-                  const stop = (e: React.MouseEvent) => e.stopPropagation();
-                  return (
-                    <React.Fragment key={criterion.id}>
-                      <TableRow
-                        className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
-                        onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
-                      >
-                        <TableCell className="text-ds-faint">
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <GripVertical className="h-4 w-4" />
-                            </div>
-                            <span className="font-bold text-ds-text">{criterion.title}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={criterion.is_active ? 'success' : 'default'}>
-                            {criterion.is_active ? 'نشط' : 'معطل'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1" onClick={stop}>
-                            <button
-                              onClick={() => handleReorder(criterion, 'up')}
-                              disabled={index === 0}
-                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </button>
-                            <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
-                            <button
-                              onClick={() => handleReorder(criterion, 'down')}
-                              disabled={index === criteria.length - 1}
-                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-blue-600 h-2 rounded-full transition-all"
-                                style={{ width: `${criterion.weight}%` }}
-                              />
-                            </div>
-                            <span className="font-bold text-blue-600">{criterion.weight}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2" onClick={stop}>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditModal(criterion)}
-                              className="flex items-center gap-1"
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span>تعديل</span>
-                            </Button>
-                            <div className="ml-auto" />
-                            <Toggle
-                              checked={criterion.is_active}
-                              onChange={() => handleToggleActive(criterion)}
-                              size="sm"
-                            />
-                            {criterion.score_count === 0 && (
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                onClick={() => confirmDelete(criterion)}
-                                className="flex items-center gap-1"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow className="bg-blue-50/40">
-                          <TableCell colSpan={7} className="!whitespace-normal">
-                            <div className="px-2 py-1">
-                              <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
-                              <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+      {customGeneralSections.map(({ group, directorateName, criteria: sectionCriteria }) => {
+        const sectionTotal = sectionCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+        const target = group.general_weight;
+        return (
+          <Card key={group.id}>
+            <CardBody className="p-0">
+              <div className="px-6 py-4 border-b border-ds-border-subtle flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-ds-text">{directorateName} — {group.name}</h2>
+                    <p className="text-xs text-ds-muted">معايير عامة خاصة بهذه المجموعة (الوزن العام {target}%، الخاص {group.specific_weight}%)</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={sectionTotal === target ? 'success' : 'warning'} size="sm">
+                    المجموع: {sectionTotal}% / {target}%
+                  </Badge>
+                  <Badge variant="info" size="sm">{sectionCriteria.filter(c => c.is_active).length} نشط</Badge>
+                  <Button onClick={() => openAddModal(group.id)} size="sm" className="flex items-center gap-2">
+                    <span>إضافة معيار</span><Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {sectionTotal !== target && sectionCriteria.length > 0 && (
+                <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-3">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                  <p className="text-amber-800 text-sm">
+                    يجب أن يساوي مجموع أوزان المعايير النشطة في هذه المجموعة {target}%. المجموع الحالي: <span className="font-bold">{sectionTotal}%</span>
+                  </p>
+                </div>
+              )}
+
+              {sectionCriteria.length === 0 ? (
+                <div className="px-6 py-8 text-center text-ds-faint text-sm">
+                  لا توجد معايير عامة لهذه المجموعة بعد — أضف معايير مجموعها {target}%.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8"> </TableHead>
+                      <TableHead>المعيار</TableHead>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الترتيب</TableHead>
+                      <TableHead>الوزن</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sectionCriteria.map((criterion, index) => {
+                      const isExpanded = expandedCriterionId === criterion.id;
+                      const stop = (e: React.MouseEvent) => e.stopPropagation();
+                      return (
+                        <React.Fragment key={criterion.id}>
+                          <TableRow
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                            onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
+                          >
+                            <TableCell className="text-ds-faint">
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <GripVertical className="h-4 w-4" />
+                                </div>
+                                <span className="font-bold text-ds-text">{criterion.title}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={criterion.is_active ? 'success' : 'default'}>
+                                {criterion.is_active ? 'نشط' : 'معطل'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1" onClick={stop}>
+                                <button onClick={() => handleReorder(criterion, 'up')} disabled={index === 0}
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                  <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                <button onClick={() => handleReorder(criterion, 'down')} disabled={index === sectionCriteria.length - 1}
+                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                  <ArrowDown className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${(criterion.weight / Math.max(1, target)) * 100}%` }} />
+                                </div>
+                                <span className="font-bold text-emerald-600">{criterion.weight}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2" onClick={stop}>
+                                <Button size="sm" variant="outline" onClick={() => openEditModal(criterion)} className="flex items-center gap-1">
+                                  <Edit className="h-4 w-4" /><span>تعديل</span>
+                                </Button>
+                                <div className="ml-auto" />
+                                <Toggle checked={criterion.is_active} onChange={() => handleToggleActive(criterion)} size="sm" />
+                                {criterion.score_count === 0 && (
+                                  <Button size="sm" variant="danger" onClick={() => confirmDelete(criterion)} className="flex items-center gap-1">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {isExpanded && (
+                            <TableRow className="bg-emerald-50/40">
+                              <TableCell colSpan={7} className="!whitespace-normal">
+                                <div className="px-2 py-1">
+                                  <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardBody>
+          </Card>
+        );
+      })}
+
+      <span className="hidden"><Scale /><EyeOff /><span>{activeCount}/{inactiveCount}/{totalWeight}</span></span>
 
       </>)}
 
@@ -2086,10 +2232,21 @@ export const EvaluationCriteria: React.FC = () => {
         </>
       )}
 
+      {(() => {
+        const editGroup = formGroupId ? allDirGroupsById[formGroupId] : null;
+        const sectionTarget = editGroup ? editGroup.general_weight : generalWeightLimit;
+        const sectionRows = criteria.filter(c => (c.group_id || null) === formGroupId);
+        const sectionTotal = sectionRows
+          .filter(c => c.is_active && c.id !== editingCriterion?.id)
+          .reduce((s, c) => s + c.weight, 0);
+        const sectionLabel = editGroup
+          ? `${directorates.find(d => d.id === editGroup.directorate_id)?.name || ''} — ${editGroup.name}`
+          : 'المجموعة الافتراضية (الذهبية)';
+        return (
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingCriterion ? 'تعديل معيار التقييم' : 'إضافة معيار تقييم جديد'}
+        title={editingCriterion ? `تعديل معيار — ${sectionLabel}` : `إضافة معيار جديد — ${sectionLabel}`}
       >
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -2123,10 +2280,10 @@ export const EvaluationCriteria: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
               placeholder="مثال: 40"
               min={1}
-              max={100}
+              max={sectionTarget}
               step={0.5}
               required
-              helperText={`مجموع أوزان المعايير النشطة الحالي: ${totalWeight}% من ${generalWeightLimit}%`}
+              helperText={`مجموع أوزان معايير ${sectionLabel} النشطة (بدون هذا المعيار): ${sectionTotal}% من ${sectionTarget}%`}
             />
 
             {editingCriterion && (
@@ -2152,6 +2309,8 @@ export const EvaluationCriteria: React.FC = () => {
           </ModalFooter>
         </form>
       </Modal>
+        );
+      })()}
 
       <Modal
         isOpen={isDeleteModalOpen}

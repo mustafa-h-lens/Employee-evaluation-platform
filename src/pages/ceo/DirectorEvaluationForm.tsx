@@ -13,6 +13,7 @@ import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSele
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
 import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
+import { DirectorCriteriaSection } from './DirectorCriteriaSection';
 
 interface Director {
   id: string;
@@ -121,6 +122,8 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
           .from('department_criteria')
           .select('id', { count: 'exact', head: true })
           .is('department_id', null)
+          .is('directorate_id', null)
+          .is('group_id', null)
           .eq('created_by', user.id)
           .eq('is_active', true),
         supabase
@@ -161,7 +164,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
     if (!user) return;
     const [{ data: general }, { data: specific }] = await Promise.all([
       supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
-      supabase.from('department_criteria').select('*').is('department_id', null).eq('created_by', user.id).eq('is_active', true).order('order'),
+      supabase.from('department_criteria').select('*').is('department_id', null).is('directorate_id', null).is('group_id', null).eq('created_by', user.id).eq('is_active', true).order('order'),
     ]);
     setCriteria(general || []);
     setSpecificCriteria((specific || []).map((s: any) => ({
@@ -780,6 +783,8 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
             )}
           </CardBody>
         </Card>
+
+        <DirectorCriteriaSection />
       </div>
     );
   }

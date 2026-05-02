@@ -76,15 +76,24 @@ const defaultFormData: FormData = {
   is_active: true,
 };
 
-export const DirectorSpecificCriteria: React.FC = () => {
+interface Props {
+  // If provided, the section locks to that directorate. Otherwise it shows
+  // its own picker over the directorates the user can manage.
+  directorateId?: string | null;
+}
+
+export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId }) => {
   const { user } = useAuth();
   const toast = useToast();
 
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
 
   const [myDirectorates, setMyDirectorates] = useState<DirectorateOption[]>([]);
-  const [selectedDirectorate, setSelectedDirectorate] = useState<string>('');
+  const [internalDirectorate, setInternalDirectorate] = useState<string>('');
+
+  const selectedDirectorate = directorateId || internalDirectorate;
 
   const [groups, setGroups] = useState<CriteriaGroup[]>([]);
   const [criteria, setCriteria] = useState<DeptCriterion[]>([]);
@@ -123,9 +132,11 @@ export const DirectorSpecificCriteria: React.FC = () => {
       .order('name');
     const list = (data || []) as DirectorateOption[];
     setMyDirectorates(list);
-    if (list.length > 0) setSelectedDirectorate(prev => prev || list[0].id);
+    if (!directorateId && list.length > 0) {
+      setInternalDirectorate(prev => prev || list[0].id);
+    }
     if (list.length === 0) setLoading(false);
-  }, [user]);
+  }, [user, directorateId]);
 
   const fetchSettings = useCallback(async () => {
     const { data: period } = await supabase
@@ -183,7 +194,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
   }, [selectedDirectorate]);
 
   useEffect(() => { fetchDirectorates(); fetchSettings(); }, [fetchDirectorates, fetchSettings]);
-  useEffect(() => { if (selectedDirectorate) fetchData(); }, [selectedDirectorate, fetchData]);
+  useEffect(() => { if (selectedDirectorate && open) fetchData(); }, [selectedDirectorate, open, fetchData]);
 
   const criteriaByGroup = useMemo(() => {
     const map: Record<string, DeptCriterion[]> = {};
@@ -209,6 +220,9 @@ export const DirectorSpecificCriteria: React.FC = () => {
     () => members.filter(m => !groupMembership[m.employee_id]),
     [members, groupMembership]
   );
+
+  const totalActiveWeight = criteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+  const activeCount = criteria.filter(c => c.is_active).length;
 
   const openCreateGroupModal = () => {
     setEditingGroup(null);
@@ -522,233 +536,233 @@ export const DirectorSpecificCriteria: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
-
-  if (myDirectorates.length === 0) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-ds-text">المعايير الخاصة بالإدارة</h1>
-        <Card>
-          <CardBody>
-            <EmptyState message="لا توجد إدارات مسندة إليك حالياً" icon={<Building2 className="h-12 w-12 text-ds-faint" />} />
-          </CardBody>
-        </Card>
-      </div>
-    );
+  if (myDirectorates.length === 0 && !loading) {
+    return null;
   }
 
   const currentDirectorate = myDirectorates.find(d => d.id === selectedDirectorate);
 
   return (
-    <div className="space-y-6">
-      <div
-        className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-3"
-        style={{
-          background: 'var(--sc-green-grad)',
-          border: '1px solid var(--sc-green-border)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>المعايير الخاصة بالإدارة</h1>
-          <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>
-            معايير التقييم الخاصة بالإدارة، مقسّمة على مجموعات حسب الموظفين
-            {currentDirectorate && (
-              <span className="font-semibold text-emerald-700"> — {currentDirectorate.name}</span>
-            )}
-            {' '}— كل مجموعة لها نسبتها الخاصة (يحددها قسم الموارد البشرية)
-          </p>
-        </div>
-        <Button onClick={openCreateGroupModal} className="flex items-center gap-2">
-          <span>إضافة مجموعة</span>
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {myDirectorates.length > 1 && (
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-ds-muted">الإدارة:</label>
-          <ModernSelect
-            value={selectedDirectorate}
-            onChange={setSelectedDirectorate}
-            ariaLabel="الإدارة"
-            className="min-w-[220px]"
-            options={myDirectorates.map(d => ({ value: d.id, label: d.name }))}
-          />
-        </div>
-      )}
-
-      {unassignedMembers.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-amber-900 font-semibold text-sm mb-1">
-              يوجد {unassignedMembers.length} موظف غير مصنّف في أي مجموعة معايير
-            </p>
-            <p className="text-amber-800 text-sm">
-              لن يتم تقييم هؤلاء الموظفين بمعايير خاصة حتى تضيفهم إلى مجموعة. الموظفون غير المصنّفين:{' '}
-              <span className="font-medium">{unassignedMembers.map(m => m.full_name).join('، ')}</span>
-            </p>
+    <Card>
+      <CardBody className="p-0">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-ds-text">معايير الإدارة لتقييم الموظفين</h2>
+              <p className="text-xs text-ds-muted mt-0.5">
+                {currentDirectorate ? <>إدارة <span className="font-semibold text-emerald-700">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex items-center gap-3">
+            <Badge variant="info" size="sm">{groups.length} مجموعة</Badge>
+            <Badge variant={activeCount > 0 ? 'success' : 'default'} size="sm">{activeCount} معيار نشط</Badge>
+            {open ? <ChevronUp className="h-5 w-5 text-ds-faint" /> : <ChevronDown className="h-5 w-5 text-ds-faint" />}
+          </div>
+        </button>
 
-      {groups.length === 0 && (
-        <Card>
-          <CardBody>
-            <EmptyState
-              message="لا توجد مجموعات معايير بعد. أنشئ مجموعة وحدّد الموظفين المشمولين بها."
-              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
-            />
-          </CardBody>
-        </Card>
-      )}
-
-      {groups.map(group => {
-        const list = criteriaByGroup[group.id] || [];
-        const groupMembers = membersByGroup[group.id] || [];
-        const total = list.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
-        return (
-          <Card key={group.id}>
-            <CardBody className="p-0">
-              <div className="px-6 py-4 border-b border-ds-border-subtle flex items-start justify-between gap-4 flex-wrap">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <h2 className="text-lg font-bold text-ds-text">{group.name}</h2>
-                    {group.is_default && (
-                      <Badge variant="info" size="sm">افتراضية</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-ds-muted">
-                    <Users className="h-4 w-4" />
-                    {groupMembers.length === 0 ? (
-                      <span className="text-amber-600">لا يوجد موظفون مرتبطون بهذه المجموعة</span>
-                    ) : (
-                      <span>{groupMembers.length} موظف: {groupMembers.map(m => m.full_name).join('، ')}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={total === group.specific_weight ? 'success' : 'warning'} size="sm">
-                    المجموع: {total}% / {group.specific_weight}%
-                  </Badge>
-                  <Badge variant="default" size="sm">
-                    عامة {group.general_weight}% / خاصة {group.specific_weight}%
-                  </Badge>
-                  <Badge variant="info" size="sm">
-                    {list.filter(c => c.is_active).length} معيار نشط
-                  </Badge>
-                  <Button size="sm" variant="outline" onClick={() => openEditGroupModal(group)} className="flex items-center gap-1">
-                    <Edit className="h-4 w-4" /><span>تعديل</span>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => openCreateCriterionModal(group.id)} className="flex items-center gap-1">
-                    <Plus className="h-4 w-4" /><span>إضافة معيار</span>
-                  </Button>
-                  <Button size="sm" variant="danger" onClick={() => confirmDeleteGroup(group)} className="flex items-center gap-1">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+        {open && (
+          <div className="border-t border-ds-border-subtle p-6 space-y-4">
+            {!directorateId && myDirectorates.length > 1 && (
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-ds-muted">الإدارة:</label>
+                <ModernSelect
+                  value={internalDirectorate}
+                  onChange={setInternalDirectorate}
+                  ariaLabel="الإدارة"
+                  className="min-w-[220px]"
+                  options={myDirectorates.map(d => ({ value: d.id, label: d.name }))}
+                />
               </div>
+            )}
 
-              {list.length === 0 ? (
-                <div className="px-6 py-8 text-center text-ds-faint text-sm">
-                  لا توجد معايير في هذه المجموعة بعد
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>المعيار</TableHead>
-                      <TableHead>الوصف</TableHead>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead>الترتيب</TableHead>
-                      <TableHead>الوزن</TableHead>
-                      <TableHead>الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {list.map((criterion, index) => {
-                      const isExpanded = expandedId === criterion.id;
-                      const stop = (e: React.MouseEvent) => e.stopPropagation();
-                      return (
-                        <React.Fragment key={criterion.id}>
-                          <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
-                            onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
-                          >
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                </div>
-                                <span className="font-bold text-ds-text">{criterion.title}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={criterion.is_active ? 'success' : 'default'}>
-                                {criterion.is_active ? 'نشط' : 'معطل'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1" onClick={stop}>
-                                <button onClick={() => handleReorderCriterion(criterion, 'up')} disabled={index === 0}
-                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
-                                  <ArrowUp className="h-4 w-4" />
-                                </button>
-                                <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
-                                <button onClick={() => handleReorderCriterion(criterion, 'down')} disabled={index === list.length - 1}
-                                  className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
-                                  <ArrowDown className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
-                                  <div className="bg-emerald-500 h-2 rounded-full transition-all"
-                                    style={{ width: `${Math.min(100, (criterion.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
-                                </div>
-                                <span className="font-bold text-emerald-600">{criterion.weight}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2" onClick={stop}>
-                                <Button size="sm" variant="outline" onClick={() => openEditCriterionModal(criterion)} className="flex items-center gap-1">
-                                  <Edit className="h-4 w-4" /><span>تعديل</span>
-                                </Button>
-                                <Toggle checked={criterion.is_active} onChange={() => handleToggleCriterion(criterion)} size="sm" />
-                                <Button size="sm" variant="danger" onClick={() => confirmDeleteCriterion(criterion)} className="flex items-center gap-1">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          {isExpanded && (
-                            <tr className="bg-emerald-50/40 border-b border-emerald-100">
-                              <td colSpan={6} className="px-6 py-4">
-                                <div className="bg-ds-surface rounded-lg border border-emerald-100 p-4">
-                                  <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
-                                  <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-line">
-                                    {criterion.description || <span className="text-ds-faint italic">لا يوجد وصف</span>}
-                                  </p>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
-        );
-      })}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="text-sm text-ds-muted flex items-center gap-2">
+                <Scale className="h-4 w-4" />
+                <span>كل مجموعة لها نسبتها الخاصة (يحددها قسم الموارد البشرية)</span>
+              </div>
+              <Button onClick={openCreateGroupModal} size="sm" className="flex items-center gap-2">
+                <span>إضافة مجموعة</span>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-8 text-ds-muted">جاري التحميل...</div>
+            ) : (
+              <>
+                {unassignedMembers.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-amber-900 font-semibold text-sm mb-1">
+                        يوجد {unassignedMembers.length} موظف غير مصنّف في أي مجموعة معايير
+                      </p>
+                      <p className="text-amber-800 text-sm">
+                        لن يتم تقييم هؤلاء الموظفين بمعايير خاصة حتى تضيفهم إلى مجموعة. الموظفون غير المصنّفين:{' '}
+                        <span className="font-medium">{unassignedMembers.map(m => m.full_name).join('، ')}</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {groups.length === 0 && (
+                  <EmptyState
+                    message="لا توجد مجموعات معايير بعد. أنشئ مجموعة وحدّد الموظفين المشمولين بها."
+                    icon={<ClipboardList className="h-10 w-10 text-ds-faint" />}
+                  />
+                )}
+
+                {groups.map(group => {
+                  const list = criteriaByGroup[group.id] || [];
+                  const groupMembers = membersByGroup[group.id] || [];
+                  const total = list.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
+                  return (
+                    <div key={group.id} className="border border-ds-border-subtle rounded-lg overflow-hidden">
+                      <div className="px-5 py-3 bg-ds-overlay/30 border-b border-ds-border-subtle flex items-start justify-between gap-4 flex-wrap">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <h3 className="text-base font-bold text-ds-text">{group.name}</h3>
+                            {group.is_default && <Badge variant="info" size="sm">افتراضية</Badge>}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-ds-muted">
+                            <Users className="h-4 w-4" />
+                            {groupMembers.length === 0 ? (
+                              <span className="text-amber-600">لا يوجد موظفون مرتبطون بهذه المجموعة</span>
+                            ) : (
+                              <span>{groupMembers.length} موظف: {groupMembers.map(m => m.full_name).join('، ')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant={total === group.specific_weight ? 'success' : 'warning'} size="sm">
+                            المجموع: {total}% / {group.specific_weight}%
+                          </Badge>
+                          <Badge variant="default" size="sm">
+                            عامة {group.general_weight}% / خاصة {group.specific_weight}%
+                          </Badge>
+                          <Button size="sm" variant="outline" onClick={() => openEditGroupModal(group)} className="flex items-center gap-1">
+                            <Edit className="h-4 w-4" /><span>تعديل</span>
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => openCreateCriterionModal(group.id)} className="flex items-center gap-1">
+                            <Plus className="h-4 w-4" /><span>إضافة معيار</span>
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => confirmDeleteGroup(group)} className="flex items-center gap-1">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {list.length === 0 ? (
+                        <div className="px-6 py-6 text-center text-ds-faint text-sm">
+                          لا توجد معايير في هذه المجموعة بعد
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>المعيار</TableHead>
+                              <TableHead>الوصف</TableHead>
+                              <TableHead>الحالة</TableHead>
+                              <TableHead>الترتيب</TableHead>
+                              <TableHead>الوزن</TableHead>
+                              <TableHead>الإجراءات</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {list.map((criterion, index) => {
+                              const isExpanded = expandedId === criterion.id;
+                              const stop = (e: React.MouseEvent) => e.stopPropagation();
+                              return (
+                                <React.Fragment key={criterion.id}>
+                                  <TableRow
+                                    className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                                    onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
+                                  >
+                                    <TableCell>
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                        </div>
+                                        <span className="font-bold text-ds-text">{criterion.title}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant={criterion.is_active ? 'success' : 'default'}>
+                                        {criterion.is_active ? 'نشط' : 'معطل'}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1" onClick={stop}>
+                                        <button onClick={() => handleReorderCriterion(criterion, 'up')} disabled={index === 0}
+                                          className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                          <ArrowUp className="h-4 w-4" />
+                                        </button>
+                                        <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                        <button onClick={() => handleReorderCriterion(criterion, 'down')} disabled={index === list.length - 1}
+                                          className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint">
+                                          <ArrowDown className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                                          <div className="bg-emerald-500 h-2 rounded-full transition-all"
+                                            style={{ width: `${Math.min(100, (criterion.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
+                                        </div>
+                                        <span className="font-bold text-emerald-600">{criterion.weight}%</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2" onClick={stop}>
+                                        <Button size="sm" variant="outline" onClick={() => openEditCriterionModal(criterion)} className="flex items-center gap-1">
+                                          <Edit className="h-4 w-4" /><span>تعديل</span>
+                                        </Button>
+                                        <Toggle checked={criterion.is_active} onChange={() => handleToggleCriterion(criterion)} size="sm" />
+                                        <Button size="sm" variant="danger" onClick={() => confirmDeleteCriterion(criterion)} className="flex items-center gap-1">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                  {isExpanded && (
+                                    <tr className="bg-emerald-50/40 border-b border-emerald-100">
+                                      <td colSpan={6} className="px-6 py-4">
+                                        <div className="bg-ds-surface rounded-lg border border-emerald-100 p-4">
+                                          <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                          <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-line">
+                                            {criterion.description || <span className="text-ds-faint italic">لا يوجد وصف</span>}
+                                          </p>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+      </CardBody>
 
       <Modal
         isOpen={isGroupModalOpen}
@@ -885,7 +899,7 @@ export const DirectorSpecificCriteria: React.FC = () => {
         </ModalFooter>
       </Modal>
 
-      <span className="hidden"><GripVertical /><Scale /><X /></span>
-    </div>
+      <span className="hidden"><GripVertical /><Scale /><X /><Building2 /><span>{totalActiveWeight}</span></span>
+    </Card>
   );
 };

@@ -16,9 +16,8 @@ import {
   ArrowDown,
   Scale,
   GripVertical,
-  EyeOff,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 import { Toggle } from '../../components/ui/Toggle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,6 +25,8 @@ import { useAuth } from '../../contexts/AuthContext';
 interface DeptCriterion {
   id: string;
   department_id: string | null;
+  directorate_id: string | null;
+  group_id: string | null;
   title: string;
   description: string;
   weight: number;
@@ -48,8 +49,9 @@ const defaultFormData: FormData = {
   is_active: true,
 };
 
-export const DirectorCriteria: React.FC = () => {
+export const DirectorCriteriaSection: React.FC = () => {
   const { user } = useAuth();
+  const [open, setOpen] = useState(false);
   const [criteria, setCriteria] = useState<DeptCriterion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,22 +86,27 @@ export const DirectorCriteria: React.FC = () => {
   }, []);
 
   const fetchCriteria = useCallback(async () => {
+    if (!user) return;
     try {
+      // Scope: ONLY this CEO's private criteria for evaluating directors.
+      // (department_id, directorate_id, group_id) all null isolates this row
+      // from directorate-employee criteria; created_by isolates Saad/Ahmed.
       const { data, error } = await supabase
         .from('department_criteria')
         .select('*')
         .is('department_id', null)
+        .is('directorate_id', null)
+        .is('group_id', null)
+        .eq('created_by', user.id)
         .order('order', { ascending: true });
 
-      if (!error && data) {
-        setCriteria(data);
-      }
+      if (!error && data) setCriteria(data);
     } catch (error) {
       console.error('Error fetching criteria:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchSettings();
@@ -141,13 +148,11 @@ export const DirectorCriteria: React.FC = () => {
       setSaving(false);
       return;
     }
-
     if (!formData.description.trim()) {
       setFormError('يرجى إدخال وصف المعيار');
       setSaving(false);
       return;
     }
-
     if (!weight || weight < 1 || weight > 100) {
       setFormError('يرجى إدخال وزن صحيح (1-100)');
       setSaving(false);
@@ -182,14 +187,14 @@ export const DirectorCriteria: React.FC = () => {
           });
         }
       } else {
-        const maxOrder = criteria.length > 0
-          ? Math.max(...criteria.map(c => c.order))
-          : 0;
+        const maxOrder = criteria.length > 0 ? Math.max(...criteria.map(c => c.order)) : 0;
 
         const { data, error } = await supabase
           .from('department_criteria')
           .insert({
             department_id: null,
+            directorate_id: null,
+            group_id: null,
             title: formData.title.trim(),
             description: formData.description.trim(),
             weight,
@@ -294,226 +299,201 @@ export const DirectorCriteria: React.FC = () => {
   const handleReorder = async (criterion: DeptCriterion, direction: 'up' | 'down') => {
     const currentIndex = criteria.findIndex(c => c.id === criterion.id);
     const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-
     if (swapIndex < 0 || swapIndex >= criteria.length) return;
-
     const swapCriterion = criteria[swapIndex];
-
     await Promise.all([
       supabase.from('department_criteria').update({ order: swapCriterion.order }).eq('id', criterion.id),
       supabase.from('department_criteria').update({ order: criterion.order }).eq('id', swapCriterion.id),
     ]);
-
     fetchCriteria();
   };
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
-  }
 
   const activeCount = criteria.filter(c => c.is_active).length;
   const inactiveCount = criteria.filter(c => !c.is_active).length;
 
   return (
-    <div className="space-y-6">
-      <div
-        className="rounded-ds-xl p-8 flex items-center justify-between"
-        style={{
-          background: 'var(--sc-blue-grad)',
-          border: '1px solid var(--sc-blue-border)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>المعايير الخاصة بتقييم المديرين</h1>
-          <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>
-            معايير التقييم الخاصة بمديري الإدارات
-            {' '}(النسبة المخصصة: {specificWeightLimit}% من إجمالي التقييم)
-          </p>
-        </div>
-        <Button onClick={openAddModal} className="flex items-center gap-2">
-          <span>إضافة معيار</span>
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
-                <p className="text-xl font-bold text-ds-text">{activeCount}</p>
-              </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
-                <ClipboardList className="h-6 w-6" />
-              </div>
+    <Card>
+      <CardBody className="p-0">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <ClipboardList className="h-5 w-5" />
             </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
-                <p className="text-xl font-bold text-ds-text">{inactiveCount}</p>
-              </div>
-              <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
-                <EyeOff className="h-6 w-6" />
-              </div>
+            <div>
+              <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المديرين</h2>
+              <p className="text-xs text-ds-muted mt-0.5">
+                هذه المعايير تظهر فقط أثناء تقييم مديري الإدارات (لا تُستخدم لتقييم الموظفين)
+              </p>
             </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-ds-muted mb-1">مجموع الأوزان (النشطة)</p>
-                <p className={`text-xl font-bold ${totalWeight === specificWeightLimit ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalWeight}% / {specificWeightLimit}%
-                </p>
-              </div>
-              <div className={`p-3 rounded-xl ${totalWeight === specificWeightLimit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                <Scale className="h-6 w-6" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant={totalWeight === specificWeightLimit ? 'success' : 'warning'} size="sm">
+              {totalWeight}% / {specificWeightLimit}%
+            </Badge>
+            <Badge variant="info" size="sm">{activeCount} نشط</Badge>
+            {open ? <ChevronUp className="h-5 w-5 text-ds-faint" /> : <ChevronDown className="h-5 w-5 text-ds-faint" />}
+          </div>
+        </button>
 
-      {totalWeight !== specificWeightLimit && criteria.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-          <p className="text-amber-800 text-sm">
-            مجموع أوزان المعايير الخاصة النشطة يجب أن يساوي {specificWeightLimit}% (النسبة المخصصة من الإعدادات). المجموع الحالي: <span className="font-bold">{totalWeight}%</span>
-          </p>
-        </div>
-      )}
+        {open && (
+          <div className="border-t border-ds-border-subtle p-6 space-y-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8 text-ds-muted">جاري التحميل...</div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2 text-sm text-ds-muted">
+                    <Scale className="h-4 w-4" />
+                    <span>النسبة المخصصة من إجمالي التقييم: <strong className="text-ds-text">{specificWeightLimit}%</strong></span>
+                    <span className="mx-2 text-ds-faint">·</span>
+                    <span>{activeCount} نشط · {inactiveCount} معطل</span>
+                  </div>
+                  <Button onClick={openAddModal} size="sm" className="flex items-center gap-2">
+                    <span>إضافة معيار</span>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
 
-      <Card>
-        <CardBody className="p-0">
-          {criteria.length === 0 ? (
-            <EmptyState
-              message="لا توجد معايير خاصة مضافة لتقييم المديرين حاليًا"
-              icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8"> </TableHead>
-                  <TableHead>المعيار</TableHead>
-                  <TableHead>الوصف</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الترتيب</TableHead>
-                  <TableHead>الوزن</TableHead>
-                  <TableHead>الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {criteria.map((criterion, index) => {
-                  const isExpanded = expandedId === criterion.id;
-                  const stop = (e: React.MouseEvent) => e.stopPropagation();
-                  return (
-                    <React.Fragment key={criterion.id}>
-                      <TableRow
-                        className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
-                        onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
-                      >
-                        <TableCell className="text-ds-faint">
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <GripVertical className="h-4 w-4" />
-                            </div>
-                            <span className="font-bold text-ds-text">{criterion.title}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={criterion.is_active ? 'success' : 'default'}>
-                            {criterion.is_active ? 'نشط' : 'معطل'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1" onClick={stop}>
-                            <button
-                              onClick={() => handleReorder(criterion, 'up')}
-                              disabled={index === 0}
-                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </button>
-                            <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
-                            <button
-                              onClick={() => handleReorder(criterion, 'down')}
-                              disabled={index === criteria.length - 1}
-                              className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-purple-600 h-2 rounded-full transition-all"
-                                style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
-                              />
-                            </div>
-                            <span className="font-bold text-purple-600">{criterion.weight}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2" onClick={stop}>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditModal(criterion)}
-                              className="flex items-center gap-1"
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span>تعديل</span>
-                            </Button>
-                            <Toggle
-                              checked={criterion.is_active}
-                              onChange={() => handleToggleActive(criterion)}
-                              size="sm"
-                            />
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => confirmDelete(criterion)}
-                              className="flex items-center gap-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow className="bg-purple-50/40">
-                          <TableCell colSpan={7} className="!whitespace-normal">
-                            <div className="px-2 py-1">
-                              <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
-                              <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
-                            </div>
-                          </TableCell>
+                {totalWeight !== specificWeightLimit && criteria.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                    <p className="text-amber-800 text-sm">
+                      مجموع أوزان المعايير الخاصة النشطة يجب أن يساوي {specificWeightLimit}%. المجموع الحالي: <span className="font-bold">{totalWeight}%</span>
+                    </p>
+                  </div>
+                )}
+
+                {criteria.length === 0 ? (
+                  <EmptyState
+                    message="لا توجد معايير خاصة مضافة لتقييم المديرين حاليًا"
+                    icon={<ClipboardList className="h-10 w-10 text-ds-faint" />}
+                  />
+                ) : (
+                  <div className="border border-ds-border-subtle rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-8"> </TableHead>
+                          <TableHead>المعيار</TableHead>
+                          <TableHead>الوصف</TableHead>
+                          <TableHead>الحالة</TableHead>
+                          <TableHead>الترتيب</TableHead>
+                          <TableHead>الوزن</TableHead>
+                          <TableHead>الإجراءات</TableHead>
                         </TableRow>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {criteria.map((criterion, index) => {
+                          const isExpanded = expandedId === criterion.id;
+                          const stop = (e: React.MouseEvent) => e.stopPropagation();
+                          return (
+                            <React.Fragment key={criterion.id}>
+                              <TableRow
+                                className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
+                                onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
+                              >
+                                <TableCell className="text-ds-faint">
+                                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <GripVertical className="h-4 w-4" />
+                                    </div>
+                                    <span className="font-bold text-ds-text">{criterion.title}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <p className="text-ds-faint text-sm max-w-xs truncate">{criterion.description}</p>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={criterion.is_active ? 'success' : 'default'}>
+                                    {criterion.is_active ? 'نشط' : 'معطل'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1" onClick={stop}>
+                                    <button
+                                      onClick={() => handleReorder(criterion, 'up')}
+                                      disabled={index === 0}
+                                      className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
+                                    >
+                                      <ArrowUp className="h-4 w-4" />
+                                    </button>
+                                    <span className="text-ds-faint text-sm font-mono w-6 text-center">{criterion.order}</span>
+                                    <button
+                                      onClick={() => handleReorder(criterion, 'down')}
+                                      disabled={index === criteria.length - 1}
+                                      className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 disabled:cursor-not-allowed text-ds-faint"
+                                    >
+                                      <ArrowDown className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-16 bg-gray-200 rounded-full h-2">
+                                      <div
+                                        className="bg-purple-600 h-2 rounded-full transition-all"
+                                        style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
+                                      />
+                                    </div>
+                                    <span className="font-bold text-purple-600">{criterion.weight}%</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2" onClick={stop}>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openEditModal(criterion)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                      <span>تعديل</span>
+                                    </Button>
+                                    <Toggle
+                                      checked={criterion.is_active}
+                                      onChange={() => handleToggleActive(criterion)}
+                                      size="sm"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      variant="danger"
+                                      onClick={() => confirmDelete(criterion)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              {isExpanded && (
+                                <TableRow className="bg-purple-50/40">
+                                  <TableCell colSpan={7} className="!whitespace-normal">
+                                    <div className="px-2 py-1">
+                                      <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
+                                      <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </CardBody>
 
       <Modal
         isOpen={isModalOpen}
@@ -609,6 +589,6 @@ export const DirectorCriteria: React.FC = () => {
           </Button>
         </ModalFooter>
       </Modal>
-    </div>
+    </Card>
   );
 };
