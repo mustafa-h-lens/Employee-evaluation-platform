@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -47,7 +48,10 @@ export const Modal: React.FC<ModalProps> = ({
     '2xl': '1152px',
   }[size];
 
-  return (
+  // Portal to body so the modal escapes any parent stacking context
+  // (e.g. cards/tabs with their own z-index or transform). Without this,
+  // modals rendered inside a Card can appear under the backdrop.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 overflow-y-auto"
       style={{
@@ -80,7 +84,8 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
