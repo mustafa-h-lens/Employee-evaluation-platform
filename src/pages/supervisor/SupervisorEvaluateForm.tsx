@@ -125,16 +125,24 @@ export const SupervisorEvaluateForm: React.FC = () => {
   // suffice). Half-filled groups (sum < target) and ungrouped employees
   // are NOT evaluable.
   const [specificWeightTarget, setSpecificWeightTarget] = useState(50);
+  const [groupSpecificTarget, setGroupSpecificTarget] = useState<Record<string, number>>({});
   const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
   const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
   const [groupCriteriaSum, setGroupCriteriaSum] = useState<Record<string, number>>({});
+
+  const targetForGroup = useCallback((groupId: string | undefined | null): number => {
+    if (!groupId) return specificWeightTarget;
+    return groupSpecificTarget[groupId] ?? specificWeightTarget;
+  }, [groupSpecificTarget, specificWeightTarget]);
 
   const canEvaluateEmployee = useCallback((empId: string): boolean => {
     if (noSpecificNeeded) return true;
     const groupId = employeeGroupMembership[empId];
     if (!groupId) return false;
-    return (groupCriteriaSum[groupId] || 0) >= specificWeightTarget;
-  }, [noSpecificNeeded, employeeGroupMembership, groupCriteriaSum, specificWeightTarget]);
+    const target = targetForGroup(groupId);
+    if (target === 0) return true;
+    return (groupCriteriaSum[groupId] || 0) >= target;
+  }, [noSpecificNeeded, employeeGroupMembership, groupCriteriaSum, targetForGroup]);
 
   // Fetch active assignments with their members
   const fetchAssignments = useCallback(async () => {
@@ -193,7 +201,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
       // button per-employee when their group's active weights don't sum
       // to the specific-weight target.
       const assignmentIds = assignmentList.map(a => a.id);
-      const [{ data: supCriteria }, { data: members }, { data: weightSettings }] = await Promise.all([
+      const [{ data: supCriteria }, { data: members }, { data: weightSettings }, { data: supGroups }] = await Promise.all([
         supabase
           .from('supervisor_criteria')
           .select('group_id, weight')
@@ -209,10 +217,18 @@ export const SupervisorEvaluateForm: React.FC = () => {
           .select('specific_weight')
           .limit(1)
           .single(),
+        supabase
+          .from('supervisor_criteria_groups')
+          .select('id, specific_weight')
+          .in('assignment_id', assignmentIds),
       ]);
-      const target = weightSettings?.specific_weight ?? 50;
-      setSpecificWeightTarget(target);
-      setNoSpecificNeeded(target === 0);
+      const fallback = weightSettings?.specific_weight ?? 50;
+      setSpecificWeightTarget(fallback);
+      const targetMap: Record<string, number> = {};
+      (supGroups || []).forEach((g: any) => { targetMap[g.id] = Number(g.specific_weight ?? fallback); });
+      setGroupSpecificTarget(targetMap);
+      const allZero = (supGroups || []).length > 0 && (supGroups || []).every((g: any) => Number(g.specific_weight ?? fallback) === 0);
+      setNoSpecificNeeded(fallback === 0 || allZero);
       const sumMap: Record<string, number> = {};
       (supCriteria || []).forEach((r: any) => {
         if (!r.group_id) return;
@@ -348,7 +364,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
     }
 
     const [{ data: general }, { data: specific }] = await Promise.all([
-      supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
+      // Use the golden (system-default) general criteria. Per-group custom
+      // general criteria belong to directorate-criteria-groups and apply to
+      // the director-evaluates-employee flow, not the supervisor flow.
+      supabase.from('evaluation_criteria').select('*').is('group_id', null).eq('is_active', true).order('order'),
       groupId
         ? supabase.from('supervisor_criteria').select('*')
             .eq('group_id', groupId)
@@ -476,9 +495,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
     if (!noSpecificNeeded && !canEvaluateEmployee(employeeId)) {
       const groupId = employeeGroupMembership[employeeId];
       const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+      const target = targetForGroup(groupId);
       toast.error(!groupId
         ? 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.'
-        : `لا يمكن تقييم هذا الموظف — مجموع أوزان معايير مجموعته ${sum}% بدلاً من ${specificWeightTarget}%. أكمل المعايير أولاً.`);
+        : `لا يمكن تقييم هذا الموظف — مجموع أوزان معايير مجموعته ${sum}% بدلاً من ${target}%. أكمل المعايير أولاً.`);
       return;
     }
 
@@ -747,7 +767,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <div>
               <p className="text-amber-800 text-sm font-medium">بعض الموظفين لا يمكن تقييمهم — مجموعتهم لم تكتمل معاييرها الخاصة</p>
-              <p className="text-amber-600 text-xs mt-0.5">يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً لـ {specificWeightTarget}%. انتقل إلى صفحة "معايير المشرف" لإكمالها.</p>
+              <p className="text-amber-600 text-xs mt-0.5">يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً للنسبة الخاصة بها. انتقل إلى صفحة "معايير المشرف" لإكمالها.</p>
             </div>
           </div>
         )}
@@ -833,9 +853,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
                           if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
                             const groupId = employeeGroupMembership[emp.id];
                             const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+                            const target = targetForGroup(groupId);
                             const reason = !groupId
                               ? 'هذا الموظف غير مُصنّف في أي مجموعة'
-                              : `أكمل أوزان معايير المجموعة (${sum}% / ${specificWeightTarget}%)`;
+                              : `أكمل أوزان معايير المجموعة (${sum}% / ${target}%)`;
                             return (
                               <button
                                 disabled

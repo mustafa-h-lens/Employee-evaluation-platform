@@ -187,7 +187,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
         if (user) {
           await supabase.from('audit_logs').insert({
             user_id: user.id,
-            action: 'تحديث معيار خاص بتقييم المديرين',
+            action: 'تحديث معيار خاص بتقييم المدراء',
             entity_type: 'department_criteria',
             entity_id: editingCriterion.id,
             details: { title: formData.title, weight },
@@ -221,7 +221,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
         if (user && data) {
           await supabase.from('audit_logs').insert({
             user_id: user.id,
-            action: 'إضافة معيار خاص بتقييم المديرين',
+            action: 'إضافة معيار خاص بتقييم المدراء',
             entity_type: 'department_criteria',
             entity_id: data.id,
             details: { title: formData.title, weight },
@@ -265,7 +265,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
       if (user) {
         await supabase.from('audit_logs').insert({
           user_id: user.id,
-          action: 'حذف معيار خاص بتقييم المديرين',
+          action: 'حذف معيار خاص بتقييم المدراء',
           entity_type: 'department_criteria',
           entity_id: deleteTarget.id,
           details: { title: deleteTarget.title },
@@ -328,7 +328,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المديرين</h2>
+                <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المدراء</h2>
                 <p className="text-xs text-ds-muted mt-0.5">
                   هذه المعايير تظهر فقط أثناء تقييم مديري الإدارات (لا تُستخدم لتقييم الموظفين)
                 </p>
@@ -352,7 +352,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المديرين</h2>
+                <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المدراء</h2>
                 <p className="text-xs text-ds-muted mt-0.5">
                   هذه المعايير تظهر فقط أثناء تقييم مديري الإدارات (لا تُستخدم لتقييم الموظفين)
                 </p>
@@ -398,7 +398,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
 
                 {criteria.length === 0 ? (
                   <EmptyState
-                    message="لا توجد معايير خاصة مضافة لتقييم المديرين حاليًا"
+                    message="لا توجد معايير خاصة مضافة لتقييم المدراء حاليًا"
                     icon={<ClipboardList className="h-10 w-10 text-ds-faint" />}
                   />
                 ) : (

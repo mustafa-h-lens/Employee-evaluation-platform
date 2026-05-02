@@ -164,7 +164,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const fetchCriteria = useCallback(async () => {
     if (!user) return;
     const [{ data: general }, { data: specific }] = await Promise.all([
-      supabase.from('evaluation_criteria').select('*').eq('is_active', true).order('order'),
+      supabase.from('evaluation_criteria').select('*').is('group_id', null).eq('is_active', true).order('order'),
       supabase.from('department_criteria').select('*').is('department_id', null).is('directorate_id', null).is('group_id', null).eq('created_by', user.id).eq('is_active', true).order('order'),
     ]);
     setCriteria(general || []);
@@ -669,7 +669,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         {!hasSpecificCriteria && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم المديرين. اذهب إلى صفحة "المعايير الخاصة" لإضافتها.</p>
+            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم المدراء. اذهب إلى تبويب "إدارة المعايير" لإضافتها.</p>
           </div>
         )}
 

@@ -399,7 +399,7 @@ export const WeightAllocation: React.FC = () => {
               </div>
               <div className="text-right">
                 <h3 className="font-semibold text-ds-text">أوزان الإدارة العليا</h3>
-                <p className="text-xs text-ds-faint">تقييم المديرين من الإدارة العليا</p>
+                <p className="text-xs text-ds-faint">تقييم المدراء من الإدارة العليا</p>
               </div>
             </div>
             {openSection === 'high' ? <ChevronUp className="h-4 w-4 text-ds-faint" /> : <ChevronDown className="h-4 w-4 text-ds-faint" />}

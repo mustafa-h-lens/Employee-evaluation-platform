@@ -141,17 +141,29 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   // group's ACTIVE specific-criteria weights sum to the specific-weight
   // target. Half-filled groups (sum < target) and ungrouped employees
   // are NOT evaluable.
+  // Fallback global target — used when a group has no custom specific_weight.
   const [specificWeightTarget, setSpecificWeightTarget] = useState(50);
+  // Per-group target (department_criteria_groups.specific_weight). Each
+  // group can override the global default, so the gate must compare to the
+  // GROUP'S target, not the global one.
+  const [groupSpecificTarget, setGroupSpecificTarget] = useState<Record<string, number>>({});
   const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
   const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
   const [groupCriteriaSum, setGroupCriteriaSum] = useState<Record<string, number>>({});
+
+  const targetForGroup = useCallback((groupId: string | undefined | null): number => {
+    if (!groupId) return specificWeightTarget;
+    return groupSpecificTarget[groupId] ?? specificWeightTarget;
+  }, [groupSpecificTarget, specificWeightTarget]);
 
   const canEvaluateEmployee = useCallback((empId: string): boolean => {
     if (noSpecificNeeded) return true;
     const groupId = employeeGroupMembership[empId];
     if (!groupId) return false;
-    return (groupCriteriaSum[groupId] || 0) >= specificWeightTarget;
-  }, [noSpecificNeeded, employeeGroupMembership, groupCriteriaSum, specificWeightTarget]);
+    const target = targetForGroup(groupId);
+    if (target === 0) return true;
+    return (groupCriteriaSum[groupId] || 0) >= target;
+  }, [noSpecificNeeded, employeeGroupMembership, groupCriteriaSum, targetForGroup]);
 
   useEffect(() => {
     const checkCriteria = async () => {
@@ -164,7 +176,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
       if (dirIds.length === 0) return;
 
-      const [{ data: critRows }, { data: members }, { data: weightSettings }] = await Promise.all([
+      const [{ data: critRows }, { data: members }, { data: weightSettings }, { data: groups }] = await Promise.all([
         supabase
           .from('department_criteria')
           .select('group_id, weight')
@@ -180,10 +192,20 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           .select('specific_weight')
           .limit(1)
           .single(),
+        supabase
+          .from('department_criteria_groups')
+          .select('id, specific_weight')
+          .in('directorate_id', dirIds),
       ]);
-      const target = weightSettings?.specific_weight ?? 50;
-      setSpecificWeightTarget(target);
-      setNoSpecificNeeded(target === 0);
+      const fallback = weightSettings?.specific_weight ?? 50;
+      setSpecificWeightTarget(fallback);
+      const targetMap: Record<string, number> = {};
+      (groups || []).forEach((g: any) => { targetMap[g.id] = Number(g.specific_weight ?? fallback); });
+      setGroupSpecificTarget(targetMap);
+      // No specific criteria needed only if EVERY group has a 0% specific
+      // target (or there are no groups).
+      const allZero = (groups || []).length > 0 && (groups || []).every((g: any) => Number(g.specific_weight ?? fallback) === 0);
+      setNoSpecificNeeded(fallback === 0 || allZero);
       const sumMap: Record<string, number> = {};
       (critRows || []).forEach((r: any) => {
         if (!r.group_id) return;
@@ -598,9 +620,10 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     if (!noSpecificNeeded && !canEvaluateEmployee(employeeId)) {
       const groupId = employeeGroupMembership[employeeId];
       const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+      const target = targetForGroup(groupId);
       toast.error(!groupId
         ? 'لا يمكن تقييم هذا الموظف — لم يتم تصنيفه في أي مجموعة معايير. أضفه إلى مجموعة أولاً.'
-        : `لا يمكن تقييم هذا الموظف — مجموع أوزان معايير مجموعته ${sum}% بدلاً من ${specificWeightTarget}%. أكمل المعايير أولاً.`);
+        : `لا يمكن تقييم هذا الموظف — مجموع أوزان معايير مجموعته ${sum}% بدلاً من ${target}%. أكمل المعايير أولاً.`);
       return;
     }
 
@@ -848,7 +871,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id)) && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">بعض الموظفين لا يمكن تقييمهم — يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً لـ {specificWeightTarget}%. أكمل المعايير في صفحة "المعايير الخاصة".</p>
+            <p className="text-sm text-amber-800">بعض الموظفين لا يمكن تقييمهم — يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً للنسبة الخاصة بها. أكمل المعايير في تبويب "إدارة المعايير".</p>
           </div>
         )}
 
@@ -948,9 +971,10 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                           if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
                             const groupId = employeeGroupMembership[emp.id];
                             const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
+                            const target = targetForGroup(groupId);
                             const reason = !groupId
                               ? 'هذا الموظف غير مُصنّف في أي مجموعة'
-                              : `أكمل أوزان معايير المجموعة (${sum}% / ${specificWeightTarget}%)`;
+                              : `أكمل أوزان معايير المجموعة (${sum}% / ${target}%)`;
                             return (
                               <button
                                 disabled

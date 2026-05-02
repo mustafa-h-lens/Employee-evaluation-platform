@@ -1008,7 +1008,7 @@ export const EvaluationCriteria: React.FC = () => {
         if (user) {
           await supabase.from('audit_logs').insert({
             user_id: user.id,
-            action: 'تحديث معيار خاص بتقييم المديرين',
+            action: 'تحديث معيار خاص بتقييم المدراء',
             entity_type: 'department_criteria',
             entity_id: editingCeoCriterion.id,
             details: { title: ceoFormData.title, weight },
@@ -1038,7 +1038,7 @@ export const EvaluationCriteria: React.FC = () => {
         if (user && data) {
           await supabase.from('audit_logs').insert({
             user_id: user.id,
-            action: 'إضافة معيار خاص بتقييم المديرين',
+            action: 'إضافة معيار خاص بتقييم المدراء',
             entity_type: 'department_criteria',
             entity_id: data.id,
             details: { title: ceoFormData.title, weight },
@@ -1078,7 +1078,7 @@ export const EvaluationCriteria: React.FC = () => {
       if (user) {
         await supabase.from('audit_logs').insert({
           user_id: user.id,
-          action: 'حذف معيار خاص بتقييم المديرين',
+          action: 'حذف معيار خاص بتقييم المدراء',
           entity_type: 'department_criteria',
           entity_id: ceoDeleteTarget.id,
           details: { title: ceoDeleteTarget.title },
@@ -1106,7 +1106,7 @@ export const EvaluationCriteria: React.FC = () => {
       if (user) {
         await supabase.from('audit_logs').insert({
           user_id: user.id,
-          action: newActive ? 'تفعيل معيار خاص بتقييم المديرين' : 'تعطيل معيار خاص بتقييم المديرين',
+          action: newActive ? 'تفعيل معيار خاص بتقييم المدراء' : 'تعطيل معيار خاص بتقييم المدراء',
           entity_type: 'department_criteria',
           entity_id: criterion.id,
           details: { title: criterion.title, is_active: newActive },
@@ -1817,7 +1817,7 @@ export const EvaluationCriteria: React.FC = () => {
             <CardBody className="p-0">
               {ceoCriteria.length === 0 ? (
                 <EmptyState
-                  message="لا توجد معايير خاصة مضافة لتقييم المديرين حاليًا"
+                  message="لا توجد معايير خاصة مضافة لتقييم المدراء حاليًا"
                   icon={<ClipboardList className="h-12 w-12 text-ds-faint" />}
                 />
               ) : (
@@ -2354,7 +2354,7 @@ export const EvaluationCriteria: React.FC = () => {
       <Modal
         isOpen={isCeoModalOpen}
         onClose={() => setIsCeoModalOpen(false)}
-        title={editingCeoCriterion ? 'تعديل معيار تقييم المديرين' : 'إضافة معيار تقييم مديرين جديد'}
+        title={editingCeoCriterion ? 'تعديل معيار تقييم المدراء' : 'إضافة معيار تقييم مديرين جديد'}
       >
         <form onSubmit={handleCeoSubmit}>
           <div className="space-y-4">
