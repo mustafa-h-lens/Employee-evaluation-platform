@@ -218,9 +218,14 @@ function AppContent() {
     if (opts?.forceDark) setForceDarkReveal(true);
     setNavPhase('leaving');
     await new Promise(resolve => window.setTimeout(resolve, 300));
-    if (opts?.targetPath) setCurrentPath(opts.targetPath);
     try {
       await action();
+      // Set targetPath AFTER the action so the authenticated branch
+      // doesn't briefly re-render at the new path (e.g. '/' →
+      // AdminDashboard) before auth flips. Once `action()` flips the
+      // user, the unauthenticated branch mounts and only then do we
+      // switch the path so it lands directly on Landing.
+      if (opts?.targetPath) setCurrentPath(opts.targetPath);
     } finally {
       setNavPhase('waiting');
     }

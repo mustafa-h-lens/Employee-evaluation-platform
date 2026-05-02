@@ -4186,6 +4186,20 @@ html.theme-transition *::after {
 .nav-overlay-force-dark .nav-transition-veil {
   background: #050d1e;
 }
+/* Force-dark transitions skip the leaving fade-in for the veil and
+   waiting phases — the dark backdrop is fully opaque the moment the
+   overlay mounts, so the light underlying page can never bleed
+   through. The exit fade-out is preserved so the new screen reveal
+   stays graceful. */
+.nav-overlay-force-dark.nav-overlay-leaving .nav-transition-veil,
+.nav-overlay-force-dark.nav-overlay-waiting .nav-transition-veil {
+  animation: none;
+  opacity: 1;
+}
+.nav-overlay-force-dark.nav-overlay-exiting .nav-transition-veil {
+  opacity: 1;
+  animation: nav-veil-out 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 .nav-overlay-force-dark .nav-transition-progress {
   background: rgba(255, 255, 255, 0.08);
 }
