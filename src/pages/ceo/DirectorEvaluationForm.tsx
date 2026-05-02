@@ -112,6 +112,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const [partnerName, setPartnerName] = useState<string>('');
   const [directorsLoading, setDirectorsLoading] = useState(true);
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
+  const [activeTab, setActiveTab] = useState<'evaluation' | 'criteria'>('evaluation');
 
   // Check if CEO has specific criteria (skip if general weight is 100%)
   useEffect(() => {
@@ -599,6 +600,30 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
           />
         </div>
 
+        <div className="flex gap-1 border-b border-ds-border">
+          <button
+            onClick={() => setActiveTab('evaluation')}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'evaluation'
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-transparent text-ds-faint hover:text-ds-muted'
+            }`}
+          >
+            التقييم
+          </button>
+          <button
+            onClick={() => setActiveTab('criteria')}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'criteria'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-ds-faint hover:text-ds-muted'
+            }`}
+          >
+            إدارة المعايير
+          </button>
+        </div>
+
+        {activeTab === 'evaluation' && (<>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardBody>
@@ -783,8 +808,11 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
             )}
           </CardBody>
         </Card>
+        </>)}
 
-        <DirectorCriteriaSection />
+        {activeTab === 'criteria' && (
+          <DirectorCriteriaSection embedded />
+        )}
       </div>
     );
   }

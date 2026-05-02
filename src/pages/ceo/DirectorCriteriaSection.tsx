@@ -49,9 +49,16 @@ const defaultFormData: FormData = {
   is_active: true,
 };
 
-export const DirectorCriteriaSection: React.FC = () => {
+interface Props {
+  // When true, the section renders its body without a collapse toggle —
+  // suitable for use inside a tab panel where the surrounding tab is the
+  // toggle. Default false keeps the original collapsible card behavior.
+  embedded?: boolean;
+}
+
+export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) => {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(embedded);
   const [criteria, setCriteria] = useState<DeptCriterion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -314,30 +321,52 @@ export const DirectorCriteriaSection: React.FC = () => {
   return (
     <Card>
       <CardBody className="p-0">
-        <button
-          type="button"
-          onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-              <ClipboardList className="h-5 w-5" />
+        {embedded ? (
+          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-ds-border-subtle">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المديرين</h2>
+                <p className="text-xs text-ds-muted mt-0.5">
+                  هذه المعايير تظهر فقط أثناء تقييم مديري الإدارات (لا تُستخدم لتقييم الموظفين)
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المديرين</h2>
-              <p className="text-xs text-ds-muted mt-0.5">
-                هذه المعايير تظهر فقط أثناء تقييم مديري الإدارات (لا تُستخدم لتقييم الموظفين)
-              </p>
+            <div className="flex items-center gap-3">
+              <Badge variant={totalWeight === specificWeightLimit ? 'success' : 'warning'} size="sm">
+                {totalWeight}% / {specificWeightLimit}%
+              </Badge>
+              <Badge variant="info" size="sm">{activeCount} نشط</Badge>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant={totalWeight === specificWeightLimit ? 'success' : 'warning'} size="sm">
-              {totalWeight}% / {specificWeightLimit}%
-            </Badge>
-            <Badge variant="info" size="sm">{activeCount} نشط</Badge>
-            {open ? <ChevronUp className="h-5 w-5 text-ds-faint" /> : <ChevronDown className="h-5 w-5 text-ds-faint" />}
-          </div>
-        </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-ds-text">معاييري الخاصة لتقييم المديرين</h2>
+                <p className="text-xs text-ds-muted mt-0.5">
+                  هذه المعايير تظهر فقط أثناء تقييم مديري الإدارات (لا تُستخدم لتقييم الموظفين)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant={totalWeight === specificWeightLimit ? 'success' : 'warning'} size="sm">
+                {totalWeight}% / {specificWeightLimit}%
+              </Badge>
+              <Badge variant="info" size="sm">{activeCount} نشط</Badge>
+              {open ? <ChevronUp className="h-5 w-5 text-ds-faint" /> : <ChevronDown className="h-5 w-5 text-ds-faint" />}
+            </div>
+          </button>
+        )}
 
         {open && (
           <div className="border-t border-ds-border-subtle p-6 space-y-4">

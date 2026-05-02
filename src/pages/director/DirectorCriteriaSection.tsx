@@ -80,13 +80,16 @@ interface Props {
   // If provided, the section locks to that directorate. Otherwise it shows
   // its own picker over the directorates the user can manage.
   directorateId?: string | null;
+  // When true, the section renders its body without a collapse toggle —
+  // suitable for use inside a tab panel.
+  embedded?: boolean;
 }
 
-export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId }) => {
+export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedded = false }) => {
   const { user } = useAuth();
   const toast = useToast();
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(embedded);
   const [loading, setLoading] = useState(true);
   const [specificWeightLimit, setSpecificWeightLimit] = useState(50);
 
@@ -545,28 +548,48 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId }) => {
   return (
     <Card>
       <CardBody className="p-0">
-        <button
-          type="button"
-          onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-              <ClipboardList className="h-5 w-5" />
+        {embedded ? (
+          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-ds-border-subtle">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-ds-text">معايير الإدارة لتقييم الموظفين</h2>
+                <p className="text-xs text-ds-muted mt-0.5">
+                  {currentDirectorate ? <>إدارة <span className="font-semibold text-emerald-700">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-ds-text">معايير الإدارة لتقييم الموظفين</h2>
-              <p className="text-xs text-ds-muted mt-0.5">
-                {currentDirectorate ? <>إدارة <span className="font-semibold text-emerald-700">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
-              </p>
+            <div className="flex items-center gap-3">
+              <Badge variant="info" size="sm">{groups.length} مجموعة</Badge>
+              <Badge variant={activeCount > 0 ? 'success' : 'default'} size="sm">{activeCount} معيار نشط</Badge>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="info" size="sm">{groups.length} مجموعة</Badge>
-            <Badge variant={activeCount > 0 ? 'success' : 'default'} size="sm">{activeCount} معيار نشط</Badge>
-            {open ? <ChevronUp className="h-5 w-5 text-ds-faint" /> : <ChevronDown className="h-5 w-5 text-ds-faint" />}
-          </div>
-        </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-ds-text">معايير الإدارة لتقييم الموظفين</h2>
+                <p className="text-xs text-ds-muted mt-0.5">
+                  {currentDirectorate ? <>إدارة <span className="font-semibold text-emerald-700">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="info" size="sm">{groups.length} مجموعة</Badge>
+              <Badge variant={activeCount > 0 ? 'success' : 'default'} size="sm">{activeCount} معيار نشط</Badge>
+              {open ? <ChevronUp className="h-5 w-5 text-ds-faint" /> : <ChevronDown className="h-5 w-5 text-ds-faint" />}
+            </div>
+          </button>
+        )}
 
         {open && (
           <div className="border-t border-ds-border-subtle p-6 space-y-4">

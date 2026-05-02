@@ -111,6 +111,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   // both rows must produce a separate evaluation. selectedDirectorateForEval
   // tells the form which directorate context this evaluation belongs to.
   const [selectedDirectorateForEval, setSelectedDirectorateForEval] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'evaluation' | 'criteria'>('evaluation');
   const employeeId = selectedEmployeeId;
   const [searchQuery, setSearchQuery] = useState('');
   const [tablePeriods, setTablePeriods] = useState<EvaluationPeriod[]>([]);
@@ -778,6 +779,30 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           />
         </div>
 
+        <div className="flex gap-1 border-b border-ds-border">
+          <button
+            onClick={() => setActiveTab('evaluation')}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'evaluation'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-ds-faint hover:text-ds-muted'
+            }`}
+          >
+            التقييم
+          </button>
+          <button
+            onClick={() => setActiveTab('criteria')}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'criteria'
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-transparent text-ds-faint hover:text-ds-muted'
+            }`}
+          >
+            إدارة المعايير
+          </button>
+        </div>
+
+        {activeTab === 'evaluation' && (<>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardBody>
@@ -972,8 +997,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             )}
           </CardBody>
         </Card>
+        </>)}
 
-        <DirectorCriteriaSection />
+        {activeTab === 'criteria' && (
+          <DirectorCriteriaSection embedded />
+        )}
       </div>
     );
   }
