@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Building2, Users, UserCog, Calendar, FileCheck, FileClock, Crown, ClipboardCheck } from 'lucide-react';
+import { Building2, UserCog, Calendar, FileCheck, FileClock, Crown, ClipboardCheck } from 'lucide-react';
 
 interface Stats {
   directorsCount: number;
@@ -10,23 +10,21 @@ interface Stats {
   completedEvaluations: number;
   pendingEvaluations: number;
   pendingApprovals: number;
-  activePeriod: string;
+  activePeriodsCount: number;
 }
 
-const monthLabels: Record<number, string> = {
-  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
-  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
-  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
-};
+interface CeoDashboardProps {
+  onNavigate?: (path: string) => void;
+}
 
-export const CeoDashboard: React.FC = () => {
+export const CeoDashboard: React.FC<CeoDashboardProps> = ({ onNavigate }) => {
   const [stats, setStats] = useState<Stats>({
     directorsCount: 0,
     directoratesCount: 0,
     completedEvaluations: 0,
     pendingEvaluations: 0,
     pendingApprovals: 0,
-    activePeriod: ''
+    activePeriodsCount: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -36,29 +34,40 @@ export const CeoDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
+      // The "بانتظار التعميد" count must mirror what /ceo-approvals shows
+      // across its three tabs, each table using its own pending statuses:
+      //   * evaluations           — ['تم الإرسال', 'بانتظار الموافقة']
+      //   * director_evaluations  — ['بانتظار الموافقة']  (type='ceo_director')
+      //   * supervisor_evaluations— ['تم الإرسال']
       const [
         { count: directorsCount },
         { count: directoratesCount },
-        { data: activePeriodData },
+        { count: activePeriodsCount },
         { count: completedCount },
         { count: pendingCount },
-        { count: pendingApprovalCount }
+        { count: empPendingApprovals },
+        { count: dirPendingApprovals },
+        { count: supPendingApprovals }
       ] = await Promise.all([
         supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'director'),
         supabase.from('directorates').select('*', { count: 'exact', head: true }),
-        supabase.from('evaluation_periods').select('*').eq('status', 'نشطة').maybeSingle(),
-        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).in('status', ['تم الإرسال', 'اطلع المدير', 'مغلق', 'موافقة']),
-        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).eq('status', 'مسودة'),
-        supabase.from('evaluations').select('*', { count: 'exact', head: true }).eq('status', 'بانتظار الموافقة')
+        supabase.from('evaluation_periods').select('*', { count: 'exact', head: true }).eq('status', 'نشطة'),
+        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).in('status', ['موافقة', 'اطلع المدير', 'مغلق']),
+        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).in('status', ['مسودة', 'مرفوض']),
+        supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['تم الإرسال', 'بانتظار الموافقة']),
+        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).eq('evaluation_type', 'ceo_director').eq('status', 'بانتظار الموافقة'),
+        supabase.from('supervisor_evaluations').select('*', { count: 'exact', head: true }).eq('status', 'تم الإرسال')
       ]);
+
+      const pendingApprovalCount = (empPendingApprovals || 0) + (dirPendingApprovals || 0) + (supPendingApprovals || 0);
 
       setStats({
         directorsCount: directorsCount || 0,
         directoratesCount: directoratesCount || 0,
-        activePeriod: activePeriodData ? `${monthLabels[activePeriodData.month]} - ${activePeriodData.year}` : 'لا توجد فترة نشطة',
+        activePeriodsCount: activePeriodsCount || 0,
         completedEvaluations: completedCount || 0,
         pendingEvaluations: pendingCount || 0,
-        pendingApprovals: pendingApprovalCount || 0
+        pendingApprovals: pendingApprovalCount
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -68,11 +77,11 @@ export const CeoDashboard: React.FC = () => {
   };
 
   const statCards = [
-    { title: 'عدد مديري الإدارات', value: stats.directorsCount,       icon: <UserCog className="h-5 w-5" />,        scClass: 'sc-purple' },
-    { title: 'عدد الإدارات',        value: stats.directoratesCount,    icon: <Building2 className="h-5 w-5" />,      scClass: 'sc-blue' },
-    { title: 'التقييمات المكتملة',  value: stats.completedEvaluations, icon: <FileCheck className="h-5 w-5" />,      scClass: 'sc-green' },
-    { title: 'التقييمات المعلقة',   value: stats.pendingEvaluations,   icon: <FileClock className="h-5 w-5" />,      scClass: 'sc-amber' },
-    { title: 'بانتظار الموافقة',    value: stats.pendingApprovals,     icon: <ClipboardCheck className="h-5 w-5" />, scClass: 'sc-amber' }
+    { title: 'عدد مديري الإدارات', value: stats.directorsCount,       icon: <UserCog className="h-5 w-5" />,        scClass: 'sc-purple', path: '/ceo-directors' },
+    { title: 'عدد الإدارات',        value: stats.directoratesCount,    icon: <Building2 className="h-5 w-5" />,      scClass: 'sc-blue',   path: '/ceo-org-structure' },
+    { title: 'التقييمات المكتملة',  value: stats.completedEvaluations, icon: <FileCheck className="h-5 w-5" />,      scClass: 'sc-green',  path: '/ceo-all-evaluations' },
+    { title: 'التقييمات المعلقة',   value: stats.pendingEvaluations,   icon: <FileClock className="h-5 w-5" />,      scClass: 'sc-amber',  path: '/ceo-evaluations' },
+    { title: 'بانتظار التعميد',     value: stats.pendingApprovals,     icon: <ClipboardCheck className="h-5 w-5" />, scClass: 'sc-amber',  path: '/ceo-approvals' }
   ];
 
   if (loading) {
@@ -110,27 +119,44 @@ export const CeoDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => (
-          <div key={index} className={`stat-card ${stat.scClass}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="stat-sub">{stat.title}</div>
-                <div className="stat-val">{stat.value}</div>
+        {statCards.map((stat, index) => {
+          const clickable = !!onNavigate && !!stat.path;
+          return (
+            <div
+              key={index}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onClick={clickable ? () => onNavigate!(stat.path) : undefined}
+              onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate!(stat.path); } } : undefined}
+              className={`stat-card ${stat.scClass} ${clickable ? 'cursor-pointer hover:-translate-y-0.5 transition-transform' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="stat-sub">{stat.title}</div>
+                  <div className="stat-val">{stat.value}</div>
+                </div>
+                <div className="stat-icon-box">{stat.icon}</div>
               </div>
-              <div className="stat-icon-box">{stat.icon}</div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
-        <div className="stat-card sc-purple">
+        <div
+          role={onNavigate ? 'button' : undefined}
+          tabIndex={onNavigate ? 0 : undefined}
+          onClick={onNavigate ? () => onNavigate('/ceo-reports') : undefined}
+          onKeyDown={onNavigate ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('/ceo-reports'); } } : undefined}
+          className={`stat-card sc-purple ${onNavigate ? 'cursor-pointer hover:-translate-y-0.5 transition-transform' : ''}`}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <div className="stat-sub">فترة التقييم الحالية</div>
-              <div className="stat-val" style={{ fontSize: '18px', letterSpacing: 0 }}>{stats.activePeriod}</div>
+              <div className="stat-sub">الفترات النشطة</div>
+              <div className="stat-val">{stats.activePeriodsCount}</div>
             </div>
             <div className="stat-icon-box"><Calendar className="h-5 w-5" /></div>
           </div>
         </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

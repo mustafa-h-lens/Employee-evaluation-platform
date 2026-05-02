@@ -227,7 +227,7 @@ function AppContent() {
 
       switch (basePath) {
         case '/':
-          return <CeoDashboard />;
+          return <CeoDashboard onNavigate={setCurrentPath} />;
         case '/ceo-directors':
           return <CeoDirectors onNavigate={setCurrentPath} />;
         case '/ceo-evaluations':
@@ -248,7 +248,7 @@ function AppContent() {
         case '/settings':
           return <ChangePassword />;
         default:
-          return <CeoDashboard />;
+          return <CeoDashboard onNavigate={setCurrentPath} />;
       }
     }
 
