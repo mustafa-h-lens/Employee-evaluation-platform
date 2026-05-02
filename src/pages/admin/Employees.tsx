@@ -515,7 +515,7 @@ export const Employees: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   return (
@@ -539,12 +539,12 @@ export const Employees: React.FC = () => {
       </div>
 
       {selectedIds.size > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-3 flex items-center justify-between animate-in">
+        <div className="bg-ds-danger-bg border border-ds-danger-border rounded-xl px-5 py-3 flex items-center justify-between animate-in">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center">
+            <div className="w-9 h-9 bg-ds-danger-bg rounded-full flex items-center justify-center">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
             </div>
-            <span className="text-red-800 font-medium text-sm">
+            <span className="text-ds-danger-text font-medium text-sm">
               تم تحديد <span className="font-bold">{selectedIds.size}</span> موظف
             </span>
           </div>
@@ -592,7 +592,7 @@ export const Employees: React.FC = () => {
                       type="checkbox"
                       checked={employees.length > 0 && selectedIds.size === employees.length}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-ds-border text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-ds-border text-blue-600 focus:ring-ds-accent cursor-pointer"
                     />
                   </TableHead>
                 </TableRow>
@@ -601,7 +601,7 @@ export const Employees: React.FC = () => {
                 {employees.map((emp) => {
                   const labels = renderDirAssignmentLabels(emp);
                   return (
-                    <TableRow key={emp.id} className={selectedIds.has(emp.id) ? 'bg-red-50/50' : ''}>
+                    <TableRow key={emp.id} className={selectedIds.has(emp.id) ? 'bg-ds-danger-bg/50' : ''}>
                       <TableCell>
                         <span className="font-medium">{emp.full_name}</span>
                       </TableCell>
@@ -611,8 +611,10 @@ export const Employees: React.FC = () => {
                           Array.isArray(labels.directorates) ? (
                             <div className="flex flex-col gap-1">
                               {labels.directorates.map((name, i) => (
-                                <span key={i} className={`inline-block text-xs px-2 py-0.5 rounded-full ${
-                                  i === 0 ? 'bg-purple-100 text-purple-700 font-medium' : 'bg-ds-overlay text-ds-muted'
+                                <span key={i} className={`inline-block text-xs px-2 py-0.5 rounded-full border ${
+                                  i === 0
+                                    ? 'bg-ds-purple-bg text-ds-purple-text border-ds-purple-border font-medium'
+                                    : 'bg-ds-overlay text-ds-muted border-ds-border-subtle'
                                 }`}>
                                   {name}
                                 </span>
@@ -630,7 +632,7 @@ export const Employees: React.FC = () => {
                           Array.isArray(labels.departments) ? (
                             <div className="flex flex-col gap-1">
                               {labels.departments.map((name, i) => (
-                                <span key={i} className="inline-block text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700">
+                                <span key={i} className="inline-block text-xs px-2 py-0.5 rounded-full bg-ds-info-bg text-ds-info-text border border-ds-info-border">
                                   {name}
                                 </span>
                               ))}
@@ -686,7 +688,7 @@ export const Employees: React.FC = () => {
                           type="checkbox"
                           checked={selectedIds.has(emp.id)}
                           onChange={() => toggleSelect(emp.id)}
-                          className="w-4 h-4 rounded border-ds-border text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-ds-border text-blue-600 focus:ring-ds-accent cursor-pointer"
                         />
                       </TableCell>
                     </TableRow>
@@ -746,7 +748,7 @@ export const Employees: React.FC = () => {
               <button
                 type="button"
                 onClick={addDirAssignment}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-ds-info-text font-medium"
               >
                 <Plus className="h-3.5 w-3.5" />
                 إضافة إدارة أخرى
@@ -805,7 +807,7 @@ export const Employees: React.FC = () => {
                           value={assignment.job_title}
                           onChange={(e) => updateDirAssignment(index, 'job_title', e.target.value)}
                           placeholder={formData.job_title || 'المسمى الوظيفي'}
-                          className="w-full px-3 py-2 text-sm border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 text-sm border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none"
                         />
                       </div>
                     </div>
@@ -832,7 +834,7 @@ export const Employees: React.FC = () => {
         title="تأكيد حذف الموظف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">
@@ -868,7 +870,7 @@ export const Employees: React.FC = () => {
         title="تأكيد حذف موظفين متعددين"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">

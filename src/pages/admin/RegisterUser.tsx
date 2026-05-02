@@ -179,7 +179,7 @@ export const RegisterUser: React.FC = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <UserPlus className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -192,8 +192,8 @@ export const RegisterUser: React.FC = () => {
             {feedback && (
               <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${
                 feedback.type === 'success'
-                  ? 'bg-green-50 border border-green-200 text-green-700'
-                  : 'bg-red-50 border border-red-200 text-red-700'
+                  ? 'bg-ds-success-bg border border-ds-success-border text-ds-success-text'
+                  : 'bg-ds-danger-bg border border-ds-danger-border text-ds-danger-text'
               }`}>
                 {feedback.type === 'success'
                   ? <CheckCircle className="h-4 w-4 flex-shrink-0" />
@@ -259,7 +259,7 @@ export const RegisterUser: React.FC = () => {
                       <button
                         type="button"
                         onClick={addDirAssignment}
-                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-ds-info-text font-medium"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         إضافة إدارة أخرى
@@ -270,7 +270,7 @@ export const RegisterUser: React.FC = () => {
                       {dirAssignments.map((assignment, index) => {
                         const filteredDepts = getFilteredDepts(assignment.directorate_id);
                         return (
-                          <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-purple-200 bg-purple-50/50' : 'border-ds-border bg-ds-bg/50'}`}>
+                          <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-ds-purple-border bg-ds-purple-bg/50' : 'border-ds-border bg-ds-bg/50'}`}>
                             <div className="flex items-center justify-between mb-2">
                               <label className="flex items-center gap-1.5 cursor-pointer">
                                 <input
@@ -278,11 +278,11 @@ export const RegisterUser: React.FC = () => {
                                   name="primary_dir_reg"
                                   checked={assignment.is_primary}
                                   onChange={() => updateDirAssignment(index, 'is_primary', true)}
-                                  className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500"
+                                  className="w-3.5 h-3.5 text-purple-600 focus:ring-ds-purple"
                                 />
                                 <span className="text-xs text-ds-muted">
                                   {assignment.is_primary ? (
-                                    <span className="text-purple-700 font-medium">الإدارة الرئيسية</span>
+                                    <span className="text-ds-purple-text font-medium">الإدارة الرئيسية</span>
                                   ) : 'تعيين كرئيسية'}
                                 </span>
                               </label>

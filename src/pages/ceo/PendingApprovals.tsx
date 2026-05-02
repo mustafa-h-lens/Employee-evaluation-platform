@@ -806,7 +806,7 @@ export const PendingApprovals: React.FC = () => {
             onClick={() => setActiveFilter(tab.key)}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeFilter === tab.key
-                ? 'border-blue-600 text-blue-600 bg-blue-50'
+                ? 'border-blue-600 text-blue-600 bg-ds-info-bg'
                 : 'border-transparent text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
             }`}
           >
@@ -819,9 +819,7 @@ export const PendingApprovals: React.FC = () => {
       {/* Director Evaluations of Employees */}
       {mainTab === 'directors' && (
         empLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="text-ds-faint">جاري التحميل...</div>
-          </div>
+          <div className="page-loading-placeholder" aria-hidden="true" />
         ) : (
           <Card>
             <CardBody className="p-0">
@@ -862,7 +860,7 @@ export const PendingApprovals: React.FC = () => {
                           <span className="text-sm text-ds-muted">{ev.department?.name || '-'}</span>
                         </TableCell>
                         <TableCell>
-                          <span className={`text-sm ${isCombined ? 'font-semibold text-indigo-700' : 'text-ds-muted'}`}>{group.manager_label}</span>
+                          <span className={`text-sm ${isCombined ? 'font-semibold text-ds-info-text' : 'text-ds-muted'}`}>{group.manager_label}</span>
                         </TableCell>
                         <TableCell>
                           {ev.period && (
@@ -926,9 +924,7 @@ export const PendingApprovals: React.FC = () => {
       {/* CEO Evaluations of Directors */}
       {mainTab === 'ceo' && (
         dirLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="text-ds-faint">جاري التحميل...</div>
-          </div>
+          <div className="page-loading-placeholder" aria-hidden="true" />
         ) : (
           <Card>
             <CardBody className="p-0">
@@ -1029,9 +1025,7 @@ export const PendingApprovals: React.FC = () => {
       {/* Supervisor Evaluations */}
       {mainTab === 'supervisors' && (
         supLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="text-ds-faint">جاري التحميل...</div>
-          </div>
+          <div className="page-loading-placeholder" aria-hidden="true" />
         ) : (
           <Card>
             <CardBody className="p-0">
@@ -1143,9 +1137,7 @@ export const PendingApprovals: React.FC = () => {
         size="lg"
       >
         {detailLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-ds-faint">جاري التحميل...</div>
-          </div>
+          <div className="page-loading-placeholder" aria-hidden="true" />
         ) : (detailEval || detailDirEval || detailSupEval || detailCombined) ? (
           <div className="space-y-6">
             {/* Header info */}
@@ -1187,25 +1179,25 @@ export const PendingApprovals: React.FC = () => {
 
             {/* Final Results */}
             <div className="grid grid-cols-4 gap-3">
-              <div className="bg-blue-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
-                <p className="text-xl font-bold text-blue-700">
+                <p className="text-xl font-bold text-ds-info-text">
                   {(detailCombined ? detailCombined.avg_score_500 : (detailEval?.final_score_500 ?? detailDirEval?.final_score_500 ?? detailSupEval?.final_score_500))?.toFixed(1)}
                 </p>
               </div>
-              <div className="bg-purple-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-purple-600 mb-1">النتيجة / 5</p>
-                <p className="text-xl font-bold text-purple-700">
+                <p className="text-xl font-bold text-ds-purple-text">
                   {(detailCombined ? detailCombined.avg_score_5 : (detailEval?.final_score_5 ?? detailDirEval?.final_score_5 ?? detailSupEval?.final_score_5))?.toFixed(2)}
                 </p>
               </div>
-              <div className="bg-teal-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-teal-600 mb-1">النسبة المئوية</p>
-                <p className="text-xl font-bold text-teal-700">
+                <p className="text-xl font-bold text-ds-info-text">
                   {(detailCombined ? detailCombined.avg_percentage : (detailEval?.percentage ?? detailDirEval?.percentage ?? detailSupEval?.percentage))?.toFixed(0)}%
                 </p>
               </div>
-              <div className="bg-amber-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-warning-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
                 {(() => {
                   const rating = detailCombined ? detailCombined.avg_rating : (detailEval?.general_rating || detailDirEval?.general_rating || detailSupEval?.general_rating);
@@ -1221,18 +1213,18 @@ export const PendingApprovals: React.FC = () => {
             {/* General Criteria */}
             {generalScores.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   المعايير العامة
                 </h3>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-blue-50">
+                    <thead className="bg-ds-info-bg">
                       <tr>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">المعيار</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الوزن</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الدرجة</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">المعيار</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">الوزن</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">الدرجة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">النتيجة الموزونة</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border-subtle">
@@ -1256,18 +1248,18 @@ export const PendingApprovals: React.FC = () => {
             {/* Specific Criteria */}
             {specificScores.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-emerald-700 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ds-success-text mb-2 flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   المعايير الخاصة
                 </h3>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-emerald-50">
+                    <thead className="bg-ds-success-bg">
                       <tr>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">المعيار</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">الوزن</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">الدرجة</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">المعيار</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">الوزن</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">الدرجة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">النتيجة الموزونة</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border-subtle">
@@ -1293,8 +1285,8 @@ export const PendingApprovals: React.FC = () => {
               detailCombined.evals.some(ev => ev.evaluator_note) && (
                 <div className="space-y-2">
                   {detailCombined.evals.filter(ev => ev.evaluator_note).map(ev => (
-                    <div key={ev.id} className="bg-blue-50 rounded-lg p-4">
-                      <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات {ev.evaluator?.full_name}</p>
+                    <div key={ev.id} className="bg-ds-info-bg rounded-lg p-4">
+                      <p className="text-xs font-medium text-ds-info-text mb-1">ملاحظات {ev.evaluator?.full_name}</p>
                       <p className="text-sm text-ds-text">{ev.evaluator_note}</p>
                     </div>
                   ))}
@@ -1302,17 +1294,17 @@ export const PendingApprovals: React.FC = () => {
               )
             ) : detailEmpCombined && detailEmpCombined.notes.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-blue-700 px-1">ملاحظات المقيّمين</p>
+                <p className="text-xs font-medium text-ds-info-text px-1">ملاحظات المقيّمين</p>
                 {detailEmpCombined.notes.map((n, i) => (
-                  <div key={i} className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-xs font-semibold text-blue-700 mb-1">{n.name}</p>
+                  <div key={i} className="bg-ds-info-bg rounded-lg p-4">
+                    <p className="text-xs font-semibold text-ds-info-text mb-1">{n.name}</p>
                     <p className="text-sm text-ds-text">{n.note}</p>
                   </div>
                 ))}
               </div>
             ) : (detailEval?.manager_note || detailDirEval?.evaluator_note || detailSupEval?.supervisor_note) ? (
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
+              <div className="bg-ds-info-bg rounded-lg p-4">
+                <p className="text-xs font-medium text-ds-info-text mb-1">ملاحظات المقيّم</p>
                 <p className="text-sm text-ds-text">{detailEval?.manager_note || detailDirEval?.evaluator_note || detailSupEval?.supervisor_note}</p>
               </div>
             ) : null}
@@ -1320,14 +1312,14 @@ export const PendingApprovals: React.FC = () => {
             {/* Reply from evaluated person */}
             {detailCombined ? (
               detailCombined.evals.some(ev => ev.director_note) && (
-                <div className="bg-teal-50 rounded-lg p-4">
-                  <p className="text-xs font-medium text-teal-700 mb-1">رد المقيَّم على التقييم</p>
+                <div className="bg-ds-info-bg rounded-lg p-4">
+                  <p className="text-xs font-medium text-ds-info-text mb-1">رد المقيَّم على التقييم</p>
                   <p className="text-sm text-ds-text">{detailCombined.evals.find(ev => ev.director_note)?.director_note}</p>
                 </div>
               )
             ) : (detailEval?.employee_note || detailDirEval?.director_note || detailSupEval?.employee_note) ? (
-              <div className="bg-teal-50 rounded-lg p-4">
-                <p className="text-xs font-medium text-teal-700 mb-1">
+              <div className="bg-ds-info-bg rounded-lg p-4">
+                <p className="text-xs font-medium text-ds-info-text mb-1">
                   {detailDirEval ? 'رد المقيَّم على التقييم' : 'رد الموظف على التقييم'}
                 </p>
                 <p className="text-sm text-ds-text">{detailEval?.employee_note || detailDirEval?.director_note || detailSupEval?.employee_note}</p>
@@ -1337,14 +1329,14 @@ export const PendingApprovals: React.FC = () => {
             {/* Previous CEO Comment */}
             {detailCombined ? (
               detailCombined.evals.some(ev => ev.ceo_comment) && (
-                <div className="bg-red-50 rounded-lg p-4">
-                  <p className="text-xs font-medium text-red-700 mb-1">سبب الرفض السابق</p>
+                <div className="bg-ds-danger-bg rounded-lg p-4">
+                  <p className="text-xs font-medium text-ds-danger-text mb-1">سبب الرفض السابق</p>
                   <p className="text-sm text-ds-text">{detailCombined.evals.find(ev => ev.ceo_comment)?.ceo_comment}</p>
                 </div>
               )
             ) : (detailEval?.ceo_comment || detailDirEval?.ceo_comment) ? (
-              <div className="bg-red-50 rounded-lg p-4">
-                <p className="text-xs font-medium text-red-700 mb-1">سبب الرفض السابق</p>
+              <div className="bg-ds-danger-bg rounded-lg p-4">
+                <p className="text-xs font-medium text-ds-danger-text mb-1">سبب الرفض السابق</p>
                 <p className="text-sm text-ds-text">{detailEval?.ceo_comment || detailDirEval?.ceo_comment}</p>
               </div>
             ) : null}
@@ -1396,16 +1388,16 @@ export const PendingApprovals: React.FC = () => {
           </p>
 
           {rejectEvaluators.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <p className="text-sm font-bold text-amber-900 mb-1">اختر التقييم المراد رفضه</p>
-              <p className="text-xs text-amber-700 mb-3">
+            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-4">
+              <p className="text-sm font-bold text-ds-warning-text mb-1">اختر التقييم المراد رفضه</p>
+              <p className="text-xs text-ds-warning-text mb-3">
                 هذا التقييم مكوّن من تقييمي مديرين. اختر من تريد إعادة تقييمه — التقييم الآخر سيبقى كما هو.
               </p>
               <div className="space-y-2">
                 {rejectEvaluators.map(ev => (
                   <label
                     key={ev.id}
-                    className="flex items-center gap-3 bg-ds-surface border border-amber-200 rounded-lg px-3 py-2.5 cursor-pointer hover:border-amber-300 transition-colors"
+                    className="flex items-center gap-3 bg-ds-surface border border-ds-warning-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-ds-warning-border transition-colors"
                   >
                     <input
                       type="checkbox"

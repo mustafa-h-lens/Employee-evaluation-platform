@@ -228,7 +228,7 @@ export const WeightAllocation: React.FC = () => {
     const dirty = !!change;
     return (
       <div key={group.id}
-        className={`border rounded-lg p-3 flex items-center justify-between gap-3 flex-wrap ${dirty ? 'border-amber-200 bg-amber-50/40' : 'border-ds-border-subtle bg-ds-bg'}`}>
+        className={`border rounded-lg p-3 flex items-center justify-between gap-3 flex-wrap ${dirty ? 'border-ds-warning-border bg-ds-warning-bg/40' : 'border-ds-border-subtle bg-ds-bg'}`}>
         <div className="flex items-center gap-2 flex-1 min-w-[180px]">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="font-medium text-ds-text">{group.name}</span>
@@ -241,7 +241,7 @@ export const WeightAllocation: React.FC = () => {
             <input
               type="number" min={0} max={100} value={gen}
               onChange={e => handleChange(group.id, group.general_weight, group.specific_weight, 'general', parseInt(e.target.value) || 0)}
-              className="w-16 text-center text-sm font-bold text-blue-600 border border-blue-200 rounded-lg px-2 py-1"
+              className="w-16 text-center text-sm font-bold text-blue-600 border border-ds-info-border rounded-lg px-2 py-1"
             />
             <span className="text-blue-600 text-xs">%</span>
           </div>
@@ -250,7 +250,7 @@ export const WeightAllocation: React.FC = () => {
             <input
               type="number" min={0} max={100} value={spec}
               onChange={e => handleChange(group.id, group.general_weight, group.specific_weight, 'specific', parseInt(e.target.value) || 0)}
-              className="w-16 text-center text-sm font-bold text-emerald-600 border border-emerald-200 rounded-lg px-2 py-1"
+              className="w-16 text-center text-sm font-bold text-emerald-600 border border-ds-success-border rounded-lg px-2 py-1"
             />
             <span className="text-emerald-600 text-xs">%</span>
           </div>
@@ -271,9 +271,9 @@ export const WeightAllocation: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+      <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-3 flex items-start gap-2">
         <AlertTriangle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-900 leading-relaxed">
+        <p className="text-xs text-ds-info-text leading-relaxed">
           توزيع الأوزان الجديد يطبَّق على التقييمات الجديدة وعلى المسودات عند إعادة الحفظ. التقييمات المرسلة سابقاً تظل بنتائجها الحالية.
         </p>
       </div>
@@ -287,7 +287,7 @@ export const WeightAllocation: React.FC = () => {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-ds-bg transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="w-9 h-9 bg-ds-success-bg text-ds-success rounded-lg flex items-center justify-center">
                 <Building2 className="h-4 w-4" />
               </div>
               <div className="text-right">
@@ -340,7 +340,7 @@ export const WeightAllocation: React.FC = () => {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-ds-bg transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
+              <div className="w-9 h-9 bg-ds-warning-bg text-ds-warning rounded-lg flex items-center justify-center">
                 <Shield className="h-4 w-4" />
               </div>
               <div className="text-right">
@@ -394,7 +394,7 @@ export const WeightAllocation: React.FC = () => {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-ds-bg transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-9 h-9 bg-ds-purple-bg text-ds-purple rounded-lg flex items-center justify-center">
                 <Crown className="h-4 w-4" />
               </div>
               <div className="text-right">
@@ -412,7 +412,7 @@ export const WeightAllocation: React.FC = () => {
                 const spec = change?.specific ?? highMgmt.specific;
                 const dirty = !!change;
                 return (
-                  <div className={`border rounded-lg p-3 flex items-center justify-between gap-3 flex-wrap ${dirty ? 'border-amber-200 bg-amber-50/40' : 'border-ds-border-subtle bg-ds-bg'}`}>
+                  <div className={`border rounded-lg p-3 flex items-center justify-between gap-3 flex-wrap ${dirty ? 'border-ds-warning-border bg-ds-warning-bg/40' : 'border-ds-border-subtle bg-ds-bg'}`}>
                     <div className="flex items-center gap-2 flex-1 min-w-[180px]">
                       <div className="w-2 h-2 rounded-full bg-purple-500" />
                       <span className="font-medium text-ds-text">الإدارة العليا</span>
@@ -423,7 +423,7 @@ export const WeightAllocation: React.FC = () => {
                         <input
                           type="number" min={0} max={100} value={gen}
                           onChange={e => handleChange(highMgmt.id, highMgmt.general, highMgmt.specific, 'general', parseInt(e.target.value) || 0)}
-                          className="w-16 text-center text-sm font-bold text-blue-600 border border-blue-200 rounded-lg px-2 py-1"
+                          className="w-16 text-center text-sm font-bold text-blue-600 border border-ds-info-border rounded-lg px-2 py-1"
                         />
                         <span className="text-blue-600 text-xs">%</span>
                       </div>
@@ -432,7 +432,7 @@ export const WeightAllocation: React.FC = () => {
                         <input
                           type="number" min={0} max={100} value={spec}
                           onChange={e => handleChange(highMgmt.id, highMgmt.general, highMgmt.specific, 'specific', parseInt(e.target.value) || 0)}
-                          className="w-16 text-center text-sm font-bold text-emerald-600 border border-emerald-200 rounded-lg px-2 py-1"
+                          className="w-16 text-center text-sm font-bold text-emerald-600 border border-ds-success-border rounded-lg px-2 py-1"
                         />
                         <span className="text-emerald-600 text-xs">%</span>
                       </div>

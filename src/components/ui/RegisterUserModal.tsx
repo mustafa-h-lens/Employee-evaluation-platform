@@ -170,8 +170,8 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
       {feedback && (
         <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${
           feedback.type === 'success'
-            ? 'bg-green-50 border border-green-200 text-green-700'
-            : 'bg-red-50 border border-red-200 text-red-700'
+            ? 'bg-ds-success-bg border border-ds-success-border text-ds-success-text'
+            : 'bg-ds-danger-bg border border-ds-danger-border text-ds-danger-text'
         }`}>
           {feedback.type === 'success'
             ? <CheckCircle className="h-4 w-4 flex-shrink-0" />
@@ -237,11 +237,11 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
         {role === 'employee' && (
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-800">الإدارات والأقسام</h3>
+              <h3 className="text-sm font-semibold text-ds-text">الإدارات والأقسام</h3>
               <button
                 type="button"
                 onClick={addDirAssignment}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                className="flex items-center gap-1 text-xs text-ds-accent hover:text-ds-accent-light font-medium"
               >
                 <Plus className="h-3.5 w-3.5" />
                 إضافة إدارة أخرى
@@ -252,7 +252,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
               {dirAssignments.map((assignment, index) => {
                 const filteredDepts = getFilteredDepts(assignment.directorate_id);
                 return (
-                  <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-purple-200 bg-purple-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
+                  <div key={index} className={`p-3 rounded-lg border ${assignment.is_primary ? 'border-ds-purple-border bg-ds-purple-bg' : 'border-ds-border-subtle bg-ds-overlay'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <label className="flex items-center gap-1.5 cursor-pointer">
                         <input
@@ -260,11 +260,11 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                           name="primary_dir_register"
                           checked={assignment.is_primary}
                           onChange={() => updateDirAssignment(index, 'is_primary', true)}
-                          className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500"
+                          className="w-3.5 h-3.5 text-purple-600 focus:ring-ds-purple"
                         />
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-ds-muted">
                           {assignment.is_primary ? (
-                            <span className="text-purple-700 font-medium">الإدارة الرئيسية</span>
+                            <span className="text-ds-purple-text font-medium">الإدارة الرئيسية</span>
                           ) : 'تعيين كرئيسية'}
                         </span>
                       </label>
@@ -280,7 +280,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">الإدارة</label>
+                        <label className="block text-xs font-medium text-ds-muted mb-1">الإدارة</label>
                         <ModernSelect
                           value={assignment.directorate_id}
                           onChange={(v) => updateDirAssignment(index, 'directorate_id', v)}
@@ -294,7 +294,7 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                       </div>
                       {filteredDepts.length > 0 && (
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">القسم</label>
+                          <label className="block text-xs font-medium text-ds-muted mb-1">القسم</label>
                           <ModernSelect
                             value={assignment.department_id}
                             onChange={(v) => updateDirAssignment(index, 'department_id', v)}
@@ -308,13 +308,13 @@ export const RegisterUserModal: React.FC<RegisterUserModalProps> = ({ isOpen, on
                         </div>
                       )}
                       <div className={filteredDepts.length > 0 ? 'col-span-2' : ''}>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">المسمى الوظيفي في هذه الإدارة</label>
+                        <label className="block text-xs font-medium text-ds-muted mb-1">المسمى الوظيفي في هذه الإدارة</label>
                         <input
                           type="text"
                           value={assignment.job_title}
                           onChange={(e) => updateDirAssignment(index, 'job_title', e.target.value)}
                           placeholder={form.job_title || 'المسمى الوظيفي'}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 text-sm border border-ds-border rounded-lg bg-ds-input text-ds-text focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none"
                         />
                       </div>
                     </div>

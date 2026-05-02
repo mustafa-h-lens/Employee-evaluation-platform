@@ -7,24 +7,18 @@ import { Building2, Users, Calendar, FileCheck, FileClock } from 'lucide-react';
 interface Stats {
   directoratesCount: number;
   employeesCount: number;
-  activePeriod: string;
+  activePeriodsCount: number;
   completedEvaluations: number;
-  pendingEvaluations: number;
+  pendingApprovals: number;
 }
-
-const monthLabels: Record<number, string> = {
-  1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
-  5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
-  9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر',
-};
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
     directoratesCount: 0,
     employeesCount: 0,
-    activePeriod: '',
+    activePeriodsCount: 0,
     completedEvaluations: 0,
-    pendingEvaluations: 0
+    pendingApprovals: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -34,26 +28,33 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
+      // "بانتظار التعميد" mirrors the three pending sources surfaced on
+      // /ceo-approvals: employee evaluations, CEO→director evaluations,
+      // and supervisor evaluations — each with its own pending statuses.
       const [
         { count: directoratesCount },
         { count: employeesCount },
-        { data: activePeriodData },
+        { count: activePeriodsCount },
         { count: completedCount },
-        { count: pendingCount }
+        { count: empPending },
+        { count: dirPending },
+        { count: supPending }
       ] = await Promise.all([
         supabase.from('directorates').select('*', { count: 'exact', head: true }),
         supabase.from('employees').select('*', { count: 'exact', head: true }),
-        supabase.from('evaluation_periods').select('*').eq('status', 'نشطة').maybeSingle(),
-        supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['بانتظار الموافقة', 'موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']),
-        supabase.from('evaluations').select('*', { count: 'exact', head: true }).eq('status', 'مسودة')
+        supabase.from('evaluation_periods').select('*', { count: 'exact', head: true }).eq('status', 'نشطة'),
+        supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['موافقة', 'اطلع الموظف', 'مغلق']),
+        supabase.from('evaluations').select('*', { count: 'exact', head: true }).in('status', ['تم الإرسال', 'بانتظار الموافقة']),
+        supabase.from('director_evaluations').select('*', { count: 'exact', head: true }).eq('evaluation_type', 'ceo_director').eq('status', 'بانتظار الموافقة'),
+        supabase.from('supervisor_evaluations').select('*', { count: 'exact', head: true }).eq('status', 'تم الإرسال')
       ]);
 
       setStats({
         directoratesCount: directoratesCount || 0,
         employeesCount: employeesCount || 0,
-        activePeriod: activePeriodData ? `${monthLabels[activePeriodData.month]} - ${activePeriodData.year}` : 'لا توجد فترة نشطة',
+        activePeriodsCount: activePeriodsCount || 0,
         completedEvaluations: completedCount || 0,
-        pendingEvaluations: pendingCount || 0
+        pendingApprovals: (empPending || 0) + (dirPending || 0) + (supPending || 0)
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -63,17 +64,15 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const statCards = [
-    { title: 'عدد الإدارات',         value: stats.directoratesCount,   icon: <Building2 className="h-5 w-5" />, scClass: 'sc-blue' },
-    { title: 'عدد الموظفين',         value: stats.employeesCount,      icon: <Users className="h-5 w-5" />,     scClass: 'sc-green' },
-    { title: 'التقييمات المكتملة',   value: stats.completedEvaluations, icon: <FileCheck className="h-5 w-5" />, scClass: 'sc-blue' },
-    { title: 'التقييمات المعلقة',    value: stats.pendingEvaluations,  icon: <FileClock className="h-5 w-5" />, scClass: 'sc-amber' }
+    { title: 'عدد الإدارات',         value: stats.directoratesCount,    icon: <Building2 className="h-5 w-5" />,      scClass: 'sc-blue' },
+    { title: 'عدد الموظفين',         value: stats.employeesCount,       icon: <Users className="h-5 w-5" />,          scClass: 'sc-green' },
+    { title: 'التقييمات المكتملة',   value: stats.completedEvaluations, icon: <FileCheck className="h-5 w-5" />,      scClass: 'sc-blue' },
+    { title: 'بانتظار التعميد',      value: stats.pendingApprovals,     icon: <FileClock className="h-5 w-5" />,      scClass: 'sc-amber' }
   ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-ds-faint">جاري التحميل...</div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -107,8 +106,8 @@ export const AdminDashboard: React.FC = () => {
         <div className="stat-card sc-purple">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <div className="stat-sub">فترة التقييم الحالية</div>
-              <div className="stat-val" style={{ fontSize: '18px', letterSpacing: 0 }}>{stats.activePeriod}</div>
+              <div className="stat-sub">الفترات النشطة</div>
+              <div className="stat-val">{stats.activePeriodsCount}</div>
             </div>
             <div className="stat-icon-box"><Calendar className="h-5 w-5" /></div>
           </div>

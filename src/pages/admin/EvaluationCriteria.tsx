@@ -1130,7 +1130,7 @@ export const EvaluationCriteria: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   const activeCount = goldenCriteria.filter(c => c.is_active).length;
@@ -1259,9 +1259,9 @@ export const EvaluationCriteria: React.FC = () => {
               </div>
 
               {sectionTotal !== target && sectionCriteria.length > 0 && (
-                <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-3">
+                <div className="bg-ds-warning-bg border-b border-ds-warning-border px-6 py-3 flex items-center gap-3">
                   <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                  <p className="text-amber-800 text-sm">
+                  <p className="text-ds-warning-text text-sm">
                     مجموع أوزان المعايير النشطة في هذا القسم يجب أن يساوي {target}%. المجموع الحالي: <span className="font-bold">{sectionTotal}%</span>
                   </p>
                 </div>
@@ -1292,7 +1292,7 @@ export const EvaluationCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-info-bg/40' : ''}`}
                             onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                           >
                             <TableCell className="text-ds-faint">
@@ -1300,7 +1300,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-9 h-9 bg-ds-info-bg text-ds-info rounded-lg flex items-center justify-center flex-shrink-0">
                                   <GripVertical className="h-4 w-4" />
                                 </div>
                                 <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -1329,7 +1329,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div className="w-16 bg-ds-track rounded-full h-2">
                                   <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${(criterion.weight / Math.max(1, target)) * 100}%` }} />
                                 </div>
                                 <span className="font-bold text-blue-600">{criterion.weight}%</span>
@@ -1351,10 +1351,10 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                           </TableRow>
                           {isExpanded && (
-                            <TableRow className="bg-blue-50/40">
+                            <TableRow className="bg-ds-info-bg/40">
                               <TableCell colSpan={7} className="!whitespace-normal">
                                 <div className="px-2 py-1">
-                                  <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-xs font-semibold text-ds-info-text mb-1">الوصف الكامل</p>
                                   <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                 </div>
                               </TableCell>
@@ -1375,7 +1375,7 @@ export const EvaluationCriteria: React.FC = () => {
           whose general_weight differs from the system default. HR fills these
           so their sum matches the group's general_weight target. */}
       {customGeneralSections.length > 0 && (
-        <div className="rounded-lg bg-blue-50/60 border border-blue-100 px-4 py-3 text-sm text-blue-900 flex items-start gap-2">
+        <div className="rounded-lg bg-ds-info-bg/60 border border-blue-100 px-4 py-3 text-sm text-ds-info-text flex items-start gap-2">
           <Filter className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <p>
             مجموعات ذات أوزان مختلفة عن الافتراضية ({generalWeightLimit}%) — أضف معاييرها العامة الخاصة بها بحيث تساوي مجموع الأوزان النسبة المحددة لكل مجموعة.
@@ -1391,7 +1391,7 @@ export const EvaluationCriteria: React.FC = () => {
             <CardBody className="p-0">
               <div className="px-6 py-4 border-b border-ds-border-subtle flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-ds-success-bg text-ds-success rounded-xl flex items-center justify-center">
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>
@@ -1411,9 +1411,9 @@ export const EvaluationCriteria: React.FC = () => {
               </div>
 
               {sectionTotal !== target && sectionCriteria.length > 0 && (
-                <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-3">
+                <div className="bg-ds-warning-bg border-b border-ds-warning-border px-6 py-3 flex items-center gap-3">
                   <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                  <p className="text-amber-800 text-sm">
+                  <p className="text-ds-warning-text text-sm">
                     يجب أن يساوي مجموع أوزان المعايير النشطة في هذه المجموعة {target}%. المجموع الحالي: <span className="font-bold">{sectionTotal}%</span>
                   </p>
                 </div>
@@ -1443,7 +1443,7 @@ export const EvaluationCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-success-bg/40' : ''}`}
                             onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                           >
                             <TableCell className="text-ds-faint">
@@ -1451,7 +1451,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-9 h-9 bg-ds-success-bg text-ds-success rounded-lg flex items-center justify-center flex-shrink-0">
                                   <GripVertical className="h-4 w-4" />
                                 </div>
                                 <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -1480,7 +1480,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div className="w-16 bg-ds-track rounded-full h-2">
                                   <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${(criterion.weight / Math.max(1, target)) * 100}%` }} />
                                 </div>
                                 <span className="font-bold text-emerald-600">{criterion.weight}%</span>
@@ -1502,10 +1502,10 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                           </TableRow>
                           {isExpanded && (
-                            <TableRow className="bg-emerald-50/40">
+                            <TableRow className="bg-ds-success-bg/40">
                               <TableCell colSpan={7} className="!whitespace-normal">
                                 <div className="px-2 py-1">
-                                  <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-xs font-semibold text-ds-success-text mb-1">الوصف الكامل</p>
                                   <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                 </div>
                               </TableCell>
@@ -1537,7 +1537,7 @@ export const EvaluationCriteria: React.FC = () => {
                     <p className="text-xl font-bold text-emerald-600">لكل مجموعة</p>
                     <p className="text-xs text-ds-faint mt-1">يحدده قسم الموارد البشرية في الإعدادات</p>
                   </div>
-                  <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
+                  <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                     <Scale className="h-6 w-6" />
                   </div>
                 </div>
@@ -1573,9 +1573,9 @@ export const EvaluationCriteria: React.FC = () => {
             />
           </div>
 
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3">
+          <div className="bg-ds-success-bg border border-ds-success-border rounded-lg p-4 flex items-center gap-3">
             <Shield className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-            <p className="text-emerald-800 text-sm">
+            <p className="text-ds-success-text text-sm">
               هذه المعايير يتم إنشاؤها وإدارتها بواسطة مديري الإدارات وتستخدم في تقييم الموظفين التابعين لهم.
             </p>
           </div>
@@ -1671,12 +1671,12 @@ export const EvaluationCriteria: React.FC = () => {
                                   return (
                                     <React.Fragment key={c.id}>
                                       <TableRow
-                                        className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                                        className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-success-bg/40' : ''}`}
                                         onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
                                       >
                                         <TableCell>
                                           <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <div className="w-9 h-9 bg-ds-success-bg text-ds-success rounded-lg flex items-center justify-center flex-shrink-0">
                                               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                             </div>
                                             <span className="font-bold text-ds-text">{c.title}</span>
@@ -1705,7 +1705,7 @@ export const EvaluationCriteria: React.FC = () => {
                                         </TableCell>
                                         <TableCell>
                                           <div className="flex items-center gap-2">
-                                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                                            <div className="w-16 bg-ds-track rounded-full h-2">
                                               <div className="bg-emerald-500 h-2 rounded-full transition-all"
                                                 style={{ width: `${Math.min(100, (c.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
                                             </div>
@@ -1725,10 +1725,10 @@ export const EvaluationCriteria: React.FC = () => {
                                         </TableCell>
                                       </TableRow>
                                       {isExpanded && (
-                                        <TableRow className="bg-emerald-50/40">
+                                        <TableRow className="bg-ds-success-bg/40">
                                           <TableCell colSpan={6} className="!whitespace-normal">
                                             <div className="px-2 py-1">
-                                              <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                              <p className="text-xs font-semibold text-ds-success-text mb-1">الوصف الكامل</p>
                                               <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                                             </div>
                                           </TableCell>
@@ -1768,7 +1768,7 @@ export const EvaluationCriteria: React.FC = () => {
                     <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
                     <p className="text-xl font-bold text-ds-text">{ceoCriteria.filter(c => c.is_active).length}</p>
                   </div>
-                  <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                  <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                     <ClipboardList className="h-6 w-6" />
                   </div>
                 </div>
@@ -1796,7 +1796,7 @@ export const EvaluationCriteria: React.FC = () => {
                       {ceoTotalWeight}% / {specificWeightLimit}%
                     </p>
                   </div>
-                  <div className={`p-3 rounded-xl ${ceoTotalWeight === specificWeightLimit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                  <div className={`p-3 rounded-xl ${ceoTotalWeight === specificWeightLimit ? 'bg-ds-success-bg text-ds-success' : 'bg-ds-danger-bg text-ds-danger'}`}>
                     <Scale className="h-6 w-6" />
                   </div>
                 </div>
@@ -1805,9 +1805,9 @@ export const EvaluationCriteria: React.FC = () => {
           </div>
 
           {ceoTotalWeight !== specificWeightLimit && ceoCriteria.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-              <p className="text-amber-800 text-sm">
+              <p className="text-ds-warning-text text-sm">
                 مجموع أوزان المعايير الخاصة النشطة يجب أن يساوي {specificWeightLimit}% (النسبة المخصصة من الإعدادات). المجموع الحالي: <span className="font-bold">{ceoTotalWeight}%</span>
               </p>
             </div>
@@ -1840,7 +1840,7 @@ export const EvaluationCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-purple-bg/40' : ''}`}
                             onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                           >
                             <TableCell className="text-ds-faint">
@@ -1848,7 +1848,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-9 h-9 bg-ds-purple-bg text-ds-purple rounded-lg flex items-center justify-center flex-shrink-0">
                                   <GripVertical className="h-4 w-4" />
                                 </div>
                                 <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -1883,7 +1883,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div className="w-16 bg-ds-track rounded-full h-2">
                                   <div
                                     className="bg-purple-600 h-2 rounded-full transition-all"
                                     style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
@@ -1920,10 +1920,10 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                           </TableRow>
                           {isExpanded && (
-                            <TableRow className="bg-purple-50/40">
+                            <TableRow className="bg-ds-purple-bg/40">
                               <TableCell colSpan={7} className="!whitespace-normal">
                                 <div className="px-2 py-1">
-                                  <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-xs font-semibold text-ds-purple-text mb-1">الوصف الكامل</p>
                                   <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                 </div>
                               </TableCell>
@@ -1961,9 +1961,9 @@ export const EvaluationCriteria: React.FC = () => {
             </p>
           )}
 
-          <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 flex items-center gap-3">
+          <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-4 flex items-center gap-3">
             <Shield className="h-5 w-5 text-teal-600 flex-shrink-0" />
-            <p className="text-teal-800 text-sm">
+            <p className="text-ds-info-text text-sm">
               هذه المعايير يتم إنشاؤها وإدارتها بواسطة المشرفين وتستخدم في تقييم الموظفين التابعين لهم.
             </p>
           </div>
@@ -2040,7 +2040,7 @@ export const EvaluationCriteria: React.FC = () => {
                             return (
                               <React.Fragment key={c.id}>
                                 <TableRow
-                                  className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-teal-50/40' : ''}`}
+                                  className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-info-bg/40' : ''}`}
                                   onClick={() => setExpandedCriterionId(isExpanded ? null : c.id)}
                                 >
                                   <TableCell className="text-ds-faint">
@@ -2062,10 +2062,10 @@ export const EvaluationCriteria: React.FC = () => {
                                   </TableCell>
                                 </TableRow>
                                 {isExpanded && (
-                                  <TableRow className="bg-teal-50/40">
+                                  <TableRow className="bg-ds-info-bg/40">
                                     <TableCell colSpan={5} className="!whitespace-normal">
                                       <div className="px-2 py-1">
-                                        <p className="text-xs font-semibold text-teal-700 mb-1">الوصف الكامل</p>
+                                        <p className="text-xs font-semibold text-ds-info-text mb-1">الوصف الكامل</p>
                                         <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                                       </div>
                                     </TableCell>
@@ -2094,9 +2094,9 @@ export const EvaluationCriteria: React.FC = () => {
             </Button>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+          <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-4 flex items-center gap-3">
             <Shield className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-amber-800 text-sm">
+            <p className="text-ds-warning-text text-sm">
               هذه المعايير تُستخدم من قبل جميع الموظفين لتقييم أداء أعضاء الإدارة العليا بشكل ربعي ومجهول. يتم إنشاؤها وإدارتها بواسطة الموارد البشرية فقط.
             </p>
           </div>
@@ -2109,7 +2109,7 @@ export const EvaluationCriteria: React.FC = () => {
                     <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
                     <p className="text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => c.is_active).length}</p>
                   </div>
-                  <div className="bg-green-50 text-green-600 p-3 rounded-xl"><ClipboardList className="h-6 w-6" /></div>
+                  <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl"><ClipboardList className="h-6 w-6" /></div>
                 </div>
               </CardBody>
             </Card>
@@ -2133,7 +2133,7 @@ export const EvaluationCriteria: React.FC = () => {
                       {ceoEvalTotalWeight}% / 100%
                     </p>
                   </div>
-                  <div className={`p-3 rounded-xl ${ceoEvalTotalWeight === 100 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                  <div className={`p-3 rounded-xl ${ceoEvalTotalWeight === 100 ? 'bg-ds-success-bg text-ds-success' : 'bg-ds-danger-bg text-ds-danger'}`}>
                     <Scale className="h-6 w-6" />
                   </div>
                 </div>
@@ -2142,9 +2142,9 @@ export const EvaluationCriteria: React.FC = () => {
           </div>
 
           {ceoEvalTotalWeight !== 100 && ceoEvalCriteria.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-              <p className="text-amber-800 text-sm">
+              <p className="text-ds-warning-text text-sm">
                 مجموع أوزان المعايير النشطة يجب أن يساوي 100%. المجموع الحالي: <span className="font-bold">{ceoEvalTotalWeight}%</span>
               </p>
             </div>
@@ -2174,7 +2174,7 @@ export const EvaluationCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-amber-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-warning-bg/40' : ''}`}
                             onClick={() => setExpandedCriterionId(isExpanded ? null : criterion.id)}
                           >
                             <TableCell className="text-ds-faint">
@@ -2182,7 +2182,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-9 h-9 bg-ds-warning-bg text-ds-warning rounded-lg flex items-center justify-center flex-shrink-0">
                                   <GripVertical className="h-4 w-4" />
                                 </div>
                                 <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -2199,7 +2199,7 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2"><div className="bg-amber-600 h-2 rounded-full transition-all" style={{ width: `${criterion.weight}%` }} /></div>
+                                <div className="w-16 bg-ds-track rounded-full h-2"><div className="bg-amber-600 h-2 rounded-full transition-all" style={{ width: `${criterion.weight}%` }} /></div>
                                 <span className="font-bold text-amber-600">{criterion.weight}%</span>
                               </div>
                             </TableCell>
@@ -2212,10 +2212,10 @@ export const EvaluationCriteria: React.FC = () => {
                             </TableCell>
                           </TableRow>
                           {isExpanded && (
-                            <TableRow className="bg-amber-50/40">
+                            <TableRow className="bg-ds-warning-bg/40">
                               <TableCell colSpan={7} className="!whitespace-normal">
                                 <div className="px-2 py-1">
-                                  <p className="text-xs font-semibold text-amber-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-xs font-semibold text-ds-warning-text mb-1">الوصف الكامل</p>
                                   <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                 </div>
                               </TableCell>
@@ -2251,7 +2251,7 @@ export const EvaluationCriteria: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             {formError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">
                 {formError}
               </div>
             )}
@@ -2318,7 +2318,7 @@ export const EvaluationCriteria: React.FC = () => {
         title="تأكيد الحذف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">
@@ -2332,7 +2332,7 @@ export const EvaluationCriteria: React.FC = () => {
             نهائيًا.
           </p>
           {deleteError && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">
+            <div className="mt-4 bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm w-full">
               {deleteError}
             </div>
           )}
@@ -2359,7 +2359,7 @@ export const EvaluationCriteria: React.FC = () => {
         <form onSubmit={handleCeoSubmit}>
           <div className="space-y-4">
             {ceoFormError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">
                 {ceoFormError}
               </div>
             )}
@@ -2421,7 +2421,7 @@ export const EvaluationCriteria: React.FC = () => {
         title="تأكيد الحذف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
@@ -2429,7 +2429,7 @@ export const EvaluationCriteria: React.FC = () => {
             سيتم حذف معيار <span className="font-bold text-ds-muted">{ceoDeleteTarget?.title}</span> نهائيًا.
           </p>
           {ceoDeleteError && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">
+            <div className="mt-4 bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm w-full">
               {ceoDeleteError}
             </div>
           )}
@@ -2456,7 +2456,7 @@ export const EvaluationCriteria: React.FC = () => {
         <form onSubmit={handleCeoEvalSubmit}>
           <div className="space-y-4">
             {ceoEvalFormError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">
                 {ceoEvalFormError}
               </div>
             )}
@@ -2518,7 +2518,7 @@ export const EvaluationCriteria: React.FC = () => {
         title="تأكيد الحذف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
@@ -2526,7 +2526,7 @@ export const EvaluationCriteria: React.FC = () => {
             سيتم حذف معيار <span className="font-bold text-ds-muted">{ceoEvalDeleteTarget?.title}</span> نهائيًا.
           </p>
           {ceoEvalDeleteError && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">
+            <div className="mt-4 bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm w-full">
               {ceoEvalDeleteError}
             </div>
           )}
@@ -2553,7 +2553,7 @@ export const EvaluationCriteria: React.FC = () => {
         <form onSubmit={handleSaveDirGroup}>
           <div className="space-y-4">
             {dirGroupError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{dirGroupError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{dirGroupError}</div>
             )}
             <Input
               label="اسم المجموعة"
@@ -2615,7 +2615,7 @@ export const EvaluationCriteria: React.FC = () => {
       {/* Directorate group delete modal */}
       <Modal isOpen={isDirGroupDeleteOpen} onClose={() => setIsDirGroupDeleteOpen(false)} title="حذف المجموعة">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذه المجموعة؟</p>
@@ -2641,7 +2641,7 @@ export const EvaluationCriteria: React.FC = () => {
         <form onSubmit={handleSaveDirCriterion}>
           <div className="space-y-4">
             {dirCriterionError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{dirCriterionError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{dirCriterionError}</div>
             )}
             <Input label="عنوان المعيار" value={dirCriterionForm.title}
               onChange={e => setDirCriterionForm({ ...dirCriterionForm, title: e.target.value })}
@@ -2671,7 +2671,7 @@ export const EvaluationCriteria: React.FC = () => {
       {/* Directorate criterion delete modal */}
       <Modal isOpen={isDirCriterionDeleteOpen} onClose={() => setIsDirCriterionDeleteOpen(false)} title="تأكيد الحذف">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>

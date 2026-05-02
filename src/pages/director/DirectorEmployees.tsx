@@ -253,7 +253,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
   const pendingCount = dirFiltered.filter(m => !m.evaluation_status || m.evaluation_status === 'مسودة').length;
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   return (
@@ -271,9 +271,9 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
       </div>
 
       {!hasSpecificCriteria && (
-        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="flex items-center gap-3 p-4 bg-ds-warning-bg border border-ds-warning-border rounded-lg">
           <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-          <p className="text-sm text-amber-800">
+          <p className="text-sm text-ds-warning-text">
             لم يتم إعداد معايير التقييم بعد. يرجى إضافة معايير التقييم أولاً قبل البدء بتقييم الموظفين.
           </p>
         </div>
@@ -287,7 +287,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                 <p className="text-sm text-ds-muted mb-1">إجمالي الموظفين</p>
                 <p className="text-2xl font-bold text-ds-text">{dirFiltered.length}</p>
               </div>
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+              <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Users className="h-6 w-6" />
               </div>
             </div>
@@ -300,7 +300,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                 <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                 <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
               </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+              <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                 <FileCheck className="h-6 w-6" />
               </div>
             </div>
@@ -313,7 +313,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                 <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                 <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
               </div>
-              <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+              <div className="bg-ds-warning-bg text-ds-warning p-3 rounded-xl">
                 <FileClock className="h-6 w-6" />
               </div>
             </div>
@@ -331,7 +331,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                 placeholder="بحث بالاسم أو البريد أو الإدارة..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pr-10 pl-4 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                className="w-full pr-10 pl-4 py-2.5 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none transition-colors text-sm"
               />
             </div>
             {myDirectorates.length > 1 && (

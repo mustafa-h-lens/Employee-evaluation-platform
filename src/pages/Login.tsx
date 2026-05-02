@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavReveal } from '../contexts/ThemeContext';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export const Login: React.FC = () => {
@@ -9,13 +10,20 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+  const { runWithNavReveal } = useNavReveal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
+      // Validate credentials FIRST (no overlay yet) so we can show inline
+      // errors. Only on success do we play the brand reveal as the auth
+      // state propagates and the dashboard mounts.
       await login(email, password);
+      // login() resolved without throwing — credentials accepted. Now
+      // play the reveal and let the dashboard render underneath.
+      runWithNavReveal(() => Promise.resolve());
     } catch (err: any) {
       setError(err?.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {

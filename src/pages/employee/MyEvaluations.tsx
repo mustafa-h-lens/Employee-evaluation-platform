@@ -349,9 +349,7 @@ export const MyEvaluations: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -513,36 +511,34 @@ export const MyEvaluations: React.FC = () => {
               {isExpanded && (
                 <div className="border-t border-ds-border">
                   {scoresLoading === ev.id ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
+                    <div className="page-loading-placeholder" aria-hidden="true" />
                   ) : (
                     <>
                       {/* Summary Cards */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-5 bg-gradient-to-l from-slate-50 to-white">
                         <div className="bg-ds-surface rounded-xl border border-ds-border p-4 text-center shadow-sm">
-                          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <div className="w-10 h-10 bg-ds-info-bg rounded-full flex items-center justify-center mx-auto mb-2">
                             <TrendingUp className="h-5 w-5 text-blue-600" />
                           </div>
                           <p className="text-2xl font-bold text-ds-text">{ev.percentage?.toFixed(1)}%</p>
                           <p className="text-xs text-ds-faint mt-1">النسبة المئوية</p>
                         </div>
                         <div className="bg-ds-surface rounded-xl border border-ds-border p-4 text-center shadow-sm">
-                          <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <div className="w-10 h-10 bg-ds-info-bg rounded-full flex items-center justify-center mx-auto mb-2">
                             <BarChart3 className="h-5 w-5 text-indigo-600" />
                           </div>
                           <p className="text-2xl font-bold text-ds-text">{ev.final_score_5 != null ? ev.final_score_5.toFixed(2) : '—'}</p>
                           <p className="text-xs text-ds-faint mt-1">الدرجة من 5</p>
                         </div>
                         <div className="bg-ds-surface rounded-xl border border-ds-border p-4 text-center shadow-sm">
-                          <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <div className="w-10 h-10 bg-ds-warning-bg rounded-full flex items-center justify-center mx-auto mb-2">
                             <Award className="h-5 w-5 text-amber-600" />
                           </div>
                           <p className="text-lg font-bold text-ds-text mt-1">{ev.general_rating || '—'}</p>
                           <p className="text-xs text-ds-faint mt-1">التقدير العام</p>
                         </div>
                         <div className="bg-ds-surface rounded-xl border border-ds-border p-4 text-center shadow-sm">
-                          <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <div className="w-10 h-10 bg-ds-success-bg rounded-full flex items-center justify-center mx-auto mb-2">
                             <User className="h-5 w-5 text-emerald-600" />
                           </div>
                           <p className="text-lg font-bold text-ds-text mt-1 truncate">{ev.manager?.full_name || '—'}</p>
@@ -574,7 +570,7 @@ export const MyEvaluations: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-3">
                                           <span className="text-xs text-ds-faint">الوزن: {score.criterion?.weight || 0}%</span>
-                                          <span className="font-bold text-blue-700 text-sm">{score.score_1_to_5} / 5</span>
+                                          <span className="font-bold text-ds-info-text text-sm">{score.score_1_to_5} / 5</span>
                                         </div>
                                       </div>
                                       <div className="w-full bg-ds-overlay rounded-full h-2">
@@ -606,14 +602,14 @@ export const MyEvaluations: React.FC = () => {
                                           <Star className="h-4 w-4 text-emerald-400" />
                                           <p className="font-medium text-ds-text text-sm">{score.dept_criterion?.title || '—'}</p>
                                           {score.dept_criterion?.group?.name && (
-                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-ds-success-bg text-ds-success-text border border-ds-success-border">
                                               {score.dept_criterion.group.name}
                                             </span>
                                           )}
                                         </div>
                                         <div className="flex items-center gap-3">
                                           <span className="text-xs text-ds-faint">الوزن: {score.dept_criterion?.weight || 0}%</span>
-                                          <span className="font-bold text-emerald-700 text-sm">{score.score_1_to_5} / 5</span>
+                                          <span className="font-bold text-ds-success-text text-sm">{score.score_1_to_5} / 5</span>
                                         </div>
                                       </div>
                                       <div className="w-full bg-ds-overlay rounded-full h-2">
@@ -638,16 +634,16 @@ export const MyEvaluations: React.FC = () => {
                       {/* Manager Note(s) — combined rows show each director separately */}
                       {ev.is_combined ? (
                         ev.manager_notes_breakdown && ev.manager_notes_breakdown.length > 0 && (
-                          <div className="mx-6 mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                          <div className="mx-6 mb-4 bg-ds-info-bg border border-blue-100 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-3">
                               <MessageSquare className="h-4 w-4 text-blue-600" />
-                              <p className="text-sm font-bold text-blue-800">ملاحظات المقيّمين</p>
+                              <p className="text-sm font-bold text-ds-info-text">ملاحظات المقيّمين</p>
                             </div>
                             <div className="space-y-3">
                               {ev.manager_notes_breakdown.map((m, i) => (
-                                <div key={i} className="bg-ds-surface/60 rounded-lg p-3 border border-blue-200">
-                                  <p className="text-xs font-semibold text-blue-700 mb-1">{m.name}</p>
-                                  <p className="text-sm text-blue-900 leading-relaxed">{m.note}</p>
+                                <div key={i} className="bg-ds-surface/60 rounded-lg p-3 border border-ds-info-border">
+                                  <p className="text-xs font-semibold text-ds-info-text mb-1">{m.name}</p>
+                                  <p className="text-sm text-ds-info-text leading-relaxed">{m.note}</p>
                                 </div>
                               ))}
                             </div>
@@ -655,25 +651,25 @@ export const MyEvaluations: React.FC = () => {
                         )
                       ) : (
                         ev.manager_note && (
-                          <div className="mx-6 mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                          <div className="mx-6 mb-4 bg-ds-info-bg border border-blue-100 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <MessageSquare className="h-4 w-4 text-blue-600" />
-                              <p className="text-sm font-bold text-blue-800">ملاحظات المقيّم</p>
+                              <p className="text-sm font-bold text-ds-info-text">ملاحظات المقيّم</p>
                             </div>
-                            <p className="text-sm text-blue-900 leading-relaxed bg-ds-surface/60 rounded-lg p-3">{ev.manager_note}</p>
+                            <p className="text-sm text-ds-info-text leading-relaxed bg-ds-surface/60 rounded-lg p-3">{ev.manager_note}</p>
                           </div>
                         )
                       )}
 
                       {/* Reply Section */}
                       {(ev.status === 'موافقة' || ev.status === 'اطلع الموظف' || ev.status === 'مغلق' || ev.status === 'تم الإرسال') && (
-                        <div className="mx-6 mb-5 bg-teal-50 border border-teal-100 rounded-xl p-4">
-                          <h4 className="text-sm font-bold text-teal-800 mb-2 flex items-center gap-2">
+                        <div className="mx-6 mb-5 bg-ds-info-bg border border-teal-100 rounded-xl p-4">
+                          <h4 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                             <MessageSquare className="h-4 w-4" />
                             ردك على التقييم
                           </h4>
                           {ev.employee_note ? (
-                            <p className="text-sm text-ds-text leading-relaxed bg-ds-surface rounded-lg p-3 border border-teal-200">{ev.employee_note}</p>
+                            <p className="text-sm text-ds-text leading-relaxed bg-ds-surface rounded-lg p-3 border border-ds-info-border">{ev.employee_note}</p>
                           ) : (
                             <>
                               <TextArea

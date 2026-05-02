@@ -86,9 +86,7 @@ export const CeoDashboard: React.FC<CeoDashboardProps> = ({ onNavigate }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-ds-faint">جاري التحميل...</div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 

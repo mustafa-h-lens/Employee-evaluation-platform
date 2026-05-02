@@ -363,7 +363,7 @@ export const EmployeeLeaves: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+  if (loading) return <div className="page-loading-placeholder" aria-hidden="true" />;
 
   return (
     <div className="space-y-6">
@@ -500,7 +500,7 @@ export const EmployeeLeaves: React.FC = () => {
         <form onSubmit={handleSave}>
           <div className="space-y-4">
             {formError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{formError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{formError}</div>
             )}
 
             <div>
@@ -616,13 +616,13 @@ export const EmployeeLeaves: React.FC = () => {
               <p className="text-xs text-ds-faint">جاري التحقق من التقييمات السابقة…</p>
             )}
             {!overlapChecking && (overlapScoreCount || 0) > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+              <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-start gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-900 mb-1">
+                  <p className="text-sm font-semibold text-ds-warning-text mb-1">
                     يوجد {overlapScoreCount} تقييم/تقييمات للموظف في هذه الفترة
                   </p>
-                  <p className="text-xs text-amber-800 leading-relaxed">
+                  <p className="text-xs text-ds-warning-text leading-relaxed">
                     لن يتم حذف هذه التقييمات، لكنها ستُستبعد من حساب المتوسط بعد إضافة الإجازة (يصبح المتوسط محسوباً على الأشهر المتاحة فقط).
                     يمكن حذف الإجازة لاحقاً لاستعادة احتساب هذه الأشهر.
                   </p>
@@ -631,9 +631,9 @@ export const EmployeeLeaves: React.FC = () => {
                       type="checkbox"
                       checked={form.ack_existing_scores}
                       onChange={e => setForm({ ...form, ack_existing_scores: e.target.checked })}
-                      className="rounded border-amber-300"
+                      className="rounded border-ds-warning-border"
                     />
-                    <span className="text-xs font-medium text-amber-900">أؤكد علمي بذلك</span>
+                    <span className="text-xs font-medium text-ds-warning-text">أؤكد علمي بذلك</span>
                   </label>
                 </div>
               </div>
@@ -648,7 +648,7 @@ export const EmployeeLeaves: React.FC = () => {
 
       <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="حذف الإجازة">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <CalendarClock className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">حذف الإجازة؟</p>

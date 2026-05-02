@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme, useNavReveal } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/Button';
 import { UserAvatar } from '../ui/UserAvatar';
@@ -23,7 +24,9 @@ import {
   Lock,
   Network,
   Star,
-  CalendarOff
+  CalendarOff,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface MenuItem {
@@ -92,8 +95,21 @@ const navItemStyle = (active: boolean): React.CSSProperties => ({
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { runWithNavReveal } = useNavReveal();
+  const handleLogout = () => runWithNavReveal(() => logout());
   const [hasSupervisorAccess, setHasSupervisorAccess] = useState(false);
   const [hasDirectorAccess, setHasDirectorAccess] = useState(false);
+  // Brief one-shot ripple on the toggle button after click. Re-keyed
+  // each press by storing the click count, which restarts the CSS
+  // animation cleanly even when toggled in rapid succession.
+  const [togglePulse, setTogglePulse] = useState(0);
+  const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setTogglePulse(p => p + 1);
+    const r = e.currentTarget.getBoundingClientRect();
+    toggleTheme({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    window.setTimeout(() => setTogglePulse(0), 560);
+  };
 
   useEffect(() => {
     if (user && (user.role === 'employee' || user.role === 'director')) {
@@ -167,11 +183,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
         style={{ borderBottom: '1px solid var(--border-subtle)' }}
       >
         <div className="flex items-center justify-center">
-          <img src="/logo-color.png" alt="Half Lens" className="h-14 w-auto" />
+          <img
+            src={theme === 'dark' ? '/logo-white.png' : '/logo-color.png'}
+            alt="Half Lens"
+            className="h-14 w-auto"
+          />
         </div>
         <p
           className="text-center text-xs mt-3 font-semibold tracking-wide"
-          style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}
+          style={{ color: 'var(--text-secondary)', letterSpacing: '0.5px' }}
         >
           منصة التقييم الوظيفي
         </p>
@@ -300,7 +320,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
             </div>
           </div>
           <button
-            onClick={logout}
+            key={`theme-btn-${togglePulse}`}
+            onClick={handleThemeToggle}
+            aria-label="تبديل المظهر"
+            className={`theme-toggle-btn ${theme === 'dark' ? 'theme-toggle-sun' : 'theme-toggle-moon'} ${togglePulse ? 'theme-toggle-pulse' : ''} w-full flex items-center justify-center gap-2 mb-2`}
+          >
+            {theme === 'dark'
+              ? <Sun className="theme-toggle-icon theme-toggle-icon-sun h-4 w-4" />
+              : <Moon className="theme-toggle-icon theme-toggle-icon-moon h-4 w-4" />}
+            <span className="theme-toggle-label">{theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}</span>
+          </button>
+          <button
+            onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 transition-colors"
             style={{
               height: '38px',

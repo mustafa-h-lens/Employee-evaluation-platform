@@ -251,9 +251,7 @@ export const CeoEvaluationForm: React.FC = () => {
 
   if (dataLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -289,12 +287,12 @@ export const CeoEvaluationForm: React.FC = () => {
       {activePeriod && (
         <>
           {/* Period banner */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 flex items-center justify-between">
-            <span className="text-sm text-blue-800">
+          <div className="bg-ds-info-bg border border-ds-info-border rounded-lg px-4 py-2.5 flex items-center justify-between">
+            <span className="text-sm text-ds-info-text">
               الفترة النشطة: {quarterLabels[activePeriod.quarter] || `الربع ${activePeriod.quarter}`} - {activePeriod.year}
             </span>
             {isReadOnly && (
-              <span className="flex items-center gap-2 text-amber-700 text-sm font-medium">
+              <span className="flex items-center gap-2 text-ds-warning-text text-sm font-medium">
                 <Lock className="h-4 w-4" />
                 تم إرسال التقييم — للعرض فقط
               </span>
@@ -307,7 +305,7 @@ export const CeoEvaluationForm: React.FC = () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-ds-warning-bg text-ds-warning rounded-full flex items-center justify-center">
                       <Crown className="h-6 w-6" />
                     </div>
                     <div>
@@ -317,7 +315,7 @@ export const CeoEvaluationForm: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardBody className="space-y-5">
-                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-900 leading-relaxed">
+                  <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4 text-sm text-ds-info-text leading-relaxed">
                     سيتم تقييم الإدارة العليا كفريق واحد بناءً على {criteria.length} معيار. تقييمك سرّي ولا يتم
                     عرض اسمك على أعضاء الإدارة العليا. يمكنك حفظ التقييم كمسودة والعودة إليه قبل الإرسال النهائي.
                   </div>
@@ -351,7 +349,7 @@ export const CeoEvaluationForm: React.FC = () => {
                       {criteria.map((c, idx) => (
                         <div key={c.id} className="flex items-start justify-between gap-3 bg-ds-bg border border-ds-border-subtle rounded-lg px-3 py-2">
                           <div className="flex items-start gap-2 min-w-0">
-                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded mt-0.5">{idx + 1}</span>
+                            <span className="bg-ds-info-bg text-ds-info-text border border-ds-info-border text-xs font-bold px-2 py-0.5 rounded mt-0.5">{idx + 1}</span>
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-ds-text">{c.title}</p>
                               {c.description && (
@@ -396,7 +394,7 @@ export const CeoEvaluationForm: React.FC = () => {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-ds-warning-bg text-ds-warning rounded-full flex items-center justify-center">
                   <Crown className="h-6 w-6" />
                 </div>
                 <div>
@@ -443,7 +441,7 @@ export const CeoEvaluationForm: React.FC = () => {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
+                        <span className="bg-ds-info-bg text-ds-info-text border border-ds-info-border text-xs font-bold px-2 py-0.5 rounded">
                           {index + 1}
                         </span>
                         <h3 className="font-bold text-ds-text">{criterion.title}</h3>

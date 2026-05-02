@@ -19,7 +19,8 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = fa
       onClick={onChange}
       style={{
         direction: 'ltr',
-        background: checked ? 'var(--success)' : 'var(--border-medium)',
+        // off-state needs more contrast in light mode than border-medium gives
+        background: checked ? 'var(--success)' : 'var(--text-disabled)',
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
@@ -39,7 +40,7 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = fa
             : 'left-[2px]'
           }
         `}
-        style={{ background: '#ffffff' }}
+        style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.12)' }}
       />
     </button>
   );

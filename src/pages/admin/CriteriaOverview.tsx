@@ -114,7 +114,7 @@ export const CriteriaOverview: React.FC = () => {
   }, [fetchAll]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   const generalTotal = generalCriteria.filter(c => c.is_active).reduce((s, c) => s + c.weight, 0);
@@ -142,7 +142,7 @@ export const CriteriaOverview: React.FC = () => {
                 <p className="text-sm text-ds-muted mb-1">وزن المعايير العامة</p>
                 <p className="text-xl font-bold text-blue-600">{generalWeight}%</p>
               </div>
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+              <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Scale className="h-6 w-6" />
               </div>
             </div>
@@ -155,7 +155,7 @@ export const CriteriaOverview: React.FC = () => {
                 <p className="text-sm text-ds-muted mb-1">وزن المعايير الخاصة</p>
                 <p className="text-xl font-bold text-emerald-600">{specificWeight}%</p>
               </div>
-              <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
+              <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                 <Scale className="h-6 w-6" />
               </div>
             </div>
@@ -210,7 +210,7 @@ export const CriteriaOverview: React.FC = () => {
                   return (
                     <React.Fragment key={c.id}>
                       <TableRow
-                        className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-blue-50/40' : ''}`}
+                        className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-info-bg/40' : ''}`}
                         onClick={() => setExpandedId(isExpanded ? null : c.id)}
                       >
                         <TableCell className="text-ds-faint">
@@ -232,10 +232,10 @@ export const CriteriaOverview: React.FC = () => {
                         </TableCell>
                       </TableRow>
                       {isExpanded && (
-                        <TableRow className="bg-blue-50/40">
+                        <TableRow className="bg-ds-info-bg/40">
                           <TableCell colSpan={5} className="!whitespace-normal">
                             <div className="px-2 py-1">
-                              <p className="text-xs font-semibold text-blue-700 mb-1">الوصف الكامل</p>
+                              <p className="text-xs font-semibold text-ds-info-text mb-1">الوصف الكامل</p>
                               <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                             </div>
                           </TableCell>
@@ -340,7 +340,7 @@ export const CriteriaOverview: React.FC = () => {
                               return (
                                 <React.Fragment key={c.id}>
                                   <TableRow
-                                    className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                                    className={`${!c.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-success-bg/40' : ''}`}
                                     onClick={() => setExpandedId(isExpanded ? null : c.id)}
                                   >
                                     <TableCell className="text-ds-faint">
@@ -362,10 +362,10 @@ export const CriteriaOverview: React.FC = () => {
                                     </TableCell>
                                   </TableRow>
                                   {isExpanded && (
-                                    <TableRow className="bg-emerald-50/40">
+                                    <TableRow className="bg-ds-success-bg/40">
                                       <TableCell colSpan={5} className="!whitespace-normal">
                                         <div className="px-2 py-1">
-                                          <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                          <p className="text-xs font-semibold text-ds-success-text mb-1">الوصف الكامل</p>
                                           <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{c.description}</p>
                                         </div>
                                       </TableCell>

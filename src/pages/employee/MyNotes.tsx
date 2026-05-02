@@ -100,9 +100,7 @@ export const MyNotes: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -153,8 +151,8 @@ export const MyNotes: React.FC = () => {
                     <h3 className="text-sm font-semibold text-ds-text">ملاحظات المدير ({ev.manager?.full_name})</h3>
                   </div>
                   {ev.manager_note ? (
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                      <p className="text-blue-900 leading-relaxed text-sm">{ev.manager_note}</p>
+                    <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                      <p className="text-ds-info-text leading-relaxed text-sm">{ev.manager_note}</p>
                     </div>
                   ) : (
                     <p className="text-ds-faint text-sm italic">لم يتم إضافة ملاحظات من المدير</p>
@@ -167,7 +165,7 @@ export const MyNotes: React.FC = () => {
                       {ev.employee_note && editingId !== ev.id && (
                         <button
                           onClick={() => startEditing(ev)}
-                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          className="text-xs text-blue-600 hover:text-ds-info-text font-medium"
                         >
                           تعديل
                         </button>
@@ -207,13 +205,13 @@ export const MyNotes: React.FC = () => {
                       </div>
                     </div>
                   ) : ev.employee_note ? (
-                    <div className="bg-teal-50 border border-teal-100 rounded-lg p-4">
-                      <p className="text-teal-900 leading-relaxed text-sm">{ev.employee_note}</p>
+                    <div className="bg-ds-info-bg border border-teal-100 rounded-lg p-4">
+                      <p className="text-ds-info-text leading-relaxed text-sm">{ev.employee_note}</p>
                     </div>
                   ) : (
                     <button
                       onClick={() => startEditing(ev)}
-                      className="w-full border-2 border-dashed border-ds-border rounded-lg p-4 text-center hover:border-blue-300 hover:bg-blue-50/50 transition-colors group"
+                      className="w-full border-2 border-dashed border-ds-border rounded-lg p-4 text-center hover:border-ds-info-border hover:bg-ds-info-bg/50 transition-colors group"
                     >
                       <MessageSquare className="h-5 w-5 text-gray-300 mx-auto mb-1 group-hover:text-blue-400 transition-colors" />
                       <p className="text-sm text-ds-faint group-hover:text-blue-500 transition-colors">

@@ -623,9 +623,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   if (employeesLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -728,7 +726,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                   <p className="text-sm text-ds-muted mb-1">إجمالي الأعضاء</p>
                   <p className="text-2xl font-bold text-ds-text">{allEmployees.length}</p>
                 </div>
-                <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                   <Users className="h-6 w-6" />
                 </div>
               </div>
@@ -741,7 +739,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                   <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                   <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
                 </div>
-                <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                   <FileCheck className="h-6 w-6" />
                 </div>
               </div>
@@ -754,7 +752,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                   <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                   <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
                 </div>
-                <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                <div className="bg-ds-warning-bg text-ds-warning p-3 rounded-xl">
                   <FileClock className="h-6 w-6" />
                 </div>
               </div>
@@ -763,10 +761,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
         </div>
 
         {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id)) && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <div className="bg-ds-warning-bg border border-ds-warning-border rounded-xl p-4 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <div>
-              <p className="text-amber-800 text-sm font-medium">بعض الموظفين لا يمكن تقييمهم — مجموعتهم لم تكتمل معاييرها الخاصة</p>
+              <p className="text-ds-warning-text text-sm font-medium">بعض الموظفين لا يمكن تقييمهم — مجموعتهم لم تكتمل معاييرها الخاصة</p>
               <p className="text-amber-600 text-xs mt-0.5">يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً للنسبة الخاصة بها. انتقل إلى صفحة "معايير المشرف" لإكمالها.</p>
             </div>
           </div>
@@ -782,7 +780,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                   placeholder="بحث بالاسم أو الرقم الوظيفي أو الإدارة..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10 pl-4 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  className="w-full pr-10 pl-4 py-2.5 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none transition-colors text-sm"
                 />
               </div>
             </div>
@@ -839,7 +837,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         {leave ? (
-                          <span className="text-xs text-amber-700" title={formatLeaveChip(leave)}>
+                          <span className="text-xs text-ds-warning-text" title={formatLeaveChip(leave)}>
                             لا يمكن التقييم — {leave.type_name}
                           </span>
                         ) : (() => {
@@ -861,7 +859,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                               <button
                                 disabled
                                 title={reason}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-ds-track text-ds-faint cursor-not-allowed"
                               >
                                 <ClipboardEdit className="h-4 w-4" />
                                 <span>تقييم</span>
@@ -921,7 +919,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
             setExistingEvaluationId(null);
             setEmployee(null);
           }}
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
+          className="flex items-center gap-1 text-blue-600 hover:text-ds-info-text transition-colors"
         >
           <ArrowRight className="h-5 w-5" />
           <span className="text-sm font-medium">العودة للقائمة</span>
@@ -961,9 +959,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
       </Card>
 
       {dataLoading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <div className="page-loading-placeholder" aria-hidden="true" />
       )}
 
       {!dataLoading && !activePeriod && (
@@ -979,10 +975,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
       {!dataLoading && activePeriod && <>
         {/* Submitted Notice */}
         {evaluationStatus === 'تم الإرسال' && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-ds-success-bg border border-ds-success-border rounded-lg p-4 flex items-start gap-3">
             <Lock className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-green-800">تم إرسال التقييم</p>
+              <p className="text-sm font-bold text-ds-success-text">تم إرسال التقييم</p>
               <p className="text-xs text-green-600 mt-1">لا يمكن تعديل التقييم بعد الإرسال</p>
             </div>
           </div>
@@ -991,27 +987,27 @@ export const SupervisorEvaluateForm: React.FC = () => {
         {/* Employee Info */}
         {employee && (
           <Card>
-            <CardBody className="bg-blue-50">
+            <CardBody className="bg-ds-info-bg">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-blue-200 rounded-full flex items-center justify-center">
-                  <User className="h-7 w-7 text-blue-700" />
+                  <User className="h-7 w-7 text-ds-info-text" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
                   <div>
                     <p className="text-sm text-blue-600">اسم الموظف</p>
-                    <p className="font-semibold text-blue-900">{employee.full_name}</p>
+                    <p className="font-semibold text-ds-info-text">{employee.full_name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">الرقم الوظيفي</p>
-                    <p className="font-semibold text-blue-900">{employee.employee_number || '-'}</p>
+                    <p className="font-semibold text-ds-info-text">{employee.employee_number || '-'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">الإدارة</p>
-                    <p className="font-semibold text-blue-900">{employee.department_name || employee.job_title}</p>
+                    <p className="font-semibold text-ds-info-text">{employee.department_name || employee.job_title}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">فترة التقييم</p>
-                    <p className="font-semibold text-blue-900">
+                    <p className="font-semibold text-ds-info-text">
                       {monthLabels[activePeriod.month]} - {activePeriod.year}
                     </p>
                   </div>
@@ -1026,15 +1022,15 @@ export const SupervisorEvaluateForm: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <h3 className="text-lg font-bold text-blue-900">معايير التقييم العامة</h3>
+              <h3 className="text-lg font-bold text-ds-info-text">معايير التقييم العامة</h3>
               <span className="text-sm text-ds-faint">
                 ({scoredCount}/{criteria.length} تم تقييمها)
               </span>
             </div>
             <div className="space-y-4">
               {criteria.map(criterion => (
-                <Card key={criterion.id} className="border-blue-200">
-                  <CardHeader className="bg-blue-50/50">
+                <Card key={criterion.id} className="border-ds-info-border">
+                  <CardHeader className="bg-ds-info-bg/50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-ds-text">{criterion.title}</h3>
@@ -1082,15 +1078,15 @@ export const SupervisorEvaluateForm: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-3 h-3 rounded-full bg-emerald-500" />
-              <h3 className="text-lg font-bold text-emerald-900">معايير التقييم الخاصة</h3>
+              <h3 className="text-lg font-bold text-ds-success-text">معايير التقييم الخاصة</h3>
               <span className="text-sm text-ds-faint">
                 ({specificCriteria.filter(c => specificScores[c.id] && specificScores[c.id] > 0).length}/{specificCriteria.length} تم تقييمها)
               </span>
             </div>
             <div className="space-y-4">
               {specificCriteria.map(criterion => (
-                <Card key={criterion.id} className="border-emerald-200">
-                  <CardHeader className="bg-emerald-50/50">
+                <Card key={criterion.id} className="border-ds-success-border">
+                  <CardHeader className="bg-ds-success-bg/50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-ds-text">{criterion.title}</h3>
@@ -1178,11 +1174,11 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
         {/* Employee Reply */}
         {isReadOnly && employeeReply && (
-          <Card className="border-teal-200">
-            <CardHeader className="bg-teal-50">
+          <Card className="border-ds-info-border">
+            <CardHeader className="bg-ds-info-bg">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-teal-600" />
-                <h2 className="text-lg font-semibold text-teal-800">رد الموظف على التقييم</h2>
+                <h2 className="text-lg font-semibold text-ds-info-text">رد الموظف على التقييم</h2>
               </div>
             </CardHeader>
             <CardBody>

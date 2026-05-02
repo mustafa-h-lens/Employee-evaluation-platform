@@ -282,9 +282,7 @@ export const DirectorMyEvaluations: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -446,9 +444,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                 {isExpanded && (
                   <div className="border-t border-ds-border px-6 py-5 bg-ds-bg space-y-5">
                     {scoresLoading === combined.key ? (
-                      <div className="flex items-center justify-center py-6">
-                        <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
+                      <div className="page-loading-placeholder" aria-hidden="true" />
                     ) : (
                       <>
                         {/* Summary Cards */}
@@ -478,7 +474,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                         {/* General Criteria Scores */}
                         {scores[combined.key]?.filter(s => s.criterion_type === 'general').length > 0 && (
                           <div>
-                            <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-ds-info-text mb-3 flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                               معايير التقييم العامة
                             </h4>
@@ -513,7 +509,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                         {/* Specific Criteria Scores */}
                         {scores[combined.key]?.filter(s => s.criterion_type === 'specific').length > 0 && (
                           <div>
-                            <h4 className="text-sm font-bold text-emerald-800 mb-3 flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-ds-success-text mb-3 flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                               معايير التقييم الخاصة
                             </h4>
@@ -551,23 +547,23 @@ export const DirectorMyEvaluations: React.FC = () => {
 
                         {/* Evaluator Notes */}
                         {combined.evaluator_notes.length > 0 && (
-                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                            <p className="text-xs font-medium text-blue-700 mb-2">ملاحظات الإدارة العليا</p>
+                          <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                            <p className="text-xs font-medium text-ds-info-text mb-2">ملاحظات الإدارة العليا</p>
                             {combined.evaluator_notes.map((note, idx) => (
-                              <p key={idx} className="text-sm text-blue-900 leading-relaxed">{note}</p>
+                              <p key={idx} className="text-sm text-ds-info-text leading-relaxed">{note}</p>
                             ))}
                           </div>
                         )}
 
                         {/* Reply Section */}
                         {(combined.status === 'بانتظار الموافقة' || combined.status === 'موافقة') && (
-                          <div className="bg-teal-50 border border-teal-100 rounded-lg p-4">
-                            <h4 className="text-sm font-bold text-teal-800 mb-2 flex items-center gap-2">
+                          <div className="bg-ds-info-bg border border-teal-100 rounded-lg p-4">
+                            <h4 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                               <MessageSquare className="h-4 w-4" />
                               ردك على التقييم
                             </h4>
                             {combined.director_note ? (
-                              <p className="text-sm text-ds-text leading-relaxed bg-ds-surface rounded-lg p-3 border border-teal-200">{combined.director_note}</p>
+                              <p className="text-sm text-ds-text leading-relaxed bg-ds-surface rounded-lg p-3 border border-ds-info-border">{combined.director_note}</p>
                             ) : (
                               <>
                                 <TextArea

@@ -341,7 +341,7 @@ export const Directorates: React.FC = () => {
   const unassignedDirectors = allDirectors.filter(d => isCeoUser(d.email) || !directorates.some(dir => dir.director_id === d.id || dir.secondary_director_id === d.id));
   const getDirectorateNames = (directorId: string) => directorates.filter(d => d.director_id === directorId || d.secondary_director_id === directorId).map(d => d.name);
 
-  if (loading) return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+  if (loading) return <div className="page-loading-placeholder" aria-hidden="true" />;
 
   return (
     <div className="space-y-6">
@@ -374,19 +374,19 @@ export const Directorates: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center"><Landmark className="h-6 w-6 text-blue-600" /></div>
+            <div className="w-12 h-12 rounded-xl bg-ds-info-bg flex items-center justify-center"><Landmark className="h-6 w-6 text-blue-600" /></div>
             <div><p className="text-sm text-ds-faint">إجمالي الإدارات</p><p className="text-2xl font-bold text-ds-text">{directorates.length}</p></div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center"><Crown className="h-6 w-6 text-purple-600" /></div>
+            <div className="w-12 h-12 rounded-xl bg-ds-purple-bg flex items-center justify-center"><Crown className="h-6 w-6 text-purple-600" /></div>
             <div><p className="text-sm text-ds-faint">مديري الإدارات</p><p className="text-2xl font-bold text-ds-text">{allDirectors.length}</p></div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center"><Users className="h-6 w-6 text-green-600" /></div>
+            <div className="w-12 h-12 rounded-xl bg-ds-success-bg flex items-center justify-center"><Users className="h-6 w-6 text-green-600" /></div>
             <div><p className="text-sm text-ds-faint">إجمالي الموظفين</p><p className="text-2xl font-bold text-ds-text">{directorates.reduce((sum, d) => sum + (d.employees?.length || 0), 0)}</p></div>
           </CardBody>
         </Card>
@@ -470,12 +470,12 @@ export const Directorates: React.FC = () => {
                                   {dirDepts.map((dept) => {
                                     const deptEmps = (dir.employees || []).filter(e => e.department_id === dept.id);
                                     return (
-                                      <div key={dept.id} className="min-w-[220px] flex-1 max-w-sm bg-ds-surface border border-teal-200 rounded-xl overflow-hidden">
+                                      <div key={dept.id} className="min-w-[220px] flex-1 max-w-sm bg-ds-surface border border-ds-info-border rounded-xl overflow-hidden">
                                         {/* Department header */}
-                                        <div className="bg-teal-50 px-3 py-2 flex items-center justify-between border-b border-teal-200">
+                                        <div className="bg-ds-info-bg px-3 py-2 flex items-center justify-between border-b border-ds-info-border">
                                           <div className="flex items-center gap-1.5">
                                             <Building2 className="h-3.5 w-3.5 text-teal-600" />
-                                            <span className="text-sm font-semibold text-teal-800">{dept.name}</span>
+                                            <span className="text-sm font-semibold text-ds-info-text">{dept.name}</span>
                                             <span className="text-xs text-teal-500">({deptEmps.length})</span>
                                           </div>
                                           <div className="flex items-center gap-1">
@@ -506,7 +506,7 @@ export const Directorates: React.FC = () => {
                                   {/* Add department card */}
                                   <button
                                     onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: dir.id }); setIsDeptModalOpen(true); }}
-                                    className="min-w-[160px] flex-shrink-0 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-teal-300 hover:border-teal-400 rounded-xl px-4 py-6 text-teal-600 hover:text-teal-800 hover:bg-teal-50/50 transition-colors"
+                                    className="min-w-[160px] flex-shrink-0 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-ds-info-border hover:border-teal-400 rounded-xl px-4 py-6 text-teal-600 hover:text-ds-info-text hover:bg-ds-info-bg/50 transition-colors"
                                   >
                                     <Plus className="h-5 w-5" />
                                     <span className="text-xs font-medium">إضافة قسم</span>
@@ -660,8 +660,8 @@ export const Directorates: React.FC = () => {
             />
           </div>
           {/* Departments section */}
-          <div className="border border-teal-200 rounded-lg p-3 bg-teal-50/50">
-            <p className="text-sm font-medium text-teal-800 flex items-center gap-1.5 mb-2">
+          <div className="border border-ds-info-border rounded-lg p-3 bg-ds-info-bg/50">
+            <p className="text-sm font-medium text-ds-info-text flex items-center gap-1.5 mb-2">
               <Building2 className="h-4 w-4" />
               أقسام الإدارة {editingDir ? `(${getDeptsByDirectorate(editingDir.id).length})` : newDeptNames.length > 0 ? `(${newDeptNames.length})` : ''}
             </p>
@@ -679,9 +679,9 @@ export const Directorates: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <button type="button" onClick={() => { setEditingDept(dept); setDeptForm({ name: dept.name, directorate_id: dept.directorate_id }); setIsDeptModalOpen(true); }}
-                          className="p-1 text-ds-faint hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
+                          className="p-1 text-ds-faint hover:text-blue-600 hover:bg-ds-info-bg rounded transition-colors"><Edit className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => setDeleteDept(dept)}
-                          className="p-1 text-ds-faint hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                          className="p-1 text-ds-faint hover:text-red-600 hover:bg-ds-danger-bg rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                   ))}
@@ -699,7 +699,7 @@ export const Directorates: React.FC = () => {
                       <span className="text-sm font-medium text-ds-text">{name}</span>
                     </div>
                     <button type="button" onClick={() => setNewDeptNames(prev => prev.filter((_, idx) => idx !== i))}
-                      className="p-1 text-ds-faint hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                      className="p-1 text-ds-faint hover:text-red-600 hover:bg-ds-danger-bg rounded transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 ))}
               </div>
@@ -708,7 +708,7 @@ export const Directorates: React.FC = () => {
             {/* Add department input */}
             {editingDir ? (
               <button type="button" onClick={() => { setEditingDept(null); setDeptForm({ name: '', directorate_id: editingDir.id }); setIsDeptModalOpen(true); }}
-                className="text-xs text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-100 transition-colors">
+                className="text-xs text-teal-600 hover:text-ds-info-text font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ds-info-bg transition-colors">
                 <Plus className="h-3.5 w-3.5" />إضافة قسم
               </button>
             ) : (
@@ -725,7 +725,7 @@ export const Directorates: React.FC = () => {
                     }
                   }}
                   placeholder="اسم القسم..."
-                  className="flex-1 px-3 py-1.5 text-sm border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-ds-surface"
+                  className="flex-1 px-3 py-1.5 text-sm border border-ds-info-border rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-ds-surface"
                 />
                 <button type="button" onClick={() => {
                   if (newDeptInput.trim()) {
@@ -789,7 +789,7 @@ export const Directorates: React.FC = () => {
             />
           </div>
           {switchTarget?.director?.full_name && switchDirectorId !== switchTarget?.director_id && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
+            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg px-4 py-3 text-sm text-ds-warning-text">
               سيتم استبدال <span className="font-bold">{switchTarget.director.full_name}</span> بالمدير الجديد
             </div>
           )}
@@ -805,7 +805,7 @@ export const Directorates: React.FC = () => {
       {/* ─── Register Director Modal ─────────── */}
       <Modal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} title="تسجيل مدير إدارة جديد" size="lg">
         {registerFeedback && (
-          <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${registerFeedback.type === 'error' ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
+          <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${registerFeedback.type === 'error' ? 'bg-ds-danger-bg border border-ds-danger-border text-ds-danger-text' : 'bg-ds-success-bg border border-ds-success-border text-ds-success-text'}`}>
             {registerFeedback.type === 'error' && <AlertTriangle className="h-4 w-4 flex-shrink-0" />}
             <span>{registerFeedback.message}</span>
           </div>
@@ -840,7 +840,7 @@ export const Directorates: React.FC = () => {
       {/* ─── Delete Directorate Modal ────────── */}
       <Modal isOpen={!!deleteDir} onClose={() => setDeleteDir(null)} title="تأكيد حذف الإدارة">
         <div className="text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
           <p className="text-ds-text font-medium mb-2">هل أنت متأكد من حذف <span className="font-bold">{deleteDir?.name}</span>؟</p>
           {(deleteDir?.employees?.length ?? 0) > 0 && <p className="text-sm text-amber-600">سيتم فك ربط {deleteDir?.employees?.length} موظف</p>}
         </div>
@@ -853,7 +853,7 @@ export const Directorates: React.FC = () => {
       {/* ─── Delete Director Modal ───────────── */}
       <Modal isOpen={!!deleteDirector} onClose={() => setDeleteDirector(null)} title="تأكيد حذف المدير">
         <div className="text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
           <p className="text-ds-muted mb-2">هل أنت متأكد من حذف <span className="font-bold text-ds-text">{deleteDirector?.full_name}</span>؟</p>
           <p className="text-sm text-red-600">سيتم حذف الحساب نهائيًا.</p>
         </div>
@@ -877,7 +877,7 @@ export const Directorates: React.FC = () => {
       {/* ─── Delete Department Modal ──────────── */}
       <Modal isOpen={!!deleteDept} onClose={() => setDeleteDept(null)} title="تأكيد حذف القسم">
         <div className="text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="h-7 w-7 text-red-600" /></div>
           <p className="text-ds-text font-medium mb-2">هل أنت متأكد من حذف قسم <span className="font-bold">{deleteDept?.name}</span>؟</p>
           <p className="text-sm text-amber-600">سيتم فك ربط الموظفين المرتبطين بهذا القسم</p>
         </div>

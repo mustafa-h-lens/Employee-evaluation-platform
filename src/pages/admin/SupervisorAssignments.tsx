@@ -430,14 +430,7 @@ export const SupervisorAssignments: React.FC = () => {
   // ─── Render ───────────────────────────────────────
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-ds-faint text-sm">جاري تحميل التعيينات...</p>
-        </div>
-      </div>
-    );
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   const allVisibleSelected = pickerEmployees.length > 0 && pickerEmployees.every(e => form.selected_employee_ids.has(e.id));
@@ -467,7 +460,7 @@ export const SupervisorAssignments: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-ds-info-bg flex items-center justify-center flex-shrink-0">
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <div>
@@ -478,23 +471,23 @@ export const SupervisorAssignments: React.FC = () => {
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-ds-success-bg flex items-center justify-center flex-shrink-0">
               <ShieldCheck className="h-6 w-6 text-green-600" />
             </div>
             <div>
               <p className="text-sm text-ds-faint">نشطة</p>
-              <p className="text-2xl font-bold text-green-700">{activeAssignments}</p>
+              <p className="text-2xl font-bold text-ds-success-text">{activeAssignments}</p>
             </div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-ds-warning-bg flex items-center justify-center flex-shrink-0">
               <ShieldOff className="h-6 w-6 text-amber-600" />
             </div>
             <div>
               <p className="text-sm text-ds-faint">معطلة</p>
-              <p className="text-2xl font-bold text-amber-700">{inactiveAssignments}</p>
+              <p className="text-2xl font-bold text-ds-warning-text">{inactiveAssignments}</p>
             </div>
           </CardBody>
         </Card>
@@ -522,7 +515,7 @@ export const SupervisorAssignments: React.FC = () => {
               placeholder="بحث بالاسم أو الموظفين..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+              className="w-full pr-9 pl-4 py-2 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none transition-colors text-sm"
             />
           </div>
         </div>
@@ -599,7 +592,7 @@ export const SupervisorAssignments: React.FC = () => {
                                 <><ShieldCheck className="h-3.5 w-3.5" /><span>تفعيل</span></>
                               )}
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => setConfirmEndTarget(assignment)} className="flex items-center gap-1 text-red-600 hover:text-red-700">
+                            <Button size="sm" variant="outline" onClick={() => setConfirmEndTarget(assignment)} className="flex items-center gap-1 text-red-600 hover:text-ds-danger-text">
                               <Trash2 className="h-3.5 w-3.5" />
                               <span>إنهاء</span>
                             </Button>
@@ -623,10 +616,10 @@ export const SupervisorAssignments: React.FC = () => {
         size="sm"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start gap-3 bg-ds-danger-bg border border-ds-danger-border rounded-lg p-4">
             <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-red-800">
+              <p className="text-sm font-medium text-ds-danger-text">
                 هل أنت متأكد من إنهاء تعيين <span className="font-bold">{confirmEndTarget?.user?.full_name}</span> كمشرف؟
               </p>
               <p className="text-xs text-red-600 mt-1">
@@ -656,8 +649,8 @@ export const SupervisorAssignments: React.FC = () => {
         {feedback && (
           <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${
             feedback.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-ds-success-bg border border-ds-success-border text-ds-success-text'
+              : 'bg-ds-danger-bg border border-ds-danger-border text-ds-danger-text'
           }`}>
             {feedback.type === 'error' && <AlertTriangle className="h-4 w-4 flex-shrink-0" />}
             <span>{feedback.message}</span>
@@ -709,7 +702,7 @@ export const SupervisorAssignments: React.FC = () => {
                 <button
                   type="button"
                   onClick={toggleAllVisible}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-xs text-blue-600 hover:text-ds-info-text font-medium"
                 >
                   {allVisibleSelected ? 'إلغاء تحديد الكل' : 'تحديد الكل المعروض'}
                 </button>
@@ -717,7 +710,7 @@ export const SupervisorAssignments: React.FC = () => {
                   <button
                     type="button"
                     onClick={clearAllSelected}
-                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                    className="text-xs text-red-500 hover:text-ds-danger-text font-medium"
                   >
                     مسح التحديد
                   </button>
@@ -734,7 +727,7 @@ export const SupervisorAssignments: React.FC = () => {
                   placeholder="بحث بالاسم أو البريد أو الرقم الوظيفي..."
                   value={empSearch}
                   onChange={(e) => setEmpSearch(e.target.value)}
-                  className="w-full pr-9 pl-4 py-2 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  className="w-full pr-9 pl-4 py-2 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none transition-colors text-sm"
                 />
               </div>
               <ModernSelect
@@ -788,7 +781,7 @@ export const SupervisorAssignments: React.FC = () => {
                           key={emp.id}
                           onClick={() => toggleEmployee(emp.id)}
                           className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-blue-50/60' : 'hover:bg-ds-bg'
+                            isSelected ? 'bg-ds-info-bg/60' : 'hover:bg-ds-bg'
                           }`}
                         >
                           <td className="px-3 py-2.5">

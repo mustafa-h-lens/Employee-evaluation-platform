@@ -530,7 +530,7 @@ export const SupervisorCriteria: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+  if (loading) return <div className="page-loading-placeholder" aria-hidden="true" />;
 
   if (assignments.length === 0) {
     return (
@@ -562,7 +562,7 @@ export const SupervisorCriteria: React.FC = () => {
           <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>
             معايير التقييم الخاصة بمهمة الإشراف
             {currentAssignment && (
-              <span className="font-semibold text-orange-700"> — {currentAssignment.title || 'مهمة إشراف'}</span>
+              <span className="font-semibold text-ds-warning-text"> — {currentAssignment.title || 'مهمة إشراف'}</span>
             )}
             {' '}— كل مجموعة لها نسبتها الخاصة (يحددها قسم الموارد البشرية)
           </p>
@@ -589,13 +589,13 @@ export const SupervisorCriteria: React.FC = () => {
 
       {/* Unassigned employees alert */}
       {unassignedMembers.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-amber-900 font-semibold text-sm mb-1">
+            <p className="text-ds-warning-text font-semibold text-sm mb-1">
               يوجد {unassignedMembers.length} موظف غير مصنّف في أي مجموعة معايير
             </p>
-            <p className="text-amber-800 text-sm">
+            <p className="text-ds-warning-text text-sm">
               لن يتم تقييم هؤلاء الموظفين بمعايير خاصة حتى تضيفهم إلى مجموعة. الموظفون غير المصنّفين:{' '}
               <span className="font-medium">{unassignedMembers.map(m => m.full_name).join('، ')}</span>
             </p>
@@ -686,12 +686,12 @@ export const SupervisorCriteria: React.FC = () => {
                       return (
                         <React.Fragment key={criterion.id}>
                           <TableRow
-                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-orange-50/40' : ''}`}
+                            className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-warning-bg/40' : ''}`}
                             onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
                           >
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-9 h-9 bg-ds-warning-bg text-ds-warning rounded-lg flex items-center justify-center flex-shrink-0">
                                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                 </div>
                                 <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -720,7 +720,7 @@ export const SupervisorCriteria: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div className="w-16 bg-ds-track rounded-full h-2">
                                   <div className="bg-orange-500 h-2 rounded-full transition-all"
                                     style={{ width: `${Math.min(100, (criterion.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
                                 </div>
@@ -740,10 +740,10 @@ export const SupervisorCriteria: React.FC = () => {
                             </TableCell>
                           </TableRow>
                           {isExpanded && (
-                            <tr className="bg-orange-50/40 border-b border-orange-100">
+                            <tr className="bg-ds-warning-bg/40 border-b border-orange-100">
                               <td colSpan={6} className="px-6 py-4">
                                 <div className="bg-ds-surface rounded-lg border border-orange-100 p-4">
-                                  <p className="text-xs font-semibold text-orange-700 mb-1">الوصف الكامل</p>
+                                  <p className="text-xs font-semibold text-ds-warning-text mb-1">الوصف الكامل</p>
                                   <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-line">
                                     {criterion.description || <span className="text-ds-faint italic">لا يوجد وصف</span>}
                                   </p>
@@ -771,7 +771,7 @@ export const SupervisorCriteria: React.FC = () => {
         <form onSubmit={handleSaveGroup}>
           <div className="space-y-4">
             {groupError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{groupError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{groupError}</div>
             )}
             <Input
               label="اسم المجموعة"
@@ -827,7 +827,7 @@ export const SupervisorCriteria: React.FC = () => {
       {/* Group delete modal */}
       <Modal isOpen={isDeleteGroupModalOpen} onClose={() => setIsDeleteGroupModalOpen(false)} title="حذف المجموعة">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذه المجموعة؟</p>
@@ -853,7 +853,7 @@ export const SupervisorCriteria: React.FC = () => {
         <form onSubmit={handleSaveCriterion}>
           <div className="space-y-4">
             {criterionError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{criterionError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{criterionError}</div>
             )}
             <Input label="عنوان المعيار" value={criterionForm.title}
               onChange={e => setCriterionForm({ ...criterionForm, title: e.target.value })}
@@ -883,7 +883,7 @@ export const SupervisorCriteria: React.FC = () => {
       {/* Criterion delete modal */}
       <Modal isOpen={isDeleteCriterionModalOpen} onClose={() => setIsDeleteCriterionModalOpen(false)} title="تأكيد الحذف">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>

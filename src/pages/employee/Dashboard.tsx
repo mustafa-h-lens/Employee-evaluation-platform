@@ -319,7 +319,7 @@ export const EmployeeDashboard: React.FC = () => {
                       .filter((m: any) => m.note)
                       .map((m: any) => (
                         <div key={m.id} className="border-r-4 border-blue-400 pr-4">
-                          <p className="text-sm font-semibold text-blue-700 mb-1">{m.name}</p>
+                          <p className="text-sm font-semibold text-ds-info-text mb-1">{m.name}</p>
                           <p className="text-ds-muted leading-relaxed">{m.note}</p>
                         </div>
                       ))}

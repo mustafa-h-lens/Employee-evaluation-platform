@@ -132,9 +132,7 @@ export const MyCeoEvaluations: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -296,15 +294,13 @@ export const MyCeoEvaluations: React.FC = () => {
                 {expandedId === ev.id && (
                   <div className="border-t border-ds-border px-6 py-4 bg-ds-bg space-y-4">
                     {scoresLoading === ev.id ? (
-                      <div className="flex items-center justify-center py-6">
-                        <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
+                      <div className="page-loading-placeholder" aria-hidden="true" />
                     ) : (
                       <>
                         {/* Criterion Scores */}
                         {scores[ev.id] && scores[ev.id].length > 0 ? (
                           <div>
-                            <h4 className="text-sm font-bold text-blue-800 mb-2">تفاصيل معايير التقييم</h4>
+                            <h4 className="text-sm font-bold text-ds-info-text mb-2">تفاصيل معايير التقييم</h4>
                             <div className="space-y-2">
                               {scores[ev.id].map(score => (
                                 <div
@@ -339,9 +335,9 @@ export const MyCeoEvaluations: React.FC = () => {
 
                         {/* Evaluator Note */}
                         {ev.evaluator_note && (
-                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                            <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
-                            <p className="text-sm text-blue-900 leading-relaxed">{ev.evaluator_note}</p>
+                          <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                            <p className="text-xs font-medium text-ds-info-text mb-1">ملاحظات المقيّم</p>
+                            <p className="text-sm text-ds-info-text leading-relaxed">{ev.evaluator_note}</p>
                           </div>
                         )}
                       </>

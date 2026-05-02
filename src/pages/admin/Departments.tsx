@@ -167,7 +167,7 @@ export const Departments: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   return (
@@ -292,7 +292,7 @@ export const Departments: React.FC = () => {
         title="تأكيد الحذف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">

@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ThemeProvider, NavRevealProvider } from './contexts/ThemeContext';
+import { ThemeTransitionOverlay } from './components/layout/ThemeTransitionOverlay';
+import { NavTransitionOverlay } from './components/layout/NavTransitionOverlay';
+import { WelcomeChip } from './components/layout/WelcomeChip';
 import { Login } from './pages/Login';
 import { Landing } from './pages/Landing';
 import { PageLayout } from './components/layout/PageLayout';
@@ -93,19 +97,30 @@ function PasswordBanner({ onDismiss, onGoSettings }: { onDismiss: () => void; on
       className={`mb-5 rounded-2xl overflow-hidden shadow-lg border transition-all duration-500 ${
         exiting ? 'opacity-0 -translate-y-4' : visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
       }`}
-      style={{ borderColor: 'rgba(99,102,241,0.2)', background: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 50%, #ede9fe 100%)' }}
+      style={{
+        borderColor: 'var(--border-accent)',
+        background: 'var(--bg-overlay)',
+      }}
     >
       <div className="px-5 py-4 flex items-center gap-4">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-          <Shield className="h-5 w-5 text-white" />
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md"
+          style={{
+            background: 'var(--accent-glow)',
+            color: 'var(--accent)',
+            border: '1px solid var(--border-accent)',
+          }}
+        >
+          <Shield className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0 text-right">
-          <p className="text-sm font-bold text-gray-800">تنبيه أمان</p>
-          <p className="text-sm text-gray-600 mt-0.5">
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>تنبيه أمان</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             لا تنسَ تغيير كلمة المرور الافتراضية من صفحة{' '}
             <button
               onClick={() => { onGoSettings(); close(); }}
-              className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+              className="inline-flex items-center gap-1 font-bold transition-colors"
+              style={{ color: 'var(--accent)' }}
             >
               <Settings className="h-3.5 w-3.5" />
               الإعدادات
@@ -114,18 +129,27 @@ function PasswordBanner({ onDismiss, onGoSettings }: { onDismiss: () => void; on
         </div>
         <button
           onClick={close}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-white/60 hover:text-gray-600 transition-all flex-shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-hover)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+          }}
         >
           <X className="h-4 w-4" />
         </button>
       </div>
       {/* Progress / timer bar */}
-      <div className="h-1 w-full" style={{ background: 'rgba(99,102,241,0.1)' }}>
+      <div className="h-1 w-full" style={{ background: 'var(--accent-glow-md)' }}>
         <div
           className="h-full rounded-full transition-none"
           style={{
             width: `${progress}%`,
-            background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa)',
+            background: 'var(--accent)',
           }}
         />
       </div>
@@ -141,6 +165,111 @@ function AppContent() {
   });
   const [showPasswordBanner, setShowPasswordBanner] = useState(false);
 
+  // Brand-reveal navigation:
+  //   leaving  → outgoing page fades out, overlay enters (300ms)
+  //   waiting  → logo breathes in a loop while the new page loads;
+  //              overlay polls the page DOM for `.page-loading-placeholder`
+  //              and dismisses as soon as it's gone (page is ready)
+  //   exiting  → logo dissolves, page fades in (450ms)
+  //   idle     → overlay unmounted
+  type NavPhase = 'idle' | 'leaving' | 'waiting' | 'exiting';
+  const [navPhase, setNavPhase] = useState<NavPhase>('idle');
+  const pendingNavRef = useRef<string | null>(null);
+
+  const navigate = useCallback((path: string) => {
+    if (path === currentPath || pendingNavRef.current) return;
+    const reduced = !!window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      setCurrentPath(path);
+      return;
+    }
+    pendingNavRef.current = path;
+    setNavPhase('leaving');
+    window.setTimeout(() => {
+      setCurrentPath(path);
+      setNavPhase('waiting');
+    }, 300);
+  }, [currentPath]);
+
+  // Wrap an async action (login, logout) in the brand-reveal overlay.
+  // Sequence:
+  //   1. play 'leaving' (300ms) so overlay slides over the current screen
+  //   2. run the action — auth state updates underneath the overlay
+  //   3. switch to 'waiting' so the polling effect dismisses once the new
+  //      screen reports ready (no placeholder)
+  const runWithNavReveal = useCallback(async (action: () => Promise<unknown> | void) => {
+    const reduced = !!window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || pendingNavRef.current || navPhase !== 'idle') {
+      await action();
+      return;
+    }
+    pendingNavRef.current = '__auth__';
+    setNavPhase('leaving');
+    await new Promise(resolve => window.setTimeout(resolve, 300));
+    try {
+      await action();
+    } finally {
+      setNavPhase('waiting');
+    }
+  }, [navPhase]);
+
+  // While in the 'waiting' phase, watch the rendered page for the
+  // `.page-loading-placeholder` element. The moment the page finishes
+  // loading (placeholder gone), enter the 'exiting' phase. A safety
+  // timeout dismisses the overlay if the page never reports ready.
+  useEffect(() => {
+    if (navPhase !== 'waiting') return;
+    const minVisible = 600;   // never flash — keep the reveal feel
+    const maxWait = 8000;     // stop the overlay even if the page hangs
+    const start = Date.now();
+
+    const isReady = () => {
+      const root = document.querySelector('.page-content');
+      if (!root) return false;
+      // Page is ready when it has rendered children but no placeholder.
+      const hasPlaceholder = root.querySelector('.page-loading-placeholder');
+      return !hasPlaceholder;
+    };
+
+    const beginExit = () => {
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, minVisible - elapsed);
+      window.setTimeout(() => setNavPhase('exiting'), wait);
+    };
+
+    if (isReady()) {
+      beginExit();
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      if (isReady()) {
+        clearInterval(interval);
+        clearTimeout(safety);
+        beginExit();
+      }
+    }, 80);
+    const safety = window.setTimeout(() => {
+      clearInterval(interval);
+      beginExit();
+    }, maxWait);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(safety);
+    };
+  }, [navPhase, currentPath]);
+
+  useEffect(() => {
+    if (navPhase !== 'exiting') return;
+    const t = window.setTimeout(() => {
+      setNavPhase('idle');
+      pendingNavRef.current = null;
+    }, 450);
+    return () => clearTimeout(t);
+  }, [navPhase]);
+
   // Sync state → URL bar
   useEffect(() => {
     if (window.location.pathname !== currentPath) {
@@ -148,18 +277,47 @@ function AppContent() {
     }
   }, [currentPath]);
 
-  // Handle browser back/forward buttons
+  // Handle browser back/forward buttons. Route through `navigate` so
+  // the brand-reveal overlay plays for back/forward jumps too —
+  // including the login → landing back-button flow.
   useEffect(() => {
     const onPopState = () => {
-      setCurrentPath(window.location.pathname || '/');
+      const target = window.location.pathname || '/';
+      navigate(target);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (isFirstLogin) setShowPasswordBanner(true);
   }, [isFirstLogin]);
+
+  // Welcome greeting: when user transitions from logged-out → logged-in,
+  // briefly show "أهلاً بعودتك, {first name}" floating at the top, then
+  // auto-dismiss. Skip on initial app boot when user is restored from a
+  // previous session — prevWasLoggedOut tracks whether the previous render
+  // genuinely had no user.
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const dismissWelcome = useCallback(() => setWelcomeName(null), []);
+  const prevAuthRef = useRef<{ wasLoggedIn: boolean; bootstrapped: boolean }>({
+    wasLoggedIn: false,
+    bootstrapped: false,
+  });
+  useEffect(() => {
+    if (loading) return;
+    const isLoggedIn = !!user?.id;
+    const prev = prevAuthRef.current;
+    if (!prev.bootstrapped) {
+      prevAuthRef.current = { wasLoggedIn: isLoggedIn, bootstrapped: true };
+      return;
+    }
+    if (!prev.wasLoggedIn && isLoggedIn) {
+      const first = (user?.full_name || '').trim().split(/\s+/)[0] || null;
+      setWelcomeName(first);
+    }
+    prevAuthRef.current = { wasLoggedIn: isLoggedIn, bootstrapped: true };
+  }, [user, loading]);
 
   if (loading) {
     return (
@@ -182,10 +340,22 @@ function AppContent() {
   }
 
   if (!user) {
-    if (currentPath === '/' || currentPath === '') {
-      return <Landing onLogin={() => setCurrentPath('/admin')} />;
-    }
-    return <Login />;
+    return (
+      <NavRevealProvider value={{ runWithNavReveal }}>
+        <div
+          key={`anon-${currentPath}`}
+          className={`page-content ${navPhase === 'leaving' ? 'page-content-leaving' : ''}`}
+        >
+          {currentPath === '/' || currentPath === ''
+            ? <Landing onLogin={() => navigate('/admin')} />
+            : <Login />}
+        </div>
+        {/* Landing/Login navigation reveal is always shown on a dark
+            backdrop with the white logo, regardless of the user's
+            theme preference, so the brand intro reads consistently. */}
+        <NavTransitionOverlay phase={navPhase} forceDark />
+      </NavRevealProvider>
+    );
   }
 
   const renderPage = () => {
@@ -227,9 +397,9 @@ function AppContent() {
 
       switch (basePath) {
         case '/':
-          return <CeoDashboard onNavigate={setCurrentPath} />;
+          return <CeoDashboard onNavigate={navigate} />;
         case '/ceo-directors':
-          return <CeoDirectors onNavigate={setCurrentPath} />;
+          return <CeoDirectors onNavigate={navigate} />;
         case '/ceo-evaluations':
           return <DirectorEvaluationForm directorId={params.get('director') || undefined} />;
         case '/ceo-reports':
@@ -248,7 +418,7 @@ function AppContent() {
         case '/settings':
           return <ChangePassword />;
         default:
-          return <CeoDashboard onNavigate={setCurrentPath} />;
+          return <CeoDashboard onNavigate={navigate} />;
       }
     }
 
@@ -310,26 +480,40 @@ function AppContent() {
   };
 
   return (
-    <PageLayout currentPath={currentPath} onNavigate={setCurrentPath}>
-      {showPasswordBanner && (
-        <PasswordBanner
-          onDismiss={dismissBanner}
-          onGoSettings={() => setCurrentPath('/settings')}
-        />
-      )}
-      {renderPage()}
-    </PageLayout>
+    <NavRevealProvider value={{ runWithNavReveal }}>
+      <PageLayout currentPath={currentPath} onNavigate={navigate}>
+        {showPasswordBanner && (
+          <PasswordBanner
+            onDismiss={dismissBanner}
+            onGoSettings={() => navigate('/settings')}
+          />
+        )}
+        <div
+          key={`${user.id}-${currentPath}`}
+          className={`page-content ${
+            navPhase === 'leaving' ? 'page-content-leaving' : ''
+          }`}
+        >
+          {renderPage()}
+        </div>
+      </PageLayout>
+      <NavTransitionOverlay phase={navPhase} />
+      <WelcomeChip name={welcomeName} onDismiss={dismissWelcome} />
+    </NavRevealProvider>
   );
 }
 
 
 function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ToastProvider>
+      <ThemeTransitionOverlay />
+    </ThemeProvider>
   );
 }
 

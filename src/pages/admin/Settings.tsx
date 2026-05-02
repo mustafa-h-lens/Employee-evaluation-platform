@@ -122,7 +122,7 @@ export const AdminSettings: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowWeights(true)}>
           <CardBody className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <Scale className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -138,7 +138,7 @@ export const AdminSettings: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg text-ds-info rounded-lg flex items-center justify-center">
                 <Scale className="h-5 w-5" />
               </div>
               <div>
@@ -160,7 +160,7 @@ export const AdminSettings: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowLeaveTypes(true)}>
           <CardBody className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-warning-bg rounded-lg flex items-center justify-center">
                 <CalendarOff className="h-5 w-5 text-amber-600" />
               </div>
               <div>
@@ -176,7 +176,7 @@ export const AdminSettings: React.FC = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-ds-warning-bg text-ds-warning rounded-lg flex items-center justify-center">
                   <CalendarOff className="h-5 w-5" />
                 </div>
                 <div>
@@ -205,7 +205,7 @@ export const AdminSettings: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setShowNameForm(true); setNewName(user?.full_name || ''); }}>
           <CardBody className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <User className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -220,7 +220,7 @@ export const AdminSettings: React.FC = () => {
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <User className="h-5 w-5 text-blue-600" />
               </div>
               <h3 className="font-semibold text-ds-text text-lg">تغيير الاسم</h3>
@@ -228,7 +228,7 @@ export const AdminSettings: React.FC = () => {
 
             <form onSubmit={handleChangeName} className="space-y-4">
               {nameError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-sm">
+                <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 flex items-center gap-2 text-ds-danger-text text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span>{nameError}</span>
                 </div>
@@ -241,7 +241,7 @@ export const AdminSettings: React.FC = () => {
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                   placeholder="أدخل الاسم الجديد"
                 />
               </div>
@@ -276,7 +276,7 @@ export const AdminSettings: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowPwForm(true)}>
           <CardBody className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <Lock className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -291,7 +291,7 @@ export const AdminSettings: React.FC = () => {
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <Lock className="h-5 w-5 text-blue-600" />
               </div>
               <h3 className="font-semibold text-ds-text text-lg">تغيير كلمة المرور</h3>
@@ -299,7 +299,7 @@ export const AdminSettings: React.FC = () => {
 
             <form onSubmit={handleChangePassword} className="space-y-4">
               {pwError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-sm">
+                <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 flex items-center gap-2 text-ds-danger-text text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span>{pwError}</span>
                 </div>
@@ -314,7 +314,7 @@ export const AdminSettings: React.FC = () => {
                     onChange={e => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                     placeholder="أدخل كلمة المرور الجديدة"
                   />
                   <button type="button" onClick={() => setShowNew(!showNew)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted">
@@ -332,7 +332,7 @@ export const AdminSettings: React.FC = () => {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                     placeholder="أعد إدخال كلمة المرور الجديدة"
                   />
                   <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted">

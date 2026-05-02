@@ -269,7 +269,7 @@ export const DirectorManagement: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   return (
@@ -297,7 +297,7 @@ export const DirectorManagement: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-ds-purple-bg flex items-center justify-center flex-shrink-0">
               <Crown className="h-6 w-6 text-purple-600" />
             </div>
             <div>
@@ -308,23 +308,23 @@ export const DirectorManagement: React.FC = () => {
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-ds-success-bg flex items-center justify-center flex-shrink-0">
               <FileCheck className="h-6 w-6 text-green-600" />
             </div>
             <div>
               <p className="text-sm text-ds-faint">مديرون تم تقييمهم</p>
-              <p className="text-2xl font-bold text-green-700">{evaluatedCount}</p>
+              <p className="text-2xl font-bold text-ds-success-text">{evaluatedCount}</p>
             </div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-ds-warning-bg flex items-center justify-center flex-shrink-0">
               <FileClock className="h-6 w-6 text-amber-600" />
             </div>
             <div>
               <p className="text-sm text-ds-faint">بانتظار التقييم</p>
-              <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
+              <p className="text-2xl font-bold text-ds-warning-text">{pendingCount}</p>
             </div>
           </CardBody>
         </Card>
@@ -413,8 +413,8 @@ export const DirectorManagement: React.FC = () => {
         {registerFeedback && (
           <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${
             registerFeedback.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-ds-success-bg border border-ds-success-border text-ds-success-text'
+              : 'bg-ds-danger-bg border border-ds-danger-border text-ds-danger-text'
           }`}>
             {registerFeedback.type === 'error' && <AlertTriangle className="h-4 w-4 flex-shrink-0" />}
             <span>{registerFeedback.message}</span>
@@ -482,7 +482,7 @@ export const DirectorManagement: React.FC = () => {
         size="sm"
       >
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-full bg-ds-danger-bg flex items-center justify-center mx-auto">
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>
           <p className="text-ds-muted">

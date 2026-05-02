@@ -40,9 +40,9 @@ const getActionIcon = (action: string) => {
 };
 
 const getActionColor = (action: string) => {
-  if (action.includes('إضافة') || action.includes('إنشاء') || action.includes('تسجيل') || action.includes('تفعيل')) return 'bg-green-100 text-green-600';
-  if (action.includes('حذف')) return 'bg-red-100 text-red-600';
-  if (action.includes('تحديث') || action.includes('تعديل')) return 'bg-blue-100 text-blue-600';
+  if (action.includes('إضافة') || action.includes('إنشاء') || action.includes('تسجيل') || action.includes('تفعيل')) return 'bg-ds-success-bg text-ds-success';
+  if (action.includes('حذف')) return 'bg-ds-danger-bg text-ds-danger';
+  if (action.includes('تحديث') || action.includes('تعديل')) return 'bg-ds-info-bg text-ds-info';
   if (action.includes('تعطيل')) return 'bg-ds-overlay text-ds-faint';
   return 'bg-ds-overlay text-ds-muted';
 };
@@ -166,7 +166,7 @@ export const AuditLog: React.FC = () => {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   if (loading && !refreshing) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   const entityTypes = [
@@ -212,7 +212,7 @@ export const AuditLog: React.FC = () => {
                 <p className="text-sm text-ds-muted mb-1">إجمالي السجلات</p>
                 <p className="text-xl font-bold text-ds-text">{totalCount}</p>
               </div>
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+              <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Activity className="h-6 w-6" />
               </div>
             </div>
@@ -227,7 +227,7 @@ export const AuditLog: React.FC = () => {
                   {logs.length > 0 ? formatDate(logs[0].created_at) : '-'}
                 </p>
               </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+              <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                 <Clock className="h-6 w-6" />
               </div>
             </div>
@@ -242,7 +242,7 @@ export const AuditLog: React.FC = () => {
                   {new Set(logs.map(l => l.user_id)).size}
                 </p>
               </div>
-              <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+              <div className="bg-ds-warning-bg text-ds-warning p-3 rounded-xl">
                 <User className="h-6 w-6" />
               </div>
             </div>

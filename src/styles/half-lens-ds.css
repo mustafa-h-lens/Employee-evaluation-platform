@@ -104,11 +104,11 @@
   --bg-input-hover: rgba(255,255,255,0.05);
   --bg-input-focus: rgba(37,99,235,0.05);
 
-  --border-subtle:  rgba(255,255,255,0.05);
-  --border-soft:    rgba(255,255,255,0.09);
-  --border-medium:  rgba(255,255,255,0.14);
-  --border-strong:  rgba(255,255,255,0.22);
-  --border-accent:  rgba(37,99,235,0.4);
+  --border-subtle:  rgba(255,255,255,0.10);
+  --border-soft:    rgba(255,255,255,0.14);
+  --border-medium:  rgba(255,255,255,0.20);
+  --border-strong:  rgba(255,255,255,0.30);
+  --border-accent:  rgba(37,99,235,0.45);
 
   --text-primary:   #f0f4ff;
   --text-secondary: rgba(200,215,255,0.65);
@@ -152,6 +152,9 @@
   --mode-badge-bg:   rgba(255,255,255,0.06);
   --mode-badge-border: rgba(255,255,255,0.1);
   --mode-badge-text: var(--text-secondary);
+
+  /* progress-bar / inline meter track */
+  --track-bg: rgba(255,255,255,0.08);
 
   /* stat card gradients */
   --sc-blue-grad:   linear-gradient(135deg, #0d2a5c 0%, #071428 60%, #050d1e 100%);
@@ -247,6 +250,9 @@
   --mode-badge-bg:   rgba(0,0,0,0.04);
   --mode-badge-border: rgba(0,0,0,0.1);
   --mode-badge-text: #475569;
+
+  /* progress-bar / inline meter track */
+  --track-bg: rgba(15,23,42,0.08);
 
   /* stat card gradients — light */
   --sc-blue-grad:   linear-gradient(135deg, #dbeafe 0%, #eef4ff 70%, #f8faff 100%);
@@ -3675,5 +3681,780 @@ a.breadcrumb-item:hover { color: var(--text-primary); }
   font-size: 12px;
   color: #fbbf24;
   line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME TOGGLE — sidebar light/dark switch with playful hover.
+   The sun (shown in dark mode → click to go light) intensifies its
+   warm glow and rotates a full turn. The moon (shown in light mode
+   → click to go dark) tilts and gains a cool blue halo. Both spring
+   in/out with a slight overshoot for delight.
+═══════════════════════════════════════════════════════════════ */
+.theme-toggle-btn {
+  position: relative;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-overlay);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background 0.35s ease,
+    color 0.35s ease,
+    border-color 0.35s ease,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.35s ease;
+}
+
+/* Sliding sheen — a soft highlight that sweeps across on hover.    */
+.theme-toggle-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 30%,
+    rgba(255,255,255,0.10) 50%,
+    transparent 70%,
+    transparent 100%
+  );
+  transform: translateX(-110%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+  box-shadow: 0 6px 22px rgba(37,99,235,0.18), 0 0 0 1px var(--border-accent) inset;
+}
+
+.theme-toggle-btn:hover::before { transform: translateX(110%); }
+
+.theme-toggle-btn:active { transform: translateY(0) scale(0.98); }
+
+/* Sun + moon shared idle — gentle floating breath when not hovered. */
+.theme-toggle-icon {
+  transition:
+    transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.4s ease,
+    color 0.35s ease;
+  will-change: transform, filter;
+}
+
+/* SUN — currently in dark mode, clicking goes light. Warm rotating glow. */
+.theme-toggle-sun:hover .theme-toggle-icon-sun {
+  color: #fbbf24;
+  transform: rotate(180deg) scale(1.18);
+  animation: theme-sun-pulse 1.6s ease-in-out infinite 0.55s;
+}
+
+@keyframes theme-sun-pulse {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 6px rgba(251,191,36,0.85))
+      drop-shadow(0 0 14px rgba(251,146,60,0.45));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 10px rgba(251,191,36,1))
+      drop-shadow(0 0 22px rgba(251,146,60,0.7));
+  }
+}
+
+/* MOON — currently in light mode, clicking goes dark. Cool tilt + halo. */
+.theme-toggle-moon:hover .theme-toggle-icon-moon {
+  color: #93c5fd;
+  transform: rotate(-22deg) scale(1.18);
+  filter:
+    drop-shadow(0 0 6px rgba(147,197,253,0.7))
+    drop-shadow(0 0 14px rgba(99,102,241,0.4));
+  animation: theme-moon-bob 2.4s ease-in-out infinite 0.55s;
+}
+
+@keyframes theme-moon-bob {
+  0%, 100% { transform: rotate(-22deg) scale(1.18) translateY(0); }
+  50%      { transform: rotate(-18deg) scale(1.20) translateY(-1.5px); }
+}
+
+.theme-toggle-label {
+  letter-spacing: 0.2px;
+  transition: letter-spacing 0.35s ease;
+}
+.theme-toggle-btn:hover .theme-toggle-label { letter-spacing: 0.6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-btn,
+  .theme-toggle-icon,
+  .theme-toggle-label,
+  .theme-toggle-btn::before { transition: none; }
+  .theme-toggle-sun:hover .theme-toggle-icon-sun,
+  .theme-toggle-moon:hover .theme-toggle-icon-moon { animation: none; }
+}
+
+/* Click feedback: a soft radial pulse from the button center on click.
+   Triggered by the `theme-toggle-pulse` class added in JSX for ~520ms. */
+.theme-toggle-btn.theme-toggle-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at center,
+    rgba(255,255,255,0.5) 0%,
+    rgba(255,255,255,0.18) 35%,
+    rgba(255,255,255,0) 70%
+  );
+  opacity: 0;
+  transform: scale(0.4);
+  pointer-events: none;
+  animation: theme-toggle-ripple 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes theme-toggle-ripple {
+  0%   { opacity: 0; transform: scale(0.4); }
+  35%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+
+/* THEME CROSSFADE — applied to every element so the entire page
+   morphs in lockstep with the celestial arc instead of swapping at a
+   single instant. Restricted to FOUR cheap properties (background-
+   color, color, border-color, fill) so it stays GPU-friendly even
+   with thousands of elements transitioning at once — these four
+   compose on the existing layer rather than triggering re-paints of
+   gradients/shadows.
+   The 950ms ease-out curve starts fast (most of the change in the
+   first half) and decelerates into a still resting point — feels
+   like dawn breaking, not a switch flicked. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    fill 0.95s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* If the browser supports View Transitions, use them — buttery
+   crossfade between the two themed UIs in ~450ms. */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.45s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    mix-blend-mode: normal;
+  }
+  ::view-transition-old(root) {
+    animation-name: theme-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation-name: theme-fade-in;
+  }
+}
+
+@keyframes theme-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes theme-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME TRANSITION OVERLAY — the full-screen "show" played when the
+   user toggles. A circular wipe blooms from the click origin while a
+   hero sun/moon ascends, pulses, and disappears in a shower of
+   sparkles. Total ~900ms, choreographed in three beats:
+     0–380ms  icon emerges from origin, sparkles burst, wipe expands
+     380–650  icon hits center stage, twirls, brightest moment;
+              theme actually flips at 380ms while the wipe is opaque
+     650–900  icon scales out, sparkles fade, wipe dissolves
+═══════════════════════════════════════════════════════════════ */
+
+.theme-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  --ox: 50%;
+  --oy: 50%;
+  /* Slightly desaturated so the wipe doesn't slap the eye — softer
+     than a fully-saturated brand color, easier to look at. */
+  --wipe-edge:   rgba(15, 23, 42, 0);
+  --wipe-soft:   rgba(15, 23, 42, 0.30);
+  --wipe-mid:    rgba(15, 23, 42, 0.65);
+  --wipe-core:   rgba(15, 23, 42, 0.90);
+}
+
+.theme-transition-overlay.going-light {
+  /* Dawn palette — five stops give a buttery falloff, no banding. */
+  --wipe-edge:   rgba(255, 251, 235, 0);
+  --wipe-soft:   rgba(254, 243, 199, 0.28);
+  --wipe-mid:    rgba(253, 224, 71, 0.45);
+  --wipe-core:   rgba(254, 240, 138, 0.88);
+}
+
+.theme-transition-overlay.going-dark {
+  /* Dusk palette — deep navy that fades through indigo at the edge. */
+  --wipe-edge:   rgba(15, 23, 42, 0);
+  --wipe-soft:   rgba(30, 27, 75, 0.30);
+  --wipe-mid:    rgba(30, 41, 59, 0.65);
+  --wipe-core:   rgba(2, 6, 23, 0.93);
+}
+
+/* The wipe is the only large animated element — kept on its own GPU
+   layer with `transform` + `opacity` only (no backdrop-filter, no
+   blur, no per-frame paint), so it stays at 60fps even on integrated
+   GPUs. A 5-stop radial gradient is rasterized once for a creamy
+   falloff with no visible banding, then only the layer transform is
+   interpolated. */
+.tt-wipe {
+  position: absolute;
+  left: var(--ox);
+  top: var(--oy);
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  margin-top: -15px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--wipe-core) 0%,
+    var(--wipe-mid) 35%,
+    var(--wipe-mid) 55%,
+    var(--wipe-soft) 78%,
+    var(--wipe-edge) 100%
+  );
+  transform: scale(0.15) translateZ(0);
+  transform-origin: center;
+  animation: tt-wipe-grow 1.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+  contain: paint;
+}
+
+@keyframes tt-wipe-grow {
+  0%   { transform: scale(0.15) translateZ(0); opacity: 0; }
+  18%  { opacity: 1; }
+  50%  { transform: scale(105) translateZ(0); opacity: 1; }
+  78%  { transform: scale(150) translateZ(0); opacity: 0.92; }
+  100% { transform: scale(180) translateZ(0); opacity: 0; }
+}
+
+.tt-icon-stage {
+  position: absolute;
+  left: var(--ox);
+  top: var(--oy);
+  width: 0;
+  height: 0;
+  /* The stage flies from origin to center, holds, breathes, then
+     dissolves. Longer hold + softer easing = the eye registers a
+     calm centerpiece instead of a flying object. */
+  animation: tt-stage-fly 1.15s cubic-bezier(0.32, 0.72, 0.35, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes tt-stage-fly {
+  0%   {
+    transform: translate(0, 0) scale(0.45);
+    opacity: 0;
+  }
+  16%  {
+    opacity: 1;
+  }
+  40%  {
+    transform: translate(calc(50vw - var(--ox)), calc(50vh - var(--oy))) scale(1);
+    opacity: 1;
+  }
+  62%  {
+    transform: translate(calc(50vw - var(--ox)), calc(50vh - var(--oy))) scale(1.05);
+    opacity: 1;
+  }
+  78%  {
+    transform: translate(calc(50vw - var(--ox)), calc(50vh - var(--oy))) scale(1);
+    opacity: 0.95;
+  }
+  92%  {
+    transform: translate(calc(50vw - var(--ox)), calc(50vh - var(--oy))) scale(0.92);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(calc(50vw - var(--ox)), calc(50vh - var(--oy))) scale(0.78);
+    opacity: 0;
+  }
+}
+
+.tt-icon {
+  position: absolute;
+  left: -56px;
+  top: -56px;
+  width: 112px;
+  height: 112px;
+  display: block;
+  filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.55))
+          drop-shadow(0 0 36px rgba(251, 146, 60, 0.35));
+}
+
+.tt-icon.tt-moon {
+  filter: drop-shadow(0 0 18px rgba(165, 180, 252, 0.55))
+          drop-shadow(0 0 40px rgba(99, 102, 241, 0.4));
+}
+
+/* Sun rays spin while the icon is on stage. */
+.tt-sun-rays {
+  transform-origin: 32px 32px;
+  animation: tt-sun-spin 1.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes tt-sun-spin {
+  0%   { transform: rotate(-25deg); opacity: 0.35; }
+  35%  { opacity: 1; }
+  100% { transform: rotate(140deg); opacity: 0.6; }
+}
+
+.tt-icon.tt-sun circle {
+  animation: tt-sun-pulse 1.15s ease-in-out forwards;
+  transform-origin: 32px 32px;
+}
+
+@keyframes tt-sun-pulse {
+  0%   { transform: scale(0.75); }
+  40%  { transform: scale(1.08); }
+  68%  { transform: scale(1.02); }
+  100% { transform: scale(0.98); }
+}
+
+/* Moon does a gentle tilt — settling into the night sky. The mask is
+   computed in viewBox space so we tilt the whole element, not the
+   path, keeping the crescent perfect at every angle. */
+.tt-icon.tt-moon {
+  animation: tt-moon-tilt 1.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 0 14px rgba(254, 240, 138, 0.45))
+          drop-shadow(0 0 30px rgba(165, 180, 252, 0.45));
+}
+
+@keyframes tt-moon-tilt {
+  0%   { transform: rotate(30deg); }
+  55%  { transform: rotate(-18deg); }
+  100% { transform: rotate(-10deg); }
+}
+
+/* Companion star twinkles independently while the moon tilts. */
+.tt-moon-star {
+  transform-origin: 50px 19.5px;
+  animation: tt-star-twinkle 1.15s ease-in-out forwards;
+}
+
+@keyframes tt-star-twinkle {
+  0%   { transform: scale(0); opacity: 0; }
+  35%  { transform: scale(1.25); opacity: 1; }
+  60%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.1); opacity: 0.85; }
+}
+
+/* Sparkles — eight diamond pips that arc outward from the icon. */
+.tt-spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  background: linear-gradient(45deg, #fff7d6 0%, #fde68a 50%, #fbbf24 100%);
+  clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%);
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7));
+  animation: tt-spark-fly 1.15s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.theme-transition-overlay.going-dark .tt-spark {
+  background: linear-gradient(45deg, #f5f3ff 0%, #c7d2fe 50%, #a5b4fc 100%);
+  filter: drop-shadow(0 0 6px rgba(165, 180, 252, 0.7));
+}
+
+@keyframes tt-spark-fly {
+  0%   { opacity: 0; transform: rotate(0deg) translate(0, 0) scale(0.3); }
+  18%  { opacity: 1; }
+  60%  { opacity: 0.95; }
+  85%  { opacity: 0.55; }
+  100% { opacity: 0; transform: rotate(280deg) translate(var(--sx, 0), var(--sy, 0)) scale(1); }
+}
+
+/* Each sparkle gets its own trajectory — radial-ish, slightly
+   offset so the burst feels organic rather than mechanical. */
+.tt-spark-1 { --sx:  90px; --sy: -40px; animation-delay: 0.05s; }
+.tt-spark-2 { --sx:  70px; --sy:  70px; animation-delay: 0.10s; }
+.tt-spark-3 { --sx: -10px; --sy:  95px; animation-delay: 0.15s; }
+.tt-spark-4 { --sx: -85px; --sy:  55px; animation-delay: 0.08s; }
+.tt-spark-5 { --sx: -95px; --sy: -25px; animation-delay: 0.12s; }
+.tt-spark-6 { --sx: -55px; --sy: -85px; animation-delay: 0.06s; }
+.tt-spark-7 { --sx:  25px; --sy: -100px; animation-delay: 0.18s; }
+.tt-spark-8 { --sx: 105px; --sy:  20px; animation-delay: 0.20s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition-overlay { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE NAVIGATION TRANSITION — brand-reveal flourish between routes.
+   The outgoing page lifts and fades in 240ms, a centered logo
+   breathes for ~480ms, then the incoming page settles in. Feels
+   like Apple/Linear-style title cards: deliberate but quick.
+═══════════════════════════════════════════════════════════════ */
+
+.page-content {
+  /* The outer wrapper is keyed on currentPath so it remounts on
+     every navigation, which restarts the entrance animation. */
+  animation: nav-page-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+/* Empty placeholder used in place of per-page spinners. Renders
+   nothing visible — the navigation overlay handles the loading
+   feedback so individual pages don't need their own spinners. */
+.page-loading-placeholder {
+  min-height: 200px;
+}
+
+@keyframes nav-page-enter {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.995); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.page-content.page-content-leaving {
+  animation: nav-page-leave 0.24s ease-in forwards;
+}
+
+@keyframes nav-page-leave {
+  0%   { opacity: 1; transform: translateY(0); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-6px); filter: blur(2px); }
+}
+
+.nav-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Force-dark variant: pins veil + halo tokens to the dark palette
+   regardless of the current theme. Used on the landing↔login
+   transition so the brand intro always reads on a deep navy
+   backdrop with the white logo. */
+.nav-overlay-force-dark .nav-transition-veil {
+  background: #050d1e;
+}
+.nav-overlay-force-dark .nav-transition-progress {
+  background: rgba(255, 255, 255, 0.08);
+}
+.nav-overlay-force-dark .nav-transition-progress-bar {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #2563eb 30%,
+    #60a5fa 55%,
+    #2563eb 80%,
+    transparent 100%
+  );
+}
+.nav-overlay-force-dark .nav-transition-logo {
+  filter: drop-shadow(0 4px 18px rgba(37, 99, 235, 0.3))
+          drop-shadow(0 0 32px rgba(37, 99, 235, 0.18));
+}
+.nav-overlay-force-dark.nav-overlay-waiting .nav-transition-logo {
+  animation: nav-logo-breath-dark 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes nav-logo-breath-dark {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 4px 18px rgba(37, 99, 235, 0.3))
+            drop-shadow(0 0 28px rgba(37, 99, 235, 0.18));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 6px 22px rgba(37, 99, 235, 0.4))
+            drop-shadow(0 0 40px rgba(37, 99, 235, 0.3));
+  }
+}
+
+/* ── Veil ───────────────────────────────────────────────────── */
+.nav-transition-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-base);
+  opacity: 0;
+  will-change: opacity;
+}
+
+.nav-overlay-leaving .nav-transition-veil {
+  animation: nav-veil-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.nav-overlay-waiting .nav-transition-veil {
+  opacity: 0.94;
+}
+.nav-overlay-exiting .nav-transition-veil {
+  opacity: 0.94;
+  animation: nav-veil-out 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes nav-veil-in  { from { opacity: 0; } to { opacity: 0.94; } }
+@keyframes nav-veil-out { from { opacity: 0.94; } to { opacity: 0; } }
+
+/* ── Stage (logo + progress bar) ───────────────────────────── */
+.nav-transition-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  opacity: 0;
+  transform: translateY(0) scale(1);
+  will-change: opacity, transform;
+}
+
+.nav-overlay-leaving .nav-transition-stage {
+  animation: nav-stage-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.nav-overlay-waiting .nav-transition-stage {
+  opacity: 1;
+}
+.nav-overlay-exiting .nav-transition-stage {
+  opacity: 1;
+  animation: nav-stage-out 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes nav-stage-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes nav-stage-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-8px) scale(0.95); }
+}
+
+/* ── Logo ───────────────────────────────────────────────────── */
+.nav-transition-logo {
+  width: 96px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 4px 18px var(--accent-glow))
+          drop-shadow(0 0 32px var(--accent-glow-md));
+  will-change: transform, filter;
+}
+
+/* While we're waiting for the page, breathe the logo gently in a
+   loop so the user knows the system is alive without it feeling
+   like a busy spinner. */
+.nav-overlay-waiting .nav-transition-logo {
+  animation: nav-logo-breath 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes nav-logo-breath {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 4px 18px var(--accent-glow))
+            drop-shadow(0 0 28px var(--accent-glow-md));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 6px 22px var(--accent-glow))
+            drop-shadow(0 0 40px var(--accent-glow));
+  }
+}
+
+/* ── Progress shimmer ──────────────────────────────────────── */
+.nav-transition-progress {
+  width: 120px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--bg-overlay);
+  overflow: hidden;
+  position: relative;
+}
+
+.nav-transition-progress-bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent) 30%,
+    var(--accent-lighter) 55%,
+    var(--accent) 80%,
+    transparent 100%
+  );
+  transform: translateX(-110%);
+  will-change: transform;
+}
+
+.nav-overlay-waiting .nav-transition-progress-bar {
+  animation: nav-progress-loop 1.6s linear infinite;
+}
+
+@keyframes nav-progress-loop {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(110%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-content,
+  .page-content.page-content-leaving { animation: none; }
+  .nav-transition-overlay { display: none; }
+  .welcome-card,
+  .welcome-card-show .welcome-spark { animation: none !important; transition: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WELCOME CHIP — slim greeting pill that floats in from above
+   after login, holds briefly, and drifts back out. Glass-morphism
+   styling with backdrop blur (cheap because the chip itself is
+   tiny). Three CSS phases keyed off the React `phase` state.
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── Welcome card — centerpiece greeting after login ─── */
+
+.welcome-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 9995;
+  width: min(360px, calc(100vw - 48px));
+  padding: 32px 36px 30px;
+  border-radius: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.32),
+    0 8px 22px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform: translate(-50%, calc(-50% + 18px)) scale(0.94);
+  opacity: 0;
+  font-family: var(--font-main);
+  overflow: visible;
+}
+
+/* Soft accent bloom behind the card. */
+.welcome-card-halo {
+  position: absolute;
+  inset: -28px;
+  border-radius: 36px;
+  background: radial-gradient(
+    60% 60% at 50% 35%,
+    var(--accent-glow) 0%,
+    transparent 70%
+  );
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.welcome-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+  box-shadow:
+    0 0 0 6px rgba(37, 99, 235, 0.07),
+    0 8px 20px rgba(37, 99, 235, 0.18);
+  margin-bottom: 18px;
+}
+
+.welcome-card-greeting {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.welcome-card-name {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-lighter) 60%, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Decorative sparkles — small twinkling diamonds positioned around
+   the card, each with its own delay so the moment feels alive. */
+.welcome-spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(45deg, #fff7d6 0%, #fde68a 50%, var(--accent) 100%);
+  clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%);
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+  opacity: 0;
+}
+
+.welcome-spark-1 { top: -14px;    left: 18%;  }
+.welcome-spark-2 { top: 28%;      right: -18px; }
+.welcome-spark-3 { bottom: -12px; left: 60%;  }
+.welcome-spark-4 { bottom: 22%;   left: -16px; }
+
+.welcome-card-show .welcome-spark {
+  animation: welcome-spark-twinkle 2.2s ease-in-out infinite;
+}
+.welcome-card-show .welcome-spark-1 { animation-delay: 0s;    }
+.welcome-card-show .welcome-spark-2 { animation-delay: 0.45s; }
+.welcome-card-show .welcome-spark-3 { animation-delay: 0.9s;  }
+.welcome-card-show .welcome-spark-4 { animation-delay: 1.35s; }
+
+@keyframes welcome-spark-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.7) rotate(0deg); }
+  50%      { opacity: 0.95; transform: scale(1.15) rotate(180deg); }
+}
+
+/* Phase choreography. */
+.welcome-card-enter {
+  transform: translate(-50%, calc(-50% + 18px)) scale(0.94);
+  opacity: 0;
+}
+
+.welcome-card-show {
+  transition:
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity   0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.welcome-card-leave {
+  transition:
+    transform 0.65s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity   0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate(-50%, calc(-50% - 26px)) scale(0.97);
+  opacity: 0;
 }
 

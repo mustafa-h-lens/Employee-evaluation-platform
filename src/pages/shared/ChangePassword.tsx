@@ -89,7 +89,7 @@ export const ChangePassword: React.FC = () => {
                 <h3 className="font-semibold text-ds-text">تغيير كلمة المرور</h3>
                 <p className="text-sm text-ds-faint">تحديث كلمة المرور الخاصة بحسابك</p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                 <Lock className="h-5 w-5 text-blue-600" />
               </div>
             </div>
@@ -102,7 +102,7 @@ export const ChangePassword: React.FC = () => {
               <div />
               <div className="flex items-center gap-3">
                 <h3 className="font-semibold text-ds-text text-lg">تغيير كلمة المرور</h3>
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-ds-info-bg rounded-lg flex items-center justify-center">
                   <Lock className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
@@ -110,7 +110,7 @@ export const ChangePassword: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {errorMsg && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-sm">
+                <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 flex items-center gap-2 text-ds-danger-text text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
@@ -125,7 +125,7 @@ export const ChangePassword: React.FC = () => {
                     onChange={e => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint px-4 py-2.5 text-sm focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                     placeholder="أدخل كلمة المرور الجديدة"
                   />
                   <button
@@ -147,7 +147,7 @@ export const ChangePassword: React.FC = () => {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className="w-full rounded-lg border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint px-4 py-2.5 text-sm focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                     placeholder="أعد إدخال كلمة المرور الجديدة"
                   />
                   <button

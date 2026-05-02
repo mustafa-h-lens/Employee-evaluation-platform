@@ -374,7 +374,7 @@ export const Reports: React.FC = () => {
                   }}
                   onFocus={() => setDropdownOpen(true)}
                   placeholder="ابحث بالاسم أو الرقم الوظيفي..."
-                  className="w-full px-4 py-2 pr-10 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 pr-10 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none"
                 />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
                 <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
@@ -393,7 +393,7 @@ export const Reports: React.FC = () => {
                           setSearchQuery('');
                           setDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-right transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-gray-50 last:border-0"
                       >
                         <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                         <div className="flex-1 min-w-0">
@@ -500,27 +500,27 @@ export const Reports: React.FC = () => {
         <>
           {/* Employee info card */}
           <Card>
-            <CardBody className="bg-blue-50">
+            <CardBody className="bg-ds-info-bg">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-blue-200 rounded-full flex items-center justify-center">
-                  <User className="h-7 w-7 text-blue-700" />
+                  <User className="h-7 w-7 text-ds-info-text" />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
                   <div>
                     <p className="text-sm text-blue-600">اسم الموظف</p>
-                    <p className="font-semibold text-blue-900">{selectedEmployee.full_name}</p>
+                    <p className="font-semibold text-ds-info-text">{selectedEmployee.full_name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">المسمى الوظيفي</p>
-                    <p className="font-semibold text-blue-900">{selectedEmployee.job_title}</p>
+                    <p className="font-semibold text-ds-info-text">{selectedEmployee.job_title}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">الإدارة</p>
-                    <p className="font-semibold text-blue-900">{selectedEmployee.department_name}</p>
+                    <p className="font-semibold text-ds-info-text">{selectedEmployee.department_name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">الرقم الوظيفي</p>
-                    <p className="font-semibold text-blue-900">{selectedEmployee.employee_number}</p>
+                    <p className="font-semibold text-ds-info-text">{selectedEmployee.employee_number}</p>
                   </div>
                 </div>
               </div>
@@ -528,9 +528,7 @@ export const Reports: React.FC = () => {
           </Card>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <div className="page-loading-placeholder" aria-hidden="true" />
           ) : evaluations.length === 0 ? (
             <Card>
               <CardBody className="text-center py-16">
@@ -542,13 +540,13 @@ export const Reports: React.FC = () => {
             <>
               {/* Full-window leave: render a friendly chip and skip the summary */}
               {fullyOnLeave && (
-                <Card className="border-amber-200">
+                <Card className="border-ds-warning-border">
                   <CardBody>
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-amber-600" />
                       <div className="text-sm">
-                        <p className="font-semibold text-amber-900">موظف في إجازة طوال هذه الفترة — لا يوجد تقييم</p>
-                        <p className="text-xs text-amber-800">
+                        <p className="font-semibold text-ds-warning-text">موظف في إجازة طوال هذه الفترة — لا يوجد تقييم</p>
+                        <p className="text-xs text-ds-warning-text">
                           {windowLeaves.map(l => l.type_name).join('، ')}
                         </p>
                       </div>
@@ -559,11 +557,11 @@ export const Reports: React.FC = () => {
 
               {/* Annual/Quarterly Summary */}
               {!fullyOnLeave && (annualSummary || quarterlySummary) && (
-                <Card className="border-blue-200">
-                  <CardHeader className="bg-blue-50">
+                <Card className="border-ds-info-border">
+                  <CardHeader className="bg-ds-info-bg">
                     <div className="flex items-center gap-2">
                       <BarChart3 className="h-5 w-5 text-blue-600" />
-                      <h2 className="text-lg font-semibold text-blue-900">
+                      <h2 className="text-lg font-semibold text-ds-info-text">
                         {annualSummary ? `الملخص السنوي — ${selectedYear}` : `ملخص ${quarterLabels[selectedQuarter]} — ${selectedYear}`}
                       </h2>
                     </div>
@@ -574,9 +572,9 @@ export const Reports: React.FC = () => {
                       return (
                         <div className="space-y-4">
                           {windowLeaves.length > 0 && (
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-start gap-2">
                               <Calendar className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                              <p className="text-xs text-amber-900">
+                              <p className="text-xs text-ds-warning-text">
                                 تم احتساب المتوسط على <span className="font-bold">{summary.evaluableMonths}</span> من <span className="font-bold">{summary.totalMonths}</span> شهر — استُبعدت أشهر الإجازة:{' '}
                                 <span className="font-medium">
                                   {windowLeaves.map(l => l.type_name).join('، ')}
@@ -585,23 +583,23 @@ export const Reports: React.FC = () => {
                             </div>
                           )}
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div className="bg-blue-50 rounded-lg p-4 text-center">
+                            <div className="bg-ds-info-bg rounded-lg p-4 text-center">
                               <p className="text-xs text-blue-600 mb-1">عدد التقييمات</p>
-                              <p className="text-2xl font-bold text-blue-700">{summary.count}</p>
+                              <p className="text-2xl font-bold text-ds-info-text">{summary.count}</p>
                             </div>
-                            <div className="bg-purple-50 rounded-lg p-4 text-center">
+                            <div className="bg-ds-purple-bg rounded-lg p-4 text-center">
                               <p className="text-xs text-purple-600 mb-1">متوسط النتيجة / 500</p>
-                              <p className="text-2xl font-bold text-purple-700">{summary.avgScore500.toFixed(0)}</p>
+                              <p className="text-2xl font-bold text-ds-purple-text">{summary.avgScore500.toFixed(0)}</p>
                             </div>
-                            <div className="bg-indigo-50 rounded-lg p-4 text-center">
+                            <div className="bg-ds-info-bg rounded-lg p-4 text-center">
                               <p className="text-xs text-indigo-600 mb-1">متوسط النتيجة / 5</p>
-                              <p className="text-2xl font-bold text-indigo-700">{summary.avgScore5.toFixed(2)}</p>
+                              <p className="text-2xl font-bold text-ds-info-text">{summary.avgScore5.toFixed(2)}</p>
                             </div>
-                            <div className="bg-teal-50 rounded-lg p-4 text-center">
+                            <div className="bg-ds-info-bg rounded-lg p-4 text-center">
                               <p className="text-xs text-teal-600 mb-1">متوسط النسبة المئوية</p>
-                              <p className="text-2xl font-bold text-teal-700">{summary.avgPercentage.toFixed(1)}%</p>
+                              <p className="text-2xl font-bold text-ds-info-text">{summary.avgPercentage.toFixed(1)}%</p>
                             </div>
-                            <div className="bg-amber-50 rounded-lg p-4 text-center">
+                            <div className="bg-ds-warning-bg rounded-lg p-4 text-center">
                               <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
                               <Badge variant={getRatingVariant(summary.generalRating)} size="lg">
                                 {summary.generalRating}
@@ -674,19 +672,19 @@ export const Reports: React.FC = () => {
                       <CardBody className="space-y-5">
                         {/* Final Results */}
                         <div className="grid grid-cols-4 gap-3">
-                          <div className="bg-blue-50 rounded-lg p-3 text-center">
+                          <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                             <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
-                            <p className="text-xl font-bold text-blue-700">{ev.final_score_500?.toFixed(1)}</p>
+                            <p className="text-xl font-bold text-ds-info-text">{ev.final_score_500?.toFixed(1)}</p>
                           </div>
-                          <div className="bg-purple-50 rounded-lg p-3 text-center">
+                          <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
                             <p className="text-xs text-purple-600 mb-1">النتيجة / 5</p>
-                            <p className="text-xl font-bold text-purple-700">{ev.final_score_5?.toFixed(2)}</p>
+                            <p className="text-xl font-bold text-ds-purple-text">{ev.final_score_5?.toFixed(2)}</p>
                           </div>
-                          <div className="bg-teal-50 rounded-lg p-3 text-center">
+                          <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                             <p className="text-xs text-teal-600 mb-1">النسبة المئوية</p>
-                            <p className="text-xl font-bold text-teal-700">{ev.percentage?.toFixed(0)}%</p>
+                            <p className="text-xl font-bold text-ds-info-text">{ev.percentage?.toFixed(0)}%</p>
                           </div>
-                          <div className="bg-amber-50 rounded-lg p-3 text-center">
+                          <div className="bg-ds-warning-bg rounded-lg p-3 text-center">
                             <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
                             {ev.general_rating ? (
                               <Badge variant={getRatingVariant(ev.general_rating)}>{ev.general_rating}</Badge>
@@ -697,17 +695,17 @@ export const Reports: React.FC = () => {
                         {/* General Criteria */}
                         {generalScores.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                               <Star className="h-4 w-4" /> المعايير العامة
                             </h3>
                             <div className="border rounded-lg overflow-hidden">
                               <table className="w-full text-sm">
-                                <thead className="bg-blue-50">
+                                <thead className="bg-ds-info-bg">
                                   <tr>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">المعيار</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الوزن</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الدرجة</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">المعيار</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">الوزن</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">الدرجة</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">النتيجة الموزونة</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-ds-border-subtle">
@@ -731,17 +729,17 @@ export const Reports: React.FC = () => {
                         {/* Specific Criteria */}
                         {specificScores.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-bold text-emerald-700 mb-2 flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-ds-success-text mb-2 flex items-center gap-2">
                               <Star className="h-4 w-4" /> المعايير الخاصة
                             </h3>
                             <div className="border rounded-lg overflow-hidden">
                               <table className="w-full text-sm">
-                                <thead className="bg-emerald-50">
+                                <thead className="bg-ds-success-bg">
                                   <tr>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">المعيار</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">الوزن</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">الدرجة</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">المعيار</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">الوزن</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">الدرجة</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">النتيجة الموزونة</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-ds-border-subtle">
@@ -766,24 +764,24 @@ export const Reports: React.FC = () => {
                         {(ev.manager_note || ev.employee_note || ev.ceo_comment) && (
                           <div className="space-y-3">
                             {ev.manager_note && (
-                              <div className="bg-blue-50 rounded-lg p-4">
-                                <p className="text-xs font-medium text-blue-700 mb-1 flex items-center gap-1">
+                              <div className="bg-ds-info-bg rounded-lg p-4">
+                                <p className="text-xs font-medium text-ds-info-text mb-1 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" /> ملاحظات المدير
                                 </p>
                                 <p className="text-sm text-ds-text">{ev.manager_note}</p>
                               </div>
                             )}
                             {ev.employee_note && (
-                              <div className="bg-teal-50 rounded-lg p-4">
-                                <p className="text-xs font-medium text-teal-700 mb-1 flex items-center gap-1">
+                              <div className="bg-ds-info-bg rounded-lg p-4">
+                                <p className="text-xs font-medium text-ds-info-text mb-1 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" /> رد الموظف
                                 </p>
                                 <p className="text-sm text-ds-text">{ev.employee_note}</p>
                               </div>
                             )}
                             {ev.ceo_comment && (
-                              <div className="bg-red-50 rounded-lg p-4">
-                                <p className="text-xs font-medium text-red-700 mb-1 flex items-center gap-1">
+                              <div className="bg-ds-danger-bg rounded-lg p-4">
+                                <p className="text-xs font-medium text-ds-danger-text mb-1 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" /> ملاحظات الإدارة العليا
                                 </p>
                                 <p className="text-sm text-ds-text">{ev.ceo_comment}</p>

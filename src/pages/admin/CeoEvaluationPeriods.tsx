@@ -390,7 +390,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   const activePeriod = periods.find(p => p.status === 'نشطة');
@@ -439,7 +439,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
                     : 'لا يوجد'}
                 </p>
               </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+              <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                 <Play className="h-6 w-6" />
               </div>
             </div>
@@ -452,7 +452,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
                 <p className="text-sm text-ds-muted mb-1">فترات قادمة</p>
                 <p className="text-xl font-bold text-ds-text">{upcomingPeriods.length}</p>
               </div>
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+              <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Calendar className="h-6 w-6" />
               </div>
             </div>
@@ -555,7 +555,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             {formError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">
                 {formError}
               </div>
             )}
@@ -637,7 +637,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
         title="تأكيد الحذف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">
@@ -651,7 +651,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
             نهائيًا.
           </p>
           {deleteError && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+            <div className="mt-4 bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">
               {deleteError}
             </div>
           )}
@@ -677,7 +677,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
       >
         <div className="flex flex-col items-center text-center py-4">
           <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${
-            statusChangeTarget?.newStatus === 'نشطة' ? 'bg-green-100' : 'bg-red-100'
+            statusChangeTarget?.newStatus === 'نشطة' ? 'bg-ds-success-bg' : 'bg-ds-danger-bg'
           }`}>
             {statusChangeTarget?.newStatus === 'نشطة' ? (
               <Play className="h-7 w-7 text-green-600" />

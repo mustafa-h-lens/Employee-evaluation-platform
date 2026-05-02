@@ -223,7 +223,7 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+  if (loading) return <div className="page-loading-placeholder" aria-hidden="true" />;
 
   return (
     <div className="space-y-6">
@@ -281,7 +281,7 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
                     <TableRow key={t.id} className={!t.is_active ? 'opacity-60 bg-ds-bg' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <div className="w-9 h-9 bg-ds-warning-bg text-ds-warning rounded-lg flex items-center justify-center flex-shrink-0">
                             <CalendarOff className="h-4 w-4" />
                           </div>
                           <span className="font-bold text-ds-text">{t.name}</span>
@@ -332,7 +332,7 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
         <form onSubmit={handleSave}>
           <div className="space-y-4">
             {formError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{formError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{formError}</div>
             )}
             <Input label="الاسم" value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
@@ -356,7 +356,7 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
 
       <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="حذف نوع الإجازة">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">حذف نوع الإجازة؟</p>

@@ -105,7 +105,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
   const pendingCount = totalCount - evaluatedCount;
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   return (
@@ -135,7 +135,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                 <p className="text-sm text-ds-muted mb-1">إجمالي المديرين</p>
                 <p className="text-2xl font-bold text-ds-text">{totalCount}</p>
               </div>
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+              <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Users className="h-6 w-6" />
               </div>
             </div>
@@ -148,7 +148,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                 <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                 <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
               </div>
-              <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+              <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                 <FileCheck className="h-6 w-6" />
               </div>
             </div>
@@ -161,7 +161,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                 <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                 <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
               </div>
-              <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+              <div className="bg-ds-warning-bg text-ds-warning p-3 rounded-xl">
                 <FileClock className="h-6 w-6" />
               </div>
             </div>

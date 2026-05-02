@@ -551,13 +551,13 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
         {embedded ? (
           <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-ds-border-subtle">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-success-bg text-ds-success rounded-xl flex items-center justify-center">
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-ds-text">معايير الإدارة لتقييم الموظفين</h2>
                 <p className="text-xs text-ds-muted mt-0.5">
-                  {currentDirectorate ? <>إدارة <span className="font-semibold text-emerald-700">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
+                  {currentDirectorate ? <>إدارة <span className="font-semibold text-ds-success-text">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
                 </p>
               </div>
             </div>
@@ -573,13 +573,13 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
             className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-success-bg text-ds-success rounded-xl flex items-center justify-center">
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-ds-text">معايير الإدارة لتقييم الموظفين</h2>
                 <p className="text-xs text-ds-muted mt-0.5">
-                  {currentDirectorate ? <>إدارة <span className="font-semibold text-emerald-700">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
+                  {currentDirectorate ? <>إدارة <span className="font-semibold text-ds-success-text">{currentDirectorate.name}</span> — مجموعات الموظفين والمعايير الخاصة بكل مجموعة</> : 'مجموعات الموظفين والمعايير الخاصة بكل مجموعة'}
                 </p>
               </div>
             </div>
@@ -618,17 +618,17 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center py-8 text-ds-muted">جاري التحميل...</div>
+              <div className="page-loading-placeholder" aria-hidden="true" />
             ) : (
               <>
                 {unassignedMembers.length > 0 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
+                  <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-start gap-3">
                     <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="text-amber-900 font-semibold text-sm mb-1">
+                      <p className="text-ds-warning-text font-semibold text-sm mb-1">
                         يوجد {unassignedMembers.length} موظف غير مصنّف في أي مجموعة معايير
                       </p>
-                      <p className="text-amber-800 text-sm">
+                      <p className="text-ds-warning-text text-sm">
                         لن يتم تقييم هؤلاء الموظفين بمعايير خاصة حتى تضيفهم إلى مجموعة. الموظفون غير المصنّفين:{' '}
                         <span className="font-medium">{unassignedMembers.map(m => m.full_name).join('، ')}</span>
                       </p>
@@ -707,12 +707,12 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
                               return (
                                 <React.Fragment key={criterion.id}>
                                   <TableRow
-                                    className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-emerald-50/40' : ''}`}
+                                    className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-success-bg/40' : ''}`}
                                     onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
                                   >
                                     <TableCell>
                                       <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <div className="w-9 h-9 bg-ds-success-bg text-ds-success rounded-lg flex items-center justify-center flex-shrink-0">
                                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </div>
                                         <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -741,7 +741,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex items-center gap-2">
-                                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                                        <div className="w-16 bg-ds-track rounded-full h-2">
                                           <div className="bg-emerald-500 h-2 rounded-full transition-all"
                                             style={{ width: `${Math.min(100, (criterion.weight / Math.max(1, group.specific_weight)) * 100)}%` }} />
                                         </div>
@@ -761,10 +761,10 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
                                     </TableCell>
                                   </TableRow>
                                   {isExpanded && (
-                                    <tr className="bg-emerald-50/40 border-b border-emerald-100">
+                                    <tr className="bg-ds-success-bg/40 border-b border-emerald-100">
                                       <td colSpan={6} className="px-6 py-4">
                                         <div className="bg-ds-surface rounded-lg border border-emerald-100 p-4">
-                                          <p className="text-xs font-semibold text-emerald-700 mb-1">الوصف الكامل</p>
+                                          <p className="text-xs font-semibold text-ds-success-text mb-1">الوصف الكامل</p>
                                           <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-line">
                                             {criterion.description || <span className="text-ds-faint italic">لا يوجد وصف</span>}
                                           </p>
@@ -795,7 +795,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
         <form onSubmit={handleSaveGroup}>
           <div className="space-y-4">
             {groupError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{groupError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{groupError}</div>
             )}
             <Input
               label="اسم المجموعة"
@@ -852,7 +852,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
 
       <Modal isOpen={isDeleteGroupModalOpen} onClose={() => setIsDeleteGroupModalOpen(false)} title="حذف المجموعة">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذه المجموعة؟</p>
@@ -877,7 +877,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
         <form onSubmit={handleSaveCriterion}>
           <div className="space-y-4">
             {criterionError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{criterionError}</div>
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">{criterionError}</div>
             )}
             <Input label="عنوان المعيار" value={criterionForm.title}
               onChange={e => setCriterionForm({ ...criterionForm, title: e.target.value })}
@@ -906,7 +906,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
 
       <Modal isOpen={isDeleteCriterionModalOpen} onClose={() => setIsDeleteCriterionModalOpen(false)} title="تأكيد الحذف">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>

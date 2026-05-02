@@ -708,7 +708,7 @@ export const AllEvaluations: React.FC = () => {
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
               activeTab === tab.key
-                ? tab.color === 'amber' ? 'border-amber-600 text-amber-600 bg-amber-50' : tab.color === 'blue' ? 'border-blue-600 text-blue-600 bg-blue-50' : tab.color === 'rose' ? 'border-rose-600 text-rose-600 bg-rose-50' : 'border-emerald-600 text-emerald-600 bg-emerald-50'
+                ? tab.color === 'amber' ? 'border-amber-600 text-amber-600 bg-ds-warning-bg' : tab.color === 'blue' ? 'border-blue-600 text-blue-600 bg-ds-info-bg' : tab.color === 'rose' ? 'border-rose-600 text-rose-600 bg-ds-danger-bg' : 'border-emerald-600 text-emerald-600 bg-ds-success-bg'
                 : 'border-transparent text-ds-faint hover:text-ds-muted hover:bg-ds-bg'
             }`}
           >
@@ -751,7 +751,7 @@ export const AllEvaluations: React.FC = () => {
             {(filterPeriod || filterDepartment || filterDirectorate) && (
               <button
                 onClick={resetFilters}
-                className="text-sm text-red-500 hover:text-red-700 transition-colors"
+                className="text-sm text-red-500 hover:text-ds-danger-text transition-colors"
               >
                 مسح الفلاتر
               </button>
@@ -762,9 +762,7 @@ export const AllEvaluations: React.FC = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="text-ds-faint">جاري التحميل...</div>
-        </div>
+        <div className="page-loading-placeholder" aria-hidden="true" />
       ) : activeTab === 'ceo' ? (
         <Card>
           <CardBody className="p-0">
@@ -938,7 +936,7 @@ export const AllEvaluations: React.FC = () => {
                     <TableRow key={ev.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                          <div className="w-9 h-9 bg-ds-success-bg text-ds-success rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
                             {ev.employee?.full_name?.charAt(0) || '?'}
                           </div>
                           <div>
@@ -993,9 +991,7 @@ export const AllEvaluations: React.FC = () => {
         size="lg"
       >
         {detailLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-ds-faint">جاري التحميل...</div>
-          </div>
+          <div className="page-loading-placeholder" aria-hidden="true" />
         ) : detailData ? (
           <div className="space-y-6">
             {/* Header info */}
@@ -1014,19 +1010,19 @@ export const AllEvaluations: React.FC = () => {
 
             {/* Final Results */}
             <div className="grid grid-cols-4 gap-3">
-              <div className="bg-blue-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
-                <p className="text-xl font-bold text-blue-700">{detailData.finalScore500?.toFixed(1)}</p>
+                <p className="text-xl font-bold text-ds-info-text">{detailData.finalScore500?.toFixed(1)}</p>
               </div>
-              <div className="bg-purple-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-purple-600 mb-1">النتيجة / 5</p>
-                <p className="text-xl font-bold text-purple-700">{detailData.finalScore5?.toFixed(2)}</p>
+                <p className="text-xl font-bold text-ds-purple-text">{detailData.finalScore5?.toFixed(2)}</p>
               </div>
-              <div className="bg-teal-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-teal-600 mb-1">النسبة المئوية</p>
-                <p className="text-xl font-bold text-teal-700">{detailData.percentage?.toFixed(0)}%</p>
+                <p className="text-xl font-bold text-ds-info-text">{detailData.percentage?.toFixed(0)}%</p>
               </div>
-              <div className="bg-amber-50 rounded-lg p-3 text-center">
+              <div className="bg-ds-warning-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
                 {detailData.generalRating ? (
                   <Badge variant={getRatingVariant(detailData.generalRating)}>{detailData.generalRating}</Badge>
@@ -1039,18 +1035,18 @@ export const AllEvaluations: React.FC = () => {
             {/* General Criteria */}
             {generalScores.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   المعايير العامة
                 </h3>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-blue-50">
+                    <thead className="bg-ds-info-bg">
                       <tr>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">المعيار</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الوزن</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">الدرجة</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-blue-700">النتيجة الموزونة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">المعيار</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">الوزن</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">الدرجة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-info-text">النتيجة الموزونة</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border-subtle">
@@ -1074,18 +1070,18 @@ export const AllEvaluations: React.FC = () => {
             {/* Specific Criteria */}
             {specificScores.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-emerald-700 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ds-success-text mb-2 flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   المعايير الخاصة
                 </h3>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-emerald-50">
+                    <thead className="bg-ds-success-bg">
                       <tr>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">المعيار</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">الوزن</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">الدرجة</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-emerald-700">النتيجة الموزونة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">المعيار</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">الوزن</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">الدرجة</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-ds-success-text">النتيجة الموزونة</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border-subtle">
@@ -1110,8 +1106,8 @@ export const AllEvaluations: React.FC = () => {
             {(detailData.evaluatorNote || detailData.subjectNote) && (
               <div className="space-y-3">
                 {detailData.evaluatorNote && (
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المقيّم</p>
+                  <div className="bg-ds-info-bg rounded-lg p-4">
+                    <p className="text-xs font-medium text-ds-info-text mb-1">ملاحظات المقيّم</p>
                     <p className="text-sm text-ds-text">{detailData.evaluatorNote}</p>
                   </div>
                 )}

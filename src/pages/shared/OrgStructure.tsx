@@ -194,8 +194,8 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
 };
 
 const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: boolean }> = ({ icon, label, value, accent }) => (
-  <div className={`flex items-center gap-3 p-3 rounded-xl ${accent ? 'bg-orange-50' : 'bg-ds-bg/80'} hover:bg-ds-overlay transition-colors`}>
-    <div className={`w-9 h-9 rounded-xl ${accent ? 'bg-orange-100 text-orange-600' : 'bg-ds-surface text-ds-faint shadow-sm'} flex items-center justify-center flex-shrink-0`}>
+  <div className={`flex items-center gap-3 p-3 rounded-xl ${accent ? 'bg-ds-warning-bg' : 'bg-ds-bg/80'} hover:bg-ds-overlay transition-colors`}>
+    <div className={`w-9 h-9 rounded-xl ${accent ? 'bg-ds-warning-bg text-ds-warning' : 'bg-ds-surface text-ds-faint shadow-sm'} flex items-center justify-center flex-shrink-0`}>
       {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
     </div>
     <div className="min-w-0 flex-1">
@@ -492,7 +492,7 @@ const OrgTree: React.FC<OrgTreeProps> = ({
           <Network className="h-12 w-12" style={{ color: '#334155' }} />
         </div>
         <p className="text-lg font-bold" style={{ color: '#94a3b8' }}>لا توجد بيانات للهيكل التنظيمي</p>
-        <p className="text-sm mt-2" style={{ color: '#475569' }}>قم بإضافة الإدارات والموظفين</p>
+        <p className="text-sm mt-2" style={{ color: '#94a3b8' }}>قم بإضافة الإدارات والموظفين</p>
       </div>
     );
   }
@@ -904,15 +904,7 @@ const JobTitlesTab: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-blue-100 rounded-full" />
-          <div className="absolute inset-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-        <p className="text-ds-muted font-medium">جاري التحميل...</p>
-      </div>
-    );
+    return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
   return (
@@ -1088,7 +1080,7 @@ const JobTitlesTab: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => handleDeleteTitle(titleRow.id)}
-                                className="p-1 rounded hover:bg-red-50 text-red-500"
+                                className="p-1 rounded hover:bg-ds-danger-bg text-ds-danger"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -1112,7 +1104,7 @@ const JobTitlesTab: React.FC = () => {
                   {editMode && (
                     <button
                       onClick={() => handleAddTitle(dept.id)}
-                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-3 border-2 border-dashed border-ds-border rounded-lg text-xs text-ds-faint hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-3 border-2 border-dashed border-ds-border rounded-lg text-xs text-ds-faint hover:border-ds-info-border hover:text-blue-600 hover:bg-ds-info-bg transition-colors"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       إضافة مسمى
@@ -1121,8 +1113,8 @@ const JobTitlesTab: React.FC = () => {
                 </div>
               </div>
 
-              <div className="px-4 py-2.5 border-t border-gray-50" style={{ background: 'rgba(249,250,251,0.5)' }}>
-                <div className="flex items-center justify-center gap-1.5 text-[10px] text-ds-faint">
+              <div className="px-4 py-2.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
+                <div className="flex items-center justify-center gap-1.5 text-[10px]" style={{ color: '#94a3b8' }}>
                   <Target className="h-3 w-3" />
                   <span>ارتقِ بمسيرتك المهنية</span>
                 </div>
@@ -1134,7 +1126,7 @@ const JobTitlesTab: React.FC = () => {
         {editMode && (
           <button
             onClick={handleAddDept}
-            className="bg-ds-surface rounded-2xl border-2 border-dashed border-ds-border hover:border-blue-400 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center min-h-[300px] gap-3 text-ds-faint hover:text-blue-600"
+            className="bg-ds-surface rounded-2xl border-2 border-dashed border-ds-border hover:border-blue-400 hover:bg-ds-info-bg transition-colors flex flex-col items-center justify-center min-h-[300px] gap-3 text-ds-faint hover:text-blue-600"
           >
             <div className="w-12 h-12 rounded-2xl bg-ds-overlay flex items-center justify-center">
               <Plus className="h-6 w-6" />
@@ -1456,20 +1448,14 @@ export const OrgStructure: React.FC = () => {
 
       {activeTab === 'org' && (<>
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-blue-100 rounded-full" />
-            <div className="absolute inset-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className="text-ds-muted font-medium">جاري تحميل الهيكل التنظيمي...</p>
-        </div>
+        <div className="page-loading-placeholder" aria-hidden="true" />
       ) : (<>
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { l: 'مديري إدارات', v: stats.directors, icon: <Landmark className="h-5 w-5" />, bg: 'bg-purple-50 text-purple-600' },
-          { l: 'موظفون', v: stats.employees, icon: <Users className="h-5 w-5" />, bg: 'bg-emerald-50 text-emerald-600' },
-          { l: 'مشرفون', v: stats.supervisors, icon: <Shield className="h-5 w-5" />, bg: 'bg-orange-50 text-orange-600' },
+          { l: 'مديري إدارات', v: stats.directors, icon: <Landmark className="h-5 w-5" />, bg: 'bg-ds-purple-bg text-ds-purple' },
+          { l: 'موظفون', v: stats.employees, icon: <Users className="h-5 w-5" />, bg: 'bg-ds-success-bg text-ds-success' },
+          { l: 'مشرفون', v: stats.supervisors, icon: <Shield className="h-5 w-5" />, bg: 'bg-ds-warning-bg text-ds-warning' },
         ].map(s => (
           <div key={s.l} className="bg-ds-surface rounded-xl border border-ds-border-subtle shadow-sm p-3 flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center`}>{s.icon}</div>
@@ -1486,10 +1472,10 @@ export const OrgStructure: React.FC = () => {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
           <input type="text" placeholder="بحث بالاسم أو البريد..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pr-10 pl-4 py-2 border border-ds-border rounded-lg text-sm bg-ds-bg focus:bg-ds-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            className="w-full pr-10 pl-4 py-2 border border-ds-border rounded-lg text-sm bg-ds-bg focus:bg-ds-surface focus:ring-2 focus:ring-ds-accent focus:border-ds-accent transition-all" />
         </div>
         <div className="h-7 w-px bg-gray-200" />
-        <button onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 hover:bg-blue-50 rounded-lg transition-colors">توسيع الكل</button>
+        <button onClick={expandAll} className="text-xs text-blue-600 hover:text-ds-info-text font-medium px-2 py-1.5 hover:bg-ds-info-bg rounded-lg transition-colors">توسيع الكل</button>
         <button onClick={collapseAll} className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors">طي الكل</button>
         <div className="h-7 w-px bg-gray-200" />
         <button onClick={toggleFullscreen}

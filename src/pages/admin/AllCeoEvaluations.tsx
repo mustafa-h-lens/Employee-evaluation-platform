@@ -269,9 +269,7 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
 
       {/* Evaluations List */}
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <div className="page-loading-placeholder" aria-hidden="true" />
       ) : filtered.length === 0 ? (
         <Card>
           <CardBody className="text-center py-16">
@@ -325,7 +323,7 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
                         </>
                       )}
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                        <div className="w-7 h-7 bg-ds-info-bg text-ds-info rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">
                           {getInitials(ev.evaluator?.full_name)}
                         </div>
                         <span className="text-ds-muted text-sm font-medium">{ev.evaluator?.full_name || '-'}</span>
@@ -341,15 +339,13 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
                 {isExpanded && (
                   <div className="border-t border-ds-border px-6 py-4 bg-ds-bg space-y-4">
                     {expandLoading ? (
-                      <div className="flex items-center justify-center py-6">
-                        <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
+                      <div className="page-loading-placeholder" aria-hidden="true" />
                     ) : (
                       <>
                         {/* Criterion Scores */}
                         {expandedScores.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-bold text-blue-800 mb-3">تفاصيل معايير التقييم</h4>
+                            <h4 className="text-sm font-bold text-ds-info-text mb-3">تفاصيل معايير التقييم</h4>
                             <div className="space-y-2">
                               {expandedScores.map((s, i) => (
                                 <div
@@ -377,9 +373,9 @@ export const AllCeoEvaluations: React.FC<{ embedded?: boolean }> = ({ embedded =
 
                         {/* Evaluator Note */}
                         {expandedNote && (
-                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                            <p className="text-xs font-medium text-blue-700 mb-1">ملاحظات المُقيّم</p>
-                            <p className="text-sm text-blue-900 leading-relaxed">{expandedNote}</p>
+                          <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                            <p className="text-xs font-medium text-ds-info-text mb-1">ملاحظات المُقيّم</p>
+                            <p className="text-sm text-ds-info-text leading-relaxed">{expandedNote}</p>
                           </div>
                         )}
 

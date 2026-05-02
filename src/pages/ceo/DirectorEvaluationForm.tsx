@@ -564,9 +564,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
   if (directorsLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <div className="page-loading-placeholder" aria-hidden="true" />
     );
   }
 
@@ -632,7 +630,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                   <p className="text-sm text-ds-muted mb-1">إجمالي المدراء</p>
                   <p className="text-2xl font-bold text-ds-text">{allDirectors.length}</p>
                 </div>
-                <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                   <Users className="h-6 w-6" />
                 </div>
               </div>
@@ -645,7 +643,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                   <p className="text-sm text-ds-muted mb-1">تم تقييمهم</p>
                   <p className="text-2xl font-bold text-green-600">{evaluatedCount}</p>
                 </div>
-                <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+                <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                   <FileCheck className="h-6 w-6" />
                 </div>
               </div>
@@ -658,7 +656,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                   <p className="text-sm text-ds-muted mb-1">بانتظار التقييم</p>
                   <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
                 </div>
-                <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                <div className="bg-ds-warning-bg text-ds-warning p-3 rounded-xl">
                   <FileClock className="h-6 w-6" />
                 </div>
               </div>
@@ -667,9 +665,9 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         </div>
 
         {!hasSpecificCriteria && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
+          <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم المدراء. اذهب إلى تبويب "إدارة المعايير" لإضافتها.</p>
+            <p className="text-sm text-ds-warning-text">يجب إضافة المعايير الخاصة أولاً قبل البدء بتقييم المدراء. اذهب إلى تبويب "إدارة المعايير" لإضافتها.</p>
           </div>
         )}
 
@@ -683,7 +681,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                   placeholder="بحث بالاسم أو البريد أو المسمى..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10 pl-4 py-2.5 border border-ds-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  className="w-full pr-10 pl-4 py-2.5 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none transition-colors text-sm"
                 />
               </div>
             </div>
@@ -747,7 +745,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                       </TableCell>
                       <TableCell>
                         {leave ? (
-                          <span className="text-xs text-amber-700" title={formatLeaveChip(leave)}>
+                          <span className="text-xs text-ds-warning-text" title={formatLeaveChip(leave)}>
                             لا يمكن التقييم — {leave.type_name}
                           </span>
                         ) : (() => {
@@ -765,7 +763,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                           if (isPeriodOpen && (!dir.eval_status || dir.eval_status === 'مسودة') && !hasSpecificCriteria) {
                             return (
                               <div className="text-center">
-                                <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-ds-faint cursor-not-allowed">
+                                <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-ds-track text-ds-faint cursor-not-allowed">
                                   <ClipboardEdit className="h-4 w-4" />
                                   <span>تقييم</span>
                                 </button>
@@ -831,7 +829,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
             setExistingEvaluationId(null);
             setDirector(null);
           }}
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
+          className="flex items-center gap-1 text-blue-600 hover:text-ds-info-text transition-colors"
         >
           <ArrowRight className="h-5 w-5" />
           <span className="text-sm font-medium">العودة للقائمة</span>
@@ -871,9 +869,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       </Card>
 
       {dataLoading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <div className="page-loading-placeholder" aria-hidden="true" />
       )}
 
       {!dataLoading && !activePeriod && (
@@ -889,11 +885,11 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       {!dataLoading && activePeriod && <>
       {/* Rejection Comment */}
       {evaluationStatus === 'مرفوض' && ceoComment && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-red-800 mb-1">تم رفض التقييم</p>
-            <p className="text-sm text-red-700">{ceoComment}</p>
+            <p className="text-sm font-bold text-ds-danger-text mb-1">تم رفض التقييم</p>
+            <p className="text-sm text-ds-danger-text">{ceoComment}</p>
             <p className="text-xs text-red-500 mt-2">يمكنك تعديل التقييم وإعادة إرساله</p>
           </div>
         </div>
@@ -901,10 +897,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
       {/* Waiting for partner notice */}
       {isWaitingForPartner && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-4 flex items-start gap-3">
           <Lock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-blue-800">تم إرسال تقييمك بنجاح</p>
+            <p className="text-sm font-bold text-ds-info-text">تم إرسال تقييمك بنجاح</p>
             <p className="text-xs text-blue-600 mt-1">
               بانتظار إرسال تقييم {partnerName || 'الشريك'} — سيتم إرسال التقييم المجمّع للاعتماد بعد إرسال كلا التقييمين
             </p>
@@ -914,10 +910,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
       {/* Pending Approval Notice */}
       {evaluationStatus === 'بانتظار الموافقة' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-4 flex items-start gap-3">
           <Lock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-amber-800">التقييم بانتظار الاعتماد</p>
+            <p className="text-sm font-bold text-ds-warning-text">التقييم بانتظار الاعتماد</p>
             <p className="text-xs text-amber-600 mt-1">تم إرسال كلا التقييمين — بانتظار المراجعة والاعتماد</p>
           </div>
         </div>
@@ -925,10 +921,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
       {/* Approved Notice */}
       {evaluationStatus === 'موافقة' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-ds-success-bg border border-ds-success-border rounded-lg p-4 flex items-start gap-3">
           <Lock className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-green-800">تم اعتماد التقييم</p>
+            <p className="text-sm font-bold text-ds-success-text">تم اعتماد التقييم</p>
           </div>
         </div>
       )}
@@ -936,23 +932,23 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       {/* Director Info */}
       {director && (
         <Card>
-          <CardBody className="bg-blue-50">
+          <CardBody className="bg-ds-info-bg">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-blue-200 rounded-full flex items-center justify-center">
-                <User className="h-7 w-7 text-blue-700" />
+                <User className="h-7 w-7 text-ds-info-text" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
                 <div>
                   <p className="text-sm text-blue-600">اسم مدير الإدارة</p>
-                  <p className="font-semibold text-blue-900">{director.full_name}</p>
+                  <p className="font-semibold text-ds-info-text">{director.full_name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-blue-600">المسمى الوظيفي</p>
-                  <p className="font-semibold text-blue-900">{director.job_title}</p>
+                  <p className="font-semibold text-ds-info-text">{director.job_title}</p>
                 </div>
                 <div>
                   <p className="text-sm text-blue-600">فترة التقييم</p>
-                  <p className="font-semibold text-blue-900">
+                  <p className="font-semibold text-ds-info-text">
                     {monthLabels[activePeriod.month]} - {activePeriod.year}
                   </p>
                 </div>
@@ -967,15 +963,15 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <h3 className="text-lg font-bold text-blue-900">معايير التقييم العامة</h3>
+            <h3 className="text-lg font-bold text-ds-info-text">معايير التقييم العامة</h3>
             <span className="text-sm text-ds-faint">
               ({scoredCount}/{criteria.length} تم تقييمها)
             </span>
           </div>
           <div className="space-y-4">
             {criteria.map(criterion => (
-              <Card key={criterion.id} className="border-blue-200">
-                <CardHeader className="bg-blue-50/50">
+              <Card key={criterion.id} className="border-ds-info-border">
+                <CardHeader className="bg-ds-info-bg/50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-ds-text">{criterion.title}</h3>
@@ -1023,15 +1019,15 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <h3 className="text-lg font-bold text-emerald-900">معايير التقييم الخاصة</h3>
+            <h3 className="text-lg font-bold text-ds-success-text">معايير التقييم الخاصة</h3>
             <span className="text-sm text-ds-faint">
               ({specificCriteria.filter(c => specificScores[c.id] && specificScores[c.id] > 0).length}/{specificCriteria.length} تم تقييمها)
             </span>
           </div>
           <div className="space-y-4">
             {specificCriteria.map(criterion => (
-              <Card key={criterion.id} className="border-emerald-200">
-                <CardHeader className="bg-emerald-50/50">
+              <Card key={criterion.id} className="border-ds-success-border">
+                <CardHeader className="bg-ds-success-bg/50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-ds-text">{criterion.title}</h3>
@@ -1120,10 +1116,10 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
       {/* Director Reply */}
       {directorReply && (
         <Card>
-          <CardBody className="bg-teal-50 border-teal-100">
+          <CardBody className="bg-ds-info-bg border-teal-100">
             <div className="flex items-center gap-2 mb-2">
               <MessageSquare className="h-4 w-4 text-teal-600" />
-              <h2 className="text-sm font-bold text-teal-800">رد مدير الإدارة على التقييم</h2>
+              <h2 className="text-sm font-bold text-ds-info-text">رد مدير الإدارة على التقييم</h2>
             </div>
             <p className="text-ds-text leading-relaxed">{directorReply}</p>
           </CardBody>

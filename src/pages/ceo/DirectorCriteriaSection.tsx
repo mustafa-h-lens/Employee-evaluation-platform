@@ -324,7 +324,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
         {embedded ? (
           <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-ds-border-subtle">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-purple-bg text-ds-purple rounded-xl flex items-center justify-center">
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
@@ -348,7 +348,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
             className="w-full flex items-center justify-between gap-4 px-6 py-4 text-right hover:bg-ds-overlay/40 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-ds-purple-bg text-ds-purple rounded-xl flex items-center justify-center">
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
@@ -371,7 +371,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
         {open && (
           <div className="border-t border-ds-border-subtle p-6 space-y-4">
             {loading ? (
-              <div className="flex items-center justify-center py-8 text-ds-muted">جاري التحميل...</div>
+              <div className="page-loading-placeholder" aria-hidden="true" />
             ) : (
               <>
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -388,9 +388,9 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                 </div>
 
                 {totalWeight !== specificWeightLimit && criteria.length > 0 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
+                  <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-center gap-3">
                     <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                    <p className="text-amber-800 text-sm">
+                    <p className="text-ds-warning-text text-sm">
                       مجموع أوزان المعايير الخاصة النشطة يجب أن يساوي {specificWeightLimit}%. المجموع الحالي: <span className="font-bold">{totalWeight}%</span>
                     </p>
                   </div>
@@ -422,7 +422,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                           return (
                             <React.Fragment key={criterion.id}>
                               <TableRow
-                                className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-purple-50/40' : ''}`}
+                                className={`${!criterion.is_active ? 'opacity-60 bg-ds-bg' : ''} ${isExpanded ? 'bg-ds-purple-bg/40' : ''}`}
                                 onClick={() => setExpandedId(isExpanded ? null : criterion.id)}
                               >
                                 <TableCell className="text-ds-faint">
@@ -430,7 +430,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 bg-ds-purple-bg text-ds-purple rounded-lg flex items-center justify-center flex-shrink-0">
                                       <GripVertical className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold text-ds-text">{criterion.title}</span>
@@ -465,7 +465,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-16 bg-gray-200 rounded-full h-2">
+                                    <div className="w-16 bg-ds-track rounded-full h-2">
                                       <div
                                         className="bg-purple-600 h-2 rounded-full transition-all"
                                         style={{ width: `${(criterion.weight / specificWeightLimit) * 100}%` }}
@@ -502,10 +502,10 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
                                 </TableCell>
                               </TableRow>
                               {isExpanded && (
-                                <TableRow className="bg-purple-50/40">
+                                <TableRow className="bg-ds-purple-bg/40">
                                   <TableCell colSpan={7} className="!whitespace-normal">
                                     <div className="px-2 py-1">
-                                      <p className="text-xs font-semibold text-purple-700 mb-1">الوصف الكامل</p>
+                                      <p className="text-xs font-semibold text-ds-purple-text mb-1">الوصف الكامل</p>
                                       <p className="text-sm text-ds-muted leading-relaxed whitespace-pre-wrap">{criterion.description}</p>
                                     </div>
                                   </TableCell>
@@ -532,7 +532,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             {formError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm">
                 {formError}
               </div>
             )}
@@ -593,7 +593,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
         title="تأكيد الحذف"
       >
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-ds-danger-bg rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-7 w-7 text-red-600" />
           </div>
           <p className="text-ds-text text-lg font-medium mb-2">هل أنت متأكد من حذف هذا المعيار؟</p>
@@ -601,7 +601,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
             سيتم حذف معيار <span className="font-bold text-ds-muted">{deleteTarget?.title}</span> نهائيًا.
           </p>
           {deleteError && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm w-full">
+            <div className="mt-4 bg-ds-danger-bg border border-ds-danger-border rounded-lg p-3 text-ds-danger-text text-sm w-full">
               {deleteError}
             </div>
           )}
