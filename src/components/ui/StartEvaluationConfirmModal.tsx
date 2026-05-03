@@ -63,10 +63,10 @@ export const StartEvaluationConfirmModal: React.FC<StartEvaluationConfirmModalPr
         </div>
       </div>
 
-      {/* Footer — primary action first in source so it lands on the right
-          in RTL (the natural starting edge of reading flow). Both buttons
-          share a min-width so the footer reads as a balanced pair. */}
-      <ModalFooter>
+      {/* Footer — buttons centered as a balanced pair. Inline style is
+          required because the shared `.modal-foot` class hard-codes
+          `justify-content: flex-end` for the rest of the system. */}
+      <ModalFooter className="!justify-center">
         <Button onClick={onConfirm} className="flex items-center gap-2 justify-center min-w-[140px]">
           <ClipboardEdit className="h-4 w-4" />
           <span>{confirmLabel}</span>
