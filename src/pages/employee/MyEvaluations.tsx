@@ -146,6 +146,18 @@ export const MyEvaluations: React.FC = () => {
 
     const rawDirEvals: any[] = ((dirData as any[]) || []);
 
+    // Co-director gating: pull every directorate that has a secondary
+    // director and hide any solo pending row tied to one of those. The
+    // employee should only see the directorate's evaluation once both
+    // co-directors have submitted and the average is computed — otherwise
+    // a single director's submission would surface before the partner
+    // had a chance to weigh in.
+    const { data: coDirs } = await supabase
+      .from('directorates')
+      .select('id')
+      .not('secondary_director_id', 'is', null);
+    const coDirIds = new Set((coDirs || []).map((d: any) => d.id));
+
     // Group director evaluations by period_id only. Two co-directors of
     // the same directorate, OR two different directorates evaluating the
     // same person, both collapse to ONE card per period whose value is the
@@ -162,7 +174,12 @@ export const MyEvaluations: React.FC = () => {
     const dirEvals: Evaluation[] = [];
     periodGroups.forEach(group => {
       if (group.length === 1) {
-        dirEvals.push({ ...group[0], source: 'director' as const });
+        const r = group[0];
+        const isPending = r.status === 'تم الإرسال' || r.status === 'بانتظار الموافقة';
+        if (isPending && r.directorate_id && coDirIds.has(r.directorate_id)) {
+          return;
+        }
+        dirEvals.push({ ...r, source: 'director' as const });
         return;
       }
       const avg = (k: string) => group.reduce((s, r) => s + (r[k] || 0), 0) / group.length;
