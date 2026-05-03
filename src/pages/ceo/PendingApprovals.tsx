@@ -48,6 +48,7 @@ interface EvalItem {
   id: string;
   employee_id?: string;
   period_id?: string;
+  directorate_id?: string | null;
   employee: { full_name: string; job_title: string; employee_number: string } | null;
   manager: { full_name: string } | null;
   department: { name: string } | null;
@@ -160,6 +161,22 @@ export const PendingApprovals: React.FC = () => {
   const [supervisorEvals, setSupervisorEvals] = useState<SupervisorEvalItem[]>([]);
   const [supLoading, setSupLoading] = useState(true);
 
+  // Directorates that have a secondary director — pending evaluations from
+  // these must wait for BOTH directors to submit before reaching the CEO.
+  // A solo submission would otherwise short-circuit the average and let
+  // one director unilaterally push to approval.
+  const [coDirectorateIds, setCoDirectorateIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('directorates')
+        .select('id')
+        .not('secondary_director_id', 'is', null);
+      setCoDirectorateIds(new Set((data || []).map((d: any) => d.id)));
+    })();
+  }, []);
+
   // Group employee evaluations by (employee_id, period_id) so the two rows
   // produced by co-directors of the same directorate collapse into one
   // "الإدارة العليا" entry with averaged scores.
@@ -174,6 +191,15 @@ export const PendingApprovals: React.FC = () => {
     groups.forEach((rows, key) => {
       if (rows.length === 1) {
         const r = rows[0];
+        // Co-directorate guard: if the directorate has a secondary
+        // director and this is still pending CEO review, hide the row
+        // until the partner submits and the pair averages. Approved or
+        // rejected solo rows still surface so historical audit isn't
+        // erased.
+        const isPending = r.status === 'تم الإرسال' || r.status === 'بانتظار الموافقة';
+        if (isPending && r.directorate_id && coDirectorateIds.has(r.directorate_id)) {
+          return;
+        }
         out.push({
           groupKey: key,
           ids: [r.id],
@@ -211,7 +237,7 @@ export const PendingApprovals: React.FC = () => {
       const tb = b.primary.submitted_at ? new Date(b.primary.submitted_at).getTime() : 0;
       return tb - ta;
     });
-  }, [evaluations]);
+  }, [evaluations, coDirectorateIds]);
 
   // Detail modal
   const [detailModal, setDetailModal] = useState(false);
@@ -251,7 +277,7 @@ export const PendingApprovals: React.FC = () => {
     let query = supabase
       .from('evaluations')
       .select(`
-        id, employee_id, period_id, status, final_score_500, final_score_5, percentage, general_rating,
+        id, employee_id, period_id, directorate_id, status, final_score_500, final_score_5, percentage, general_rating,
         manager_note, employee_note, ceo_comment, submitted_at,
         employee:employees(full_name, job_title, employee_number),
         manager:users!evaluations_manager_id_fkey(full_name),
