@@ -494,23 +494,41 @@ export const PendingApprovals: React.FC = () => {
     setDetailEval(null);
     setDetailDirEval(null);
 
+    // Fetch raw scores first; resolve criterion titles/weights in a second
+    // pass. Splitting the queries keeps the criteria sections rendering
+    // even if a single embedded join hits an RLS edge case.
     const { data: scores } = await supabase
       .from('supervisor_evaluation_scores')
-      .select(`
-        score_1_to_5, weighted_result, criterion_type,
-        criterion:evaluation_criteria(title, description, weight),
-        sup_criterion:supervisor_criteria(title, description, weight)
-      `)
+      .select('score_1_to_5, weighted_result, criterion_type, criterion_id, supervisor_criterion_id')
       .eq('evaluation_id', ev.id);
 
-    const scoreDetails: ScoreDetail[] = (scores || []).map((s: any) => ({
-      criterion_title: s.criterion_type === 'specific' ? (s.sup_criterion?.title || '') : (s.criterion?.title || ''),
-      criterion_description: s.criterion_type === 'specific' ? (s.sup_criterion?.description || '') : (s.criterion?.description || ''),
-      criterion_weight: s.criterion_type === 'specific' ? (s.sup_criterion?.weight || 0) : (s.criterion?.weight || 0),
-      score: s.score_1_to_5,
-      weighted_result: s.weighted_result,
-      type: s.criterion_type || 'general',
-    }));
+    const rows = (scores as any[]) || [];
+    const generalIds = Array.from(new Set(rows.filter(r => r.criterion_type !== 'specific' && r.criterion_id).map(r => r.criterion_id)));
+    const specificIds = Array.from(new Set(rows.filter(r => r.criterion_type === 'specific' && r.supervisor_criterion_id).map(r => r.supervisor_criterion_id)));
+
+    const [{ data: genCrit }, { data: supCrit }] = await Promise.all([
+      generalIds.length
+        ? supabase.from('evaluation_criteria').select('id, title, description, weight').in('id', generalIds)
+        : Promise.resolve({ data: [] as any[] }),
+      specificIds.length
+        ? supabase.from('supervisor_criteria').select('id, title, description, weight').in('id', specificIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const genMap = new Map((genCrit || []).map((c: any) => [c.id, c]));
+    const supMap = new Map((supCrit || []).map((c: any) => [c.id, c]));
+
+    const scoreDetails: ScoreDetail[] = rows.map((s: any) => {
+      const c = s.criterion_type === 'specific' ? supMap.get(s.supervisor_criterion_id) : genMap.get(s.criterion_id);
+      return {
+        criterion_title: c?.title || '',
+        criterion_description: c?.description || '',
+        criterion_weight: c?.weight || 0,
+        score: s.score_1_to_5,
+        weighted_result: s.weighted_result,
+        type: s.criterion_type || 'general',
+      };
+    });
 
     setDetailScores(scoreDetails);
     setDetailLoading(false);
