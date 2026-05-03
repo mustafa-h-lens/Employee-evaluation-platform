@@ -160,9 +160,16 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     return groupSpecificTarget[groupId] ?? specificWeightTarget;
   }, [groupSpecificTarget, specificWeightTarget]);
 
-  const canEvaluateEmployee = useCallback((empId: string): boolean => {
+  // Membership is keyed by `${empId}__${dirId}` so a multi-directorate
+  // employee carries a separate group per directorate. A flat empId-only
+  // key collapsed both rows onto whichever group_id arrived last and
+  // falsely enabled the button for the directorate where the employee
+  // was unassigned.
+  const membershipKey = (empId: string, dirId: string | null | undefined) => `${empId}__${dirId || ''}`;
+
+  const canEvaluateEmployee = useCallback((empId: string, dirId: string | null | undefined): boolean => {
     if (noSpecificNeeded) return true;
-    const groupId = employeeGroupMembership[empId];
+    const groupId = employeeGroupMembership[membershipKey(empId, dirId)];
     if (!groupId) return false;
     const target = targetForGroup(groupId);
     if (target === 0) return true;
@@ -189,7 +196,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           .not('group_id', 'is', null),
         supabase
           .from('department_criteria_group_members')
-          .select('group_id, employee_id')
+          .select('group_id, employee_id, directorate_id')
           .in('directorate_id', dirIds),
         supabase
           .from('evaluation_settings')
@@ -216,8 +223,13 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         sumMap[r.group_id] = (sumMap[r.group_id] || 0) + Number(r.weight || 0);
       });
       setGroupCriteriaSum(sumMap);
+      // Key by `${empId}__${dirId}` — a multi-directorate employee can be
+      // in different groups (or in no group) per directorate, so collapsing
+      // to empId-only would let the wrong directorate's group bleed across.
       const memMap: Record<string, string> = {};
-      (members || []).forEach((m: any) => { memMap[m.employee_id] = m.group_id; });
+      (members || []).forEach((m: any) => {
+        memMap[`${m.employee_id}__${m.directorate_id || ''}`] = m.group_id;
+      });
       setEmployeeGroupMembership(memMap);
     };
     checkCriteria();
@@ -411,7 +423,14 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
   const fetchEmployee = useCallback(async () => {
     if (!employeeId) return;
-    const found = allEmployees.find(e => e.id === employeeId);
+    // Prefer the row whose directorate matches the chosen evaluation
+    // context — multi-directorate employees appear once per directorate
+    // in `allEmployees`, so a plain `find by id` would return whichever
+    // came first and overwrite directorate_id with the wrong value.
+    const matchedByDir = selectedDirectorateForEval
+      ? allEmployees.find(e => e.id === employeeId && e.directorate_id === selectedDirectorateForEval)
+      : null;
+    const found = matchedByDir || allEmployees.find(e => e.id === employeeId);
     if (found) {
       setEmployee(found);
       return;
@@ -422,7 +441,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       .eq('id', employeeId)
       .single();
     if (data) setEmployee({ ...data, department_name: '' });
-  }, [employeeId, allEmployees]);
+  }, [employeeId, allEmployees, selectedDirectorateForEval]);
 
   const fetchActivePeriod = useCallback(async () => {
     const { data: periods } = await supabase
@@ -577,7 +596,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         ]);
       })().finally(() => setDataLoading(false));
     }
-  }, [user, employeeId]);
+    // selectedDirectorateForEval is part of the deps so re-entering the
+    // form for the same employee under a different directorate reloads
+    // criteria for THAT directorate's group.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, employeeId, selectedDirectorateForEval]);
 
   useEffect(() => {
     if (employeeId && activePeriod && user) {
@@ -621,8 +644,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     // specific-criteria weights don't sum to the target (or who isn't in
     // any group). Mirrors the table-row disable so a user reaching the
     // form via direct URL can't bypass it.
-    if (!noSpecificNeeded && !canEvaluateEmployee(employeeId)) {
-      const groupId = employeeGroupMembership[employeeId];
+    if (!noSpecificNeeded && !canEvaluateEmployee(employeeId, selectedDirectorateForEval)) {
+      const groupId = employeeGroupMembership[membershipKey(employeeId, selectedDirectorateForEval)];
       const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
       const target = targetForGroup(groupId);
       toast.error(!groupId
@@ -870,7 +893,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           </Card>
         </div>
 
-        {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id)) && (
+        {!noSpecificNeeded && filteredEmployees.some(e => !canEvaluateEmployee(e.id, e.directorate_id)) && (
           <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <p className="text-sm text-ds-warning-text">بعض الموظفين لا يمكن تقييمهم — يجب أن يكون مجموع أوزان المعايير النشطة في كل مجموعة مساوياً للنسبة الخاصة بها. أكمل المعايير في تبويب "إدارة المعايير".</p>
@@ -970,8 +993,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                             return <span className="text-xs text-ds-faint">لا توجد فترة نشطة</span>;
                           }
 
-                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id)) {
-                            const groupId = employeeGroupMembership[emp.id];
+                          if (isPeriodOpen && (!emp.eval_status || emp.eval_status === 'مسودة') && !canEvaluateEmployee(emp.id, emp.directorate_id)) {
+                            const groupId = employeeGroupMembership[membershipKey(emp.id, emp.directorate_id)];
                             const sum = groupId ? (groupCriteriaSum[groupId] || 0) : 0;
                             const target = targetForGroup(groupId);
                             const reason = !groupId
