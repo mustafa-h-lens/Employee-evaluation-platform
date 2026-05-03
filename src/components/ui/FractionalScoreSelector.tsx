@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface FractionalScoreSelectorProps {
@@ -16,16 +17,56 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
 }) => {
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        popoverRef.current && !popoverRef.current.contains(target)
+      ) {
         setOpenDropdown(null);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useLayoutEffect(() => {
+    if (openDropdown === null) {
+      setPopoverPos(null);
+      return;
+    }
+    const trigger = triggerRefs.current[openDropdown];
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setPopoverPos({
+      top: rect.bottom + 4,
+      left: rect.left + rect.width / 2,
+    });
+  }, [openDropdown]);
+
+  useEffect(() => {
+    if (openDropdown === null) return;
+    const reposition = () => {
+      const trigger = triggerRefs.current[openDropdown];
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      setPopoverPos({
+        top: rect.bottom + 4,
+        left: rect.left + rect.width / 2,
+      });
+    };
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [openDropdown]);
 
   const baseInt = Math.floor(value);
   const frac = value ? +(value - baseInt).toFixed(2) : 0;
@@ -58,7 +99,7 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
         const displayText = hasFraction ? `${value}` : `${score}`;
 
         return (
-          <div key={score} className="flex-1 relative">
+          <div key={score} className="flex-1 relative min-w-0">
             <button
               type="button"
               disabled={disabled}
@@ -67,7 +108,9 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
                 onChange(score);
                 setOpenDropdown(null);
               }}
-              className={`w-full py-3 px-2 font-bold text-lg transition-all ${
+              className={`w-full py-3 px-2 font-bold transition-all tabular-nums truncate ${
+                hasFraction ? 'text-base' : 'text-lg'
+              } ${
                 score < 5 && !disabled ? 'rounded-t-lg border-b-0' : 'rounded-lg'
               } ${disabled ? 'cursor-default' : ''}`}
               style={{
@@ -82,6 +125,7 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
             {score < 5 && !disabled && (
               <button
                 type="button"
+                ref={el => { triggerRefs.current[score] = el; }}
                 onClick={() => setOpenDropdown(isDropdownOpen ? null : score)}
                 className="w-full py-1 rounded-b-lg border-t flex items-center justify-center transition-all"
                 style={{
@@ -105,44 +149,51 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
             )}
-
-            {isDropdownOpen && (
-              <div
-                className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-20 py-1 min-w-[80px]"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-soft)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-md)',
-                }}
-              >
-                {[0.25, 0.5, 0.75].map(f => {
-                  const fracValue = score + f;
-                  const isFracSelected = value === fracValue;
-                  return (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => {
-                        onChange(fracValue);
-                        setOpenDropdown(null);
-                      }}
-                      className="w-full px-3 py-1.5 text-sm font-semibold text-center transition-colors"
-                      style={
-                        isFracSelected
-                          ? { background: accentLight, color: accent }
-                          : { color: 'var(--text-secondary)' }
-                      }
-                    >
-                      {fracValue.toFixed(2)}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         );
       })}
+
+      {openDropdown !== null && popoverPos && createPortal(
+        <div
+          ref={popoverRef}
+          className="py-1 min-w-[80px]"
+          style={{
+            position: 'fixed',
+            top: popoverPos.top,
+            left: popoverPos.left,
+            transform: 'translateX(-50%)',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-soft)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-md)',
+            zIndex: 1000,
+          }}
+        >
+          {[0.25, 0.5, 0.75].map(f => {
+            const fracValue = openDropdown + f;
+            const isFracSelected = value === fracValue;
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => {
+                  onChange(fracValue);
+                  setOpenDropdown(null);
+                }}
+                className="w-full px-3 py-1.5 text-sm font-semibold text-center transition-colors tabular-nums"
+                style={
+                  isFracSelected
+                    ? { background: accentLight, color: accent }
+                    : { color: 'var(--text-secondary)' }
+                }
+              >
+                {fracValue.toFixed(2)}
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
