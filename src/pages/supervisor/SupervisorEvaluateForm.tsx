@@ -12,6 +12,7 @@ import { Save, Send, User, AlertTriangle, Lock, ArrowRight, ClipboardEdit, Eye, 
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { StartEvaluationConfirmModal } from '../../components/ui/StartEvaluationConfirmModal';
 import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
 
 interface EmployeeInfo {
@@ -129,6 +130,9 @@ export const SupervisorEvaluateForm: React.FC = () => {
   const [noSpecificNeeded, setNoSpecificNeeded] = useState(false);
   const [employeeGroupMembership, setEmployeeGroupMembership] = useState<Record<string, string>>({});
   const [groupCriteriaSum, setGroupCriteriaSum] = useState<Record<string, number>>({});
+  // Confirmation modal: holds the employee the supervisor is about to
+  // start evaluating. Null = no confirmation in flight.
+  const [confirmEvalFor, setConfirmEvalFor] = useState<EmployeeInfo | null>(null);
 
   const targetForGroup = useCallback((groupId: string | undefined | null): number => {
     if (!groupId) return specificWeightTarget;
@@ -882,7 +886,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-ds-track text-ds-faint cursor-not-allowed"
                               >
                                 <ClipboardEdit className="h-4 w-4" />
-                                <span>تقييم</span>
+                                <span>بدء التقييم</span>
                               </button>
                             );
                           }
@@ -891,7 +895,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
                           return (
                             <button
-                              onClick={() => setSelectedEmployeeId(emp.id)}
+                              onClick={() => canEvaluate ? setConfirmEvalFor(emp) : setSelectedEmployeeId(emp.id)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                 canEvaluate
                                   ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -901,7 +905,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
                               {canEvaluate ? (
                                 <>
                                   <ClipboardEdit className="h-4 w-4" />
-                                  <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : 'تقييم'}</span>
+                                  <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : 'بدء التقييم'}</span>
                                 </>
                               ) : (
                                 <>
@@ -921,6 +925,18 @@ export const SupervisorEvaluateForm: React.FC = () => {
             )}
           </CardBody>
         </Card>
+
+        <StartEvaluationConfirmModal
+          isOpen={!!confirmEvalFor}
+          subjectName={confirmEvalFor?.full_name}
+          title={confirmEvalFor?.eval_status === 'مسودة' ? 'متابعة التقييم' : 'بدء التقييم'}
+          confirmLabel={confirmEvalFor?.eval_status === 'مسودة' ? 'متابعة' : 'بدء التقييم'}
+          onCancel={() => setConfirmEvalFor(null)}
+          onConfirm={() => {
+            if (confirmEvalFor) setSelectedEmployeeId(confirmEvalFor.id);
+            setConfirmEvalFor(null);
+          }}
+        />
       </div>
     );
   }

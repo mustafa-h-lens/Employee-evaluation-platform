@@ -12,6 +12,7 @@ import { Save, Send, User, Star, AlertTriangle, Lock, MessageSquare, ArrowRight,
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { StartEvaluationConfirmModal } from '../../components/ui/StartEvaluationConfirmModal';
 import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
 import { DirectorCriteriaSection } from './DirectorCriteriaSection';
 
@@ -110,6 +111,9 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
   const [specificWeight, setSpecificWeight] = useState(50);
   const [partnerStatus, setPartnerStatus] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
+  // Confirmation modal: director the CEO is about to start evaluating.
+  // Null = no confirmation in flight.
+  const [confirmEvalFor, setConfirmEvalFor] = useState<Director | null>(null);
   const [directorsLoading, setDirectorsLoading] = useState(true);
   const [hasSpecificCriteria, setHasSpecificCriteria] = useState(true);
   const [activeTab, setActiveTab] = useState<'evaluation' | 'criteria'>('evaluation');
@@ -765,7 +769,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                               <div className="text-center">
                                 <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-ds-track text-ds-faint cursor-not-allowed">
                                   <ClipboardEdit className="h-4 w-4" />
-                                  <span>تقييم</span>
+                                  <span>بدء التقييم</span>
                                 </button>
                                 <p className="text-[10px] text-red-500 mt-1">أضف المعايير الخاصة أولاً</p>
                               </div>
@@ -776,7 +780,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
                           return (
                             <button
-                              onClick={() => setSelectedDirectorId(dir.id)}
+                              onClick={() => canEvaluate ? setConfirmEvalFor(dir) : setSelectedDirectorId(dir.id)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                 canEvaluate
                                   ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -786,7 +790,7 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
                               {canEvaluate ? (
                                 <>
                                   <ClipboardEdit className="h-4 w-4" />
-                                  <span>{dir.eval_status === 'مسودة' ? 'متابعة التقييم' : dir.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
+                                  <span>{dir.eval_status === 'مسودة' ? 'متابعة التقييم' : dir.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'بدء التقييم'}</span>
                                 </>
                               ) : (
                                 <>
@@ -811,6 +815,26 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         {activeTab === 'criteria' && (
           <DirectorCriteriaSection embedded />
         )}
+
+        <StartEvaluationConfirmModal
+          isOpen={!!confirmEvalFor}
+          subjectName={confirmEvalFor?.full_name}
+          title={
+            confirmEvalFor?.eval_status === 'مسودة' ? 'متابعة التقييم'
+            : confirmEvalFor?.eval_status === 'مرفوض' ? 'إعادة التقييم'
+            : 'بدء التقييم'
+          }
+          confirmLabel={
+            confirmEvalFor?.eval_status === 'مسودة' ? 'متابعة'
+            : confirmEvalFor?.eval_status === 'مرفوض' ? 'إعادة التقييم'
+            : 'بدء التقييم'
+          }
+          onCancel={() => setConfirmEvalFor(null)}
+          onConfirm={() => {
+            if (confirmEvalFor) setSelectedDirectorId(confirmEvalFor.id);
+            setConfirmEvalFor(null);
+          }}
+        />
       </div>
     );
   }

@@ -12,6 +12,7 @@ import { Save, Send, User, AlertTriangle, Lock, MessageSquare, ArrowRight, Clipb
 import { FractionalScoreSelector } from '../../components/ui/FractionalScoreSelector';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
+import { StartEvaluationConfirmModal } from '../../components/ui/StartEvaluationConfirmModal';
 import { useEmployeeLeaveStatus, formatLeaveChip } from '../../hooks/useEmployeeLeaveStatus';
 import { DirectorCriteriaSection } from './DirectorCriteriaSection';
 
@@ -112,6 +113,9 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
   // tells the form which directorate context this evaluation belongs to.
   const [selectedDirectorateForEval, setSelectedDirectorateForEval] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'evaluation' | 'criteria'>('evaluation');
+  // Confirmation modal: employee the director is about to start
+  // evaluating. Null = no confirmation in flight.
+  const [confirmEvalFor, setConfirmEvalFor] = useState<EmployeeInfo | null>(null);
   const employeeId = selectedEmployeeId;
   const [searchQuery, setSearchQuery] = useState('');
   const [tablePeriods, setTablePeriods] = useState<EvaluationPeriod[]>([]);
@@ -980,7 +984,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-ds-track text-ds-faint cursor-not-allowed"
                               >
                                 <ClipboardEdit className="h-4 w-4" />
-                                <span>تقييم</span>
+                                <span>بدء التقييم</span>
                               </button>
                             );
                           }
@@ -989,7 +993,14 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
                           return (
                             <button
-                              onClick={() => { setSelectedDirectorateForEval(emp.directorate_id || null); setSelectedEmployeeId(emp.id); }}
+                              onClick={() => {
+                                if (canEvaluate) {
+                                  setConfirmEvalFor(emp);
+                                } else {
+                                  setSelectedDirectorateForEval(emp.directorate_id || null);
+                                  setSelectedEmployeeId(emp.id);
+                                }
+                              }}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                 canEvaluate
                                   ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -999,7 +1010,7 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
                               {canEvaluate ? (
                                 <>
                                   <ClipboardEdit className="h-4 w-4" />
-                                  <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : emp.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'تقييم'}</span>
+                                  <span>{emp.eval_status === 'مسودة' ? 'متابعة التقييم' : emp.eval_status === 'مرفوض' ? 'إعادة التقييم' : 'بدء التقييم'}</span>
                                 </>
                               ) : (
                                 <>
@@ -1024,6 +1035,29 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         {activeTab === 'criteria' && (
           <DirectorCriteriaSection embedded />
         )}
+
+        <StartEvaluationConfirmModal
+          isOpen={!!confirmEvalFor}
+          subjectName={confirmEvalFor?.full_name}
+          title={
+            confirmEvalFor?.eval_status === 'مسودة' ? 'متابعة التقييم'
+            : confirmEvalFor?.eval_status === 'مرفوض' ? 'إعادة التقييم'
+            : 'بدء التقييم'
+          }
+          confirmLabel={
+            confirmEvalFor?.eval_status === 'مسودة' ? 'متابعة'
+            : confirmEvalFor?.eval_status === 'مرفوض' ? 'إعادة التقييم'
+            : 'بدء التقييم'
+          }
+          onCancel={() => setConfirmEvalFor(null)}
+          onConfirm={() => {
+            if (confirmEvalFor) {
+              setSelectedDirectorateForEval(confirmEvalFor.directorate_id || null);
+              setSelectedEmployeeId(confirmEvalFor.id);
+            }
+            setConfirmEvalFor(null);
+          }}
+        />
       </div>
     );
   }
