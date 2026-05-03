@@ -159,6 +159,23 @@ export const Login: React.FC = () => {
           box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
           background: rgba(37,99,235,0.05);
         }
+        /* Browser autofill paints its own light background and dark text
+           — pin both back to the dark-mode palette so saved-credential
+           fields don't read as white blocks. */
+        .hl-input:-webkit-autofill,
+        .hl-input:-webkit-autofill:hover,
+        .hl-input:-webkit-autofill:focus,
+        .hl-input:-webkit-autofill:active {
+          -webkit-text-fill-color: #f0f4ff;
+          -webkit-box-shadow: 0 0 0 1000px #0b1426 inset;
+          caret-color: #f0f4ff;
+          transition: background-color 9999s ease-out 0s;
+          border-color: rgba(255,255,255,0.08);
+        }
+        .hl-input:-webkit-autofill:focus {
+          border-color: rgba(59,130,246,0.55);
+          -webkit-box-shadow: 0 0 0 1000px #0b1426 inset, 0 0 0 3px rgba(37,99,235,0.12);
+        }
 
         .hl-pw-wrap { position: relative; }
         .hl-pw-wrap .hl-input { padding-left: 44px; }

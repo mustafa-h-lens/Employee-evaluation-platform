@@ -337,9 +337,19 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
     const filteredPeriods = filterPeriodsForAssignments(periods || [], assignments);
     setAllPeriods(filteredPeriods);
-    const active = filteredPeriods.find((p: any) => p.status === 'نشطة') || null;
+    // Honor the period the supervisor was viewing in the table when they
+    // clicked "تقييم" — multiple periods can be active simultaneously
+    // (one per month) and the table choice is the supervisor's intent.
+    // Fall back to the most recent active period only when no table
+    // selection is available.
+    const fromTable = tablePeriodId
+      ? filteredPeriods.find((p: any) => p.id === tablePeriodId)
+      : null;
+    const active = fromTable
+      || filteredPeriods.find((p: any) => p.status === 'نشطة')
+      || null;
     setActivePeriod(active);
-  }, [assignments, filterPeriodsForAssignments]);
+  }, [assignments, filterPeriodsForAssignments, tablePeriodId]);
 
   const fetchCriteria = useCallback(async () => {
     if (!employeeId) return;
@@ -452,6 +462,16 @@ export const SupervisorEvaluateForm: React.FC = () => {
 
   useEffect(() => {
     if (employeeId && activePeriod && user) {
+      // Reset per-period form state BEFORE loading. loadExistingEvaluation
+      // only writes when a matching evaluation exists, so without this
+      // reset, scores/notes from the previous period would remain visible
+      // when switching to a fresh (un-evaluated) period.
+      setScores({});
+      setSpecificScores({});
+      setEvaluatorNotes('');
+      setEmployeeReply('');
+      setEvaluationStatus('');
+      setExistingEvaluationId(null);
       loadExistingEvaluation();
     }
   }, [employeeId, activePeriod, user, loadExistingEvaluation]);
