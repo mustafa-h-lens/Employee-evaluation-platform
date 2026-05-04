@@ -98,6 +98,17 @@ export const EmployeeDashboard: React.FC = () => {
 
     if (!employee) return;
 
+    // Co-director gate — mirror the MyEvaluations rule: a solo pending
+    // submission from a directorate that has a secondary director must
+    // wait for the partner before surfacing anywhere. Without this, the
+    // dashboard would happily show a "latest evaluation" tile that
+    // MyEvaluations is correctly hiding.
+    const { data: coDirs } = await supabase
+      .from('directorates')
+      .select('id')
+      .not('secondary_director_id', 'is', null);
+    const coDirIds = new Set((coDirs || []).map((d: any) => d.id));
+
     // Find the most recent period that has any visible evaluation, then load
     // ALL evaluations for that period (one per director). When there are two
     // directors, we combine them into a single "الإدارة العليا" card.
@@ -124,6 +135,16 @@ export const EmployeeDashboard: React.FC = () => {
       .in('status', ['موافقة', 'تم الإرسال', 'اطلع الموظف', 'مغلق']);
 
     if (!rows || rows.length === 0) return;
+
+    // Apply the gate: a single pending row from a co-director directorate
+    // is held until the partner submits, exactly as MyEvaluations does.
+    if (rows.length === 1) {
+      const r: any = rows[0];
+      const isPending = r.status === 'تم الإرسال' || r.status === 'بانتظار الموافقة';
+      if (isPending && r.directorate_id && coDirIds.has(r.directorate_id)) {
+        return;
+      }
+    }
 
     let combined: any;
     if (rows.length === 1) {
