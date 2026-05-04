@@ -163,7 +163,13 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
     if (!selectedDirectorate) return;
     setLoading(true);
     try {
-      const [groupsRes, criteriaRes, employeesRes, membershipRes] = await Promise.all([
+      // Multi-directorate employees aren't reachable via employees.directorate_id
+      // alone — pull both the primary-directorate match AND the junction-table
+      // assignments, then de-dupe by employee_id. Without this, an employee
+      // assigned via employee_directorates (without their primary set to this
+      // directorate) was invisible to this page even though they show up in
+      // every other listing.
+      const [groupsRes, criteriaRes, primaryEmpsRes, junctionEmpsRes, membershipRes] = await Promise.all([
         supabase.from('department_criteria_groups').select('*')
           .eq('directorate_id', selectedDirectorate).order('order'),
         supabase.from('department_criteria').select('*')
@@ -173,19 +179,37 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
           .eq('directorate_id', selectedDirectorate)
           .eq('status', 'active')
           .order('full_name'),
+        supabase.from('employee_directorates')
+          .select('employee:employees!inner(id, full_name, job_title, status, department:departments(name))')
+          .eq('directorate_id', selectedDirectorate),
         supabase.from('department_criteria_group_members')
           .select('group_id, employee_id')
           .eq('directorate_id', selectedDirectorate),
       ]);
       setGroups((groupsRes.data || []) as CriteriaGroup[]);
       setCriteria((criteriaRes.data || []) as DeptCriterion[]);
-      const ms = (employeesRes.data || []).map((r: any) => ({
-        employee_id: r.id,
-        full_name: r.full_name || 'موظف',
-        job_title: r.job_title || null,
-        department_name: r.department?.name || null,
-      })) as DirectorateMember[];
+
+      const seen = new Set<string>();
+      const ms: DirectorateMember[] = [];
+      const pushOne = (r: any) => {
+        if (!r || !r.id || seen.has(r.id)) return;
+        if (r.status && r.status !== 'active') return;
+        seen.add(r.id);
+        ms.push({
+          employee_id: r.id,
+          full_name: r.full_name || 'موظف',
+          job_title: r.job_title || null,
+          department_name: r.department?.name || null,
+        });
+      };
+      (primaryEmpsRes.data || []).forEach(pushOne);
+      (junctionEmpsRes.data || []).forEach((row: any) => {
+        const emp = Array.isArray(row.employee) ? row.employee[0] : row.employee;
+        pushOne(emp);
+      });
+      ms.sort((a, b) => a.full_name.localeCompare(b.full_name, 'ar'));
       setMembers(ms);
+
       const map: Record<string, string> = {};
       (membershipRes.data || []).forEach((r: any) => { map[r.employee_id] = r.group_id; });
       setGroupMembership(map);
