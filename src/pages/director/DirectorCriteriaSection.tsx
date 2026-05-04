@@ -169,11 +169,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
       // assigned via employee_directorates (without their primary set to this
       // directorate) was invisible to this page even though they show up in
       // every other listing.
-      // Also pull active supervisor assignments so we can exclude any
-      // employee whose criteria + evaluation are owned by their supervisor —
-      // those employees should NOT appear in the directorate's criteria
-      // page or its default group, since the supervisor handles them.
-      const [groupsRes, criteriaRes, primaryEmpsRes, junctionEmpsRes, membershipRes, supervisedRes] = await Promise.all([
+      const [groupsRes, criteriaRes, primaryEmpsRes, junctionEmpsRes, membershipRes, activeSupRes] = await Promise.all([
         supabase.from('department_criteria_groups').select('*')
           .eq('directorate_id', selectedDirectorate).order('order'),
         supabase.from('department_criteria').select('*')
@@ -189,13 +185,25 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
         supabase.from('department_criteria_group_members')
           .select('group_id, employee_id')
           .eq('directorate_id', selectedDirectorate),
-        supabase.from('supervisor_assignment_members')
-          .select('employee_id, assignment:supervisor_assignments!inner(status)')
-          .eq('assignment.status', 'active'),
+        // Active supervisor assignments — fetch IDs first, then resolve
+        // members below. Two-step is more reliable than a nested-resource
+        // .eq() filter, which can silently degrade in PostgREST.
+        supabase.from('supervisor_assignments').select('id').eq('status', 'active'),
       ]);
-      const supervisedIds = new Set<string>(
-        (supervisedRes.data || []).map((r: any) => r.employee_id)
-      );
+
+      // Resolve supervised-employee set: any employee in an active
+      // supervisor_assignment is owned by their supervisor for criteria
+      // and evaluation — they don't belong to the directorate's groups
+      // or its unassigned-warning banner.
+      const activeAssignmentIds = (activeSupRes.data || []).map((a: any) => a.id);
+      let supervisedIds = new Set<string>();
+      if (activeAssignmentIds.length > 0) {
+        const { data: supMembers } = await supabase
+          .from('supervisor_assignment_members')
+          .select('employee_id')
+          .in('assignment_id', activeAssignmentIds);
+        supervisedIds = new Set<string>((supMembers || []).map((r: any) => r.employee_id));
+      }
       setGroups((groupsRes.data || []) as CriteriaGroup[]);
       setCriteria((criteriaRes.data || []) as DeptCriterion[]);
 
