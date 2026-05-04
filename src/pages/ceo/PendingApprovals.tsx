@@ -33,10 +33,11 @@ const getStatusVariant = (
   status: string,
   phase?: EvalPhase
 ): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
-  // 'awaiting_reply' overrides the underlying status — render as the DS
-  // danger variant so the wait reads as a soft red ("attention, blocked")
-  // instead of being confused with the warning queue or an info chip.
-  if (phase === 'awaiting_reply') return 'danger';
+  // 'awaiting_reply' uses the DS warning variant — same amber family as
+  // 'بانتظار الموافقة' so the chip reads as "in progress, waiting", not as
+  // a rejection. The two pending phases are distinguished by their label
+  // text rather than by colour.
+  if (phase === 'awaiting_reply') return 'warning';
   switch (status) {
     case 'تم الإرسال': case 'بانتظار الموافقة': return 'warning';
     case 'موافقة': case 'اطلع الموظف': case 'مغلق': return 'success';
