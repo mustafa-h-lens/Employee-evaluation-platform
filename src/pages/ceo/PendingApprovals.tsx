@@ -1016,12 +1016,6 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {(group.status === 'بانتظار الموافقة' || group.status === 'تم الإرسال') && phase === 'awaiting_reply' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-ds-info-bg text-ds-info-text border border-ds-info-border">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>بانتظار رد المقيَّم</span>
-                              </span>
-                            )}
                             {(group.status === 'بانتظار الموافقة' || group.status === 'تم الإرسال') && phase === 'awaiting_ceo' && (
                               <>
                                 <Button
@@ -1131,12 +1125,6 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {combined.status === 'بانتظار الموافقة' && phase === 'awaiting_reply' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-ds-info-bg text-ds-info-text border border-ds-info-border">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>بانتظار رد المقيَّم</span>
-                              </span>
-                            )}
                             {combined.status === 'بانتظار الموافقة' && phase === 'awaiting_ceo' && (
                               <>
                                 <Button
@@ -1241,12 +1229,6 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {ev.status === 'تم الإرسال' && phase === 'awaiting_reply' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-ds-info-bg text-ds-info-text border border-ds-info-border">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>بانتظار رد المقيَّم</span>
-                              </span>
-                            )}
                             {ev.status === 'تم الإرسال' && phase === 'awaiting_ceo' && (
                               <>
                                 <Button
