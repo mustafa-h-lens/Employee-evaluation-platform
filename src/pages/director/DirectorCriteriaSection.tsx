@@ -169,7 +169,11 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
       // assigned via employee_directorates (without their primary set to this
       // directorate) was invisible to this page even though they show up in
       // every other listing.
-      const [groupsRes, criteriaRes, primaryEmpsRes, junctionEmpsRes, membershipRes] = await Promise.all([
+      // Also pull active supervisor assignments so we can exclude any
+      // employee whose criteria + evaluation are owned by their supervisor —
+      // those employees should NOT appear in the directorate's criteria
+      // page or its default group, since the supervisor handles them.
+      const [groupsRes, criteriaRes, primaryEmpsRes, junctionEmpsRes, membershipRes, supervisedRes] = await Promise.all([
         supabase.from('department_criteria_groups').select('*')
           .eq('directorate_id', selectedDirectorate).order('order'),
         supabase.from('department_criteria').select('*')
@@ -185,7 +189,13 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
         supabase.from('department_criteria_group_members')
           .select('group_id, employee_id')
           .eq('directorate_id', selectedDirectorate),
+        supabase.from('supervisor_assignment_members')
+          .select('employee_id, assignment:supervisor_assignments!inner(status)')
+          .eq('assignment.status', 'active'),
       ]);
+      const supervisedIds = new Set<string>(
+        (supervisedRes.data || []).map((r: any) => r.employee_id)
+      );
       setGroups((groupsRes.data || []) as CriteriaGroup[]);
       setCriteria((criteriaRes.data || []) as DeptCriterion[]);
 
@@ -194,6 +204,7 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ directorateId, embedd
       const pushOne = (r: any) => {
         if (!r || !r.id || seen.has(r.id)) return;
         if (r.status && r.status !== 'active') return;
+        if (supervisedIds.has(r.id)) return;
         seen.add(r.id);
         ms.push({
           employee_id: r.id,
