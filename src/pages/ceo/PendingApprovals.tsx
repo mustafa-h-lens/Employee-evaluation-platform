@@ -33,10 +33,10 @@ const getStatusVariant = (
   status: string,
   phase?: EvalPhase
 ): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
-  // 'awaiting_reply' overrides the underlying status so the chip reads as
-  // a neutral wait, not a warning queued for the CEO. Anything else falls
-  // through to the status-based mapping.
-  if (phase === 'awaiting_reply') return 'info';
+  // 'awaiting_reply' overrides the underlying status — render as the DS
+  // danger variant so the wait reads as a soft red ("attention, blocked")
+  // instead of being confused with the warning queue or an info chip.
+  if (phase === 'awaiting_reply') return 'danger';
   switch (status) {
     case 'تم الإرسال': case 'بانتظار الموافقة': return 'warning';
     case 'موافقة': case 'اطلع الموظف': case 'مغلق': return 'success';
