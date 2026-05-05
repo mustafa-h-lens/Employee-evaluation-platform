@@ -7,11 +7,9 @@ import { Button } from '../../components/ui/Button';
 import { TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
-import { CheckCircle, XCircle, Eye, Clock, FileText, Star, Filter, Users, Crown, UserCog, Shield, MessageCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, FileText, Star, Filter, Users, Crown, UserCog, Shield } from 'lucide-react';
 import { percentageToRating } from '../../lib/scoring';
 import { UserAvatar } from '../../components/ui/UserAvatar';
-import { getEvalPhase, type EvalPhase } from '../../lib/evalPhase';
-import { useToast } from '../../contexts/ToastContext';
 
 const monthLabels: Record<number, string> = {
   1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
@@ -29,14 +27,7 @@ const getRatingVariant = (rating: string | null): 'success' | 'info' | 'warning'
   }
 };
 
-const getStatusVariant = (
-  status: string,
-  phase?: EvalPhase
-): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
-  // 'awaiting_reply' overrides the underlying status so the chip reads as
-  // a neutral wait, not a warning queued for the CEO. Anything else falls
-  // through to the status-based mapping.
-  if (phase === 'awaiting_reply') return 'info';
+const getStatusVariant = (status: string): 'success' | 'info' | 'warning' | 'danger' | 'default' => {
   switch (status) {
     case 'تم الإرسال': case 'بانتظار الموافقة': return 'warning';
     case 'موافقة': case 'اطلع الموظف': case 'مغلق': return 'success';
@@ -45,8 +36,7 @@ const getStatusVariant = (
   }
 };
 
-const getStatusLabel = (status: string, phase?: EvalPhase): string => {
-  if (phase === 'awaiting_reply') return 'بانتظار رد المقيَّم';
+const getStatusLabel = (status: string): string => {
   if (status === 'تم الإرسال') return 'بانتظار الموافقة';
   if (status === 'بانتظار الموافقة') return 'بانتظار الموافقة';
   if (status === 'موافقة' || status === 'اطلع الموظف' || status === 'مغلق') return 'تمت الموافقة';
@@ -156,7 +146,6 @@ type StatusFilter = 'pending' | 'rejected' | 'approved' | 'all';
 
 export const PendingApprovals: React.FC = () => {
   const { user } = useAuth();
-  const toast = useToast();
   const [mainTab, setMainTab] = useState<MainTab>('ceo');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('pending');
 
@@ -571,37 +560,8 @@ export const PendingApprovals: React.FC = () => {
     setDetailLoading(false);
   };
 
-  // Re-fetch the evaluatee's reply right before approving/rejecting and
-  // refuse if it's still empty. The UI gate already prevents the buttons
-  // from rendering, but a stale tab or any future caller that bypasses
-  // the UI shouldn't be able to short-circuit the workflow.
-  const verifyReplyExists = async (
-    id: string,
-    type: 'employee' | 'director' | 'supervisor',
-  ): Promise<boolean> => {
-    const table = type === 'employee' ? 'evaluations' : type === 'director' ? 'director_evaluations' : 'supervisor_evaluations';
-    const replyCol = type === 'director' ? 'director_note' : 'employee_note';
-    const { data } = await supabase
-      .from(table)
-      .select(`${replyCol}`)
-      .eq('id', id)
-      .maybeSingle();
-    const reply = data ? (data as any)[replyCol] : null;
-    return !!(reply && String(reply).trim().length > 0);
-  };
-
   const handleApprove = async (id: string, type: 'employee' | 'director' | 'supervisor') => {
     if (!user) return;
-
-    // For combined employee evals (id is a comma-joined list), any
-    // sibling having the reply suffices — replies are saved across all
-    // sibling rows, so verifying the first id is enough.
-    const verifyId = id.includes(',') ? id.split(',')[0] : id;
-    if (!(await verifyReplyExists(verifyId, type))) {
-      toast.error('لا يمكن اتخاذ قرار قبل أن يقدّم المقيَّم ردّه على التقييم');
-      return;
-    }
-
     setActionLoading(true);
 
     const table = type === 'employee' ? 'evaluations' : type === 'director' ? 'director_evaluations' : 'supervisor_evaluations';
@@ -676,6 +636,7 @@ export const PendingApprovals: React.FC = () => {
 
   const handleReject = async () => {
     if (!user || !rejectTarget || !rejectComment.trim()) return;
+    setActionLoading(true);
 
     const table = rejectTarget.type === 'employee' ? 'evaluations' : rejectTarget.type === 'director' ? 'director_evaluations' : 'supervisor_evaluations';
 
@@ -686,16 +647,9 @@ export const PendingApprovals: React.FC = () => {
       ? rejectEvaluators.filter(e => e.selected).map(e => e.id)
       : rejectTarget.id.split(',');
     if (ids.length === 0) {
+      setActionLoading(false);
       return;
     }
-    // Same gate as approval — the CEO can't reject before the evaluatee
-    // has had their say either. Verifying the first id is enough since
-    // the reply mirrors across sibling rows on save.
-    if (!(await verifyReplyExists(ids[0], rejectTarget.type))) {
-      toast.error('لا يمكن اتخاذ قرار قبل أن يقدّم المقيَّم ردّه على التقييم');
-      return;
-    }
-    setActionLoading(true);
     for (const id of ids) {
       await supabase
         .from(table)
@@ -779,14 +733,8 @@ export const PendingApprovals: React.FC = () => {
 
   const handleApproveCombined = async (combined: CombinedDirectorEval) => {
     if (!user) return;
-    const ids = combined.evals.map(e => e.id);
-    // Any sibling row carrying the director's reply is enough — replies
-    // are mirrored across siblings on save.
-    if (!(await verifyReplyExists(ids[0], 'director'))) {
-      toast.error('لا يمكن اتخاذ قرار قبل أن يقدّم المقيَّم ردّه على التقييم');
-      return;
-    }
     setActionLoading(true);
+    const ids = combined.evals.map(e => e.id);
     for (const id of ids) {
       await supabase.from('director_evaluations').update({
         status: 'موافقة',
@@ -857,30 +805,6 @@ export const PendingApprovals: React.FC = () => {
   const currentDetailId = detailEval?.id || detailDirEval?.id || detailSupEval?.id || '';
   const currentDetailType: 'employee' | 'director' | 'supervisor' = detailEval ? 'employee' : (detailDirEval || detailCombined) ? 'director' : 'supervisor';
   const isPendingApproval = currentDetailStatus === 'بانتظار الموافقة' || currentDetailStatus === 'تم الإرسال';
-
-  // Approval-flow phase for the row in the open detail modal. The reply
-  // field name differs by type — employee_note for director→employee and
-  // supervisor→employee; director_note for CEO→director. For combined
-  // entries we OR-aggregate across siblings (one reply written by the
-  // evaluatee covers the pair).
-  const currentDetailReply: string | null = detailEmpCombined
-    ? detailEmpCombined.employee_note
-    : detailCombined
-      ? (detailCombined.evals.find(ev => ev.director_note)?.director_note || null)
-      : (detailEval?.employee_note ?? detailDirEval?.director_note ?? detailSupEval?.employee_note ?? null);
-  // Submitted_at is set the moment the evaluator hits "إرسال" — required
-  // to distinguish a fresh draft from a real submission awaiting reply.
-  const currentDetailSubmittedAt: string | null =
-    detailEval?.submitted_at
-    ?? detailDirEval?.submitted_at
-    ?? detailSupEval?.submitted_at
-    ?? (detailCombined ? (detailCombined.evals.find(ev => ev.submitted_at)?.submitted_at || null) : null);
-  const currentDetailPhase: EvalPhase = getEvalPhase({
-    status: currentDetailStatus,
-    submittedAt: currentDetailSubmittedAt,
-    reply: currentDetailReply,
-  });
-  const isAwaitingReply = currentDetailPhase === 'awaiting_reply';
 
   return (
     <div className="space-y-6">
@@ -965,16 +889,6 @@ export const PendingApprovals: React.FC = () => {
                     {combinedEmployeeEvals.map(group => {
                       const ev = group.primary;
                       const isCombined = group.ids.length > 1;
-                      // Combined: any sibling's employee_note counts as
-                      // "the evaluatee replied". Singleton: just the row's
-                      // own employee_note. The reply mirrors the helper.
-                      const groupReply = ev.employee_note || null;
-                      const groupSubmittedAt = ev.submitted_at || null;
-                      const phase = getEvalPhase({
-                        status: group.status,
-                        submittedAt: groupSubmittedAt,
-                        reply: groupReply,
-                      });
                       return (
                       <TableRow key={group.groupKey}>
                         <TableCell>
@@ -1008,7 +922,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(group.status, phase)} size="sm">{getStatusLabel(group.status, phase)}</Badge>
+                          <Badge variant={getStatusVariant(group.status)} size="sm">{getStatusLabel(group.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -1016,13 +930,7 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {(group.status === 'بانتظار الموافقة' || group.status === 'تم الإرسال') && phase === 'awaiting_reply' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-ds-info-bg text-ds-info-text border border-ds-info-border">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>بانتظار رد المقيَّم</span>
-                              </span>
-                            )}
-                            {(group.status === 'بانتظار الموافقة' || group.status === 'تم الإرسال') && phase === 'awaiting_ceo' && (
+                            {(group.status === 'بانتظار الموافقة' || group.status === 'تم الإرسال') && (
                               <>
                                 <Button
                                   size="sm"
@@ -1082,14 +990,7 @@ export const PendingApprovals: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {combinedDirectorEvals.map(combined => {
-                      // Director's reply across the co-CEO sibling rows.
-                      // Any one filled note counts as the director having
-                      // responded.
-                      const reply = combined.evals.find(ev => ev.director_note)?.director_note || null;
-                      const submittedAt = combined.evals.find(ev => ev.submitted_at)?.submitted_at || null;
-                      const phase = getEvalPhase({ status: combined.status, submittedAt, reply });
-                      return (
+                    {combinedDirectorEvals.map(combined => (
                       <TableRow key={`${combined.director_id}_${combined.period_id}`}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -1123,7 +1024,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(combined.status, phase)} size="sm">{getStatusLabel(combined.status, phase)}</Badge>
+                          <Badge variant={getStatusVariant(combined.status)} size="sm">{getStatusLabel(combined.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -1131,13 +1032,7 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {combined.status === 'بانتظار الموافقة' && phase === 'awaiting_reply' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-ds-info-bg text-ds-info-text border border-ds-info-border">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>بانتظار رد المقيَّم</span>
-                              </span>
-                            )}
-                            {combined.status === 'بانتظار الموافقة' && phase === 'awaiting_ceo' && (
+                            {combined.status === 'بانتظار الموافقة' && (
                               <>
                                 <Button
                                   size="sm"
@@ -1162,8 +1057,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                      );
-                    })}
+                    ))}
                   </TableBody>
                 </Table>
               )}
@@ -1197,13 +1091,7 @@ export const PendingApprovals: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {supervisorEvals.map(ev => {
-                      const phase = getEvalPhase({
-                        status: ev.status,
-                        submittedAt: ev.submitted_at,
-                        reply: ev.employee_note,
-                      });
-                      return (
+                    {supervisorEvals.map(ev => (
                       <TableRow key={ev.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -1233,7 +1121,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(ev.status, phase)} size="sm">{getStatusLabel(ev.status, phase)}</Badge>
+                          <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -1241,13 +1129,7 @@ export const PendingApprovals: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               <span>عرض</span>
                             </Button>
-                            {ev.status === 'تم الإرسال' && phase === 'awaiting_reply' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-ds-info-bg text-ds-info-text border border-ds-info-border">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>بانتظار رد المقيَّم</span>
-                              </span>
-                            )}
-                            {ev.status === 'تم الإرسال' && phase === 'awaiting_ceo' && (
+                            {ev.status === 'تم الإرسال' && (
                               <>
                                 <Button
                                   size="sm"
@@ -1272,8 +1154,7 @@ export const PendingApprovals: React.FC = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                      );
-                    })}
+                    ))}
                   </TableBody>
                 </Table>
               )}
@@ -1333,8 +1214,8 @@ export const PendingApprovals: React.FC = () => {
                       return period ? `${monthLabels[period.month]} ${period.year}` : '';
                     })()}
                   </p>
-                  <Badge variant={getStatusVariant(currentDetailStatus, currentDetailPhase)} size="sm" className="mt-1">
-                    {getStatusLabel(currentDetailStatus, currentDetailPhase)}
+                  <Badge variant={getStatusVariant(currentDetailStatus)} size="sm" className="mt-1">
+                    {getStatusLabel(currentDetailStatus)}
                   </Badge>
                 </div>
               </div>
@@ -1504,33 +1385,8 @@ export const PendingApprovals: React.FC = () => {
               </div>
             ) : null}
 
-            {/* Action gate / buttons inside modal.
-                When the evaluatee hasn't replied yet we suppress both
-                approve and reject — the CEO must wait for the reply so
-                the evaluatee gets a chance to justify or contest. */}
-            {isPendingApproval && isAwaitingReply && (
-              <div className="pt-4 border-t border-ds-border">
-                <div
-                  className="flex items-start gap-3 rounded-lg p-4"
-                  style={{
-                    background: 'var(--bg-warning-soft, var(--sc-amber-icon-bg))',
-                    border: '1px solid var(--sc-amber-border)',
-                  }}
-                >
-                  <MessageCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--sc-amber-val)' }} />
-                  <div>
-                    <p className="text-sm font-bold mb-1" style={{ color: 'var(--sc-amber-val)' }}>
-                      بانتظار رد المقيَّم
-                    </p>
-                    <p className="text-sm" style={{ color: 'var(--sc-amber-label)' }}>
-                      لا يمكن اتخاذ قرار قبل أن يقدّم المقيَّم ردّه على التقييم.
-                      ستظهر أزرار الموافقة والرفض هنا فور كتابة الرد.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {isPendingApproval && !isAwaitingReply && (
+            {/* Action buttons inside modal */}
+            {isPendingApproval && (
               <div className="flex gap-3 pt-4 border-t border-ds-border">
                 <Button
                   onClick={() => detailCombined ? handleApproveCombined(detailCombined) : handleApprove(currentDetailId, currentDetailType)}
