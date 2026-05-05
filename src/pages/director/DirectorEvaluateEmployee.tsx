@@ -616,6 +616,19 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
 
   useEffect(() => {
     if (employeeId && activePeriod && user) {
+      // Clear the form state before fetching the new period's evaluation.
+      // loadExistingEvaluation only writes back when it finds a row — if
+      // the new month has no evaluation yet, the previous month's scores
+      // would otherwise leak forward and the form behaves as if you can't
+      // evaluate (the existing-eval id and submitted status from the old
+      // month make the form read-only).
+      setScores({});
+      setSpecificScores({});
+      setEvaluatorNotes('');
+      setEmployeeReply('');
+      setEvaluationStatus('');
+      setExistingEvaluationId(null);
+      setCeoComment('');
       loadExistingEvaluation();
     }
   }, [employeeId, activePeriod, user, loadExistingEvaluation]);
