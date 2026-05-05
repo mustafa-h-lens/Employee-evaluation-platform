@@ -704,15 +704,39 @@ export const PendingApprovals: React.FC = () => {
       `)
       .in('evaluation_id', allIds);
 
-    // Average scores by criterion
+    // Average scores by criterion. Two pieces of dedupe noise to handle:
+    //   1) The same criterion scored by two CEOs (different evaluation_id,
+    //      same criterion_id) — title matches, merges naturally.
+    //   2) Duplicate criterion rows in the directorate's set with similar
+    //      titles like "X" vs "معيار X" — different ids AND different
+    //      titles, so a raw title key would surface them as separate
+    //      rows even though the user reads them as the same criterion.
+    // Solution: build the dedupe key from a normalized title (trim,
+    // collapse whitespace, strip the leading "معيار " prefix). Prefer
+    // the cleaner (shorter, prefix-free) title when displaying the
+    // merged row.
+    const normalizeTitle = (t: string): string => {
+      const trimmed = (t || '').replace(/\s+/g, ' ').trim();
+      return trimmed.startsWith('معيار ') ? trimmed.slice('معيار '.length).trim() : trimmed;
+    };
+
     const criterionMap = new Map<string, { totalScore: number; totalWeighted: number; count: number; title: string; desc: string; weight: number; type: string }>();
     (scores || []).forEach((s: any) => {
-      const title = s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || '');
+      const rawTitle = s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || '');
       const desc = s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || '');
       const weight = s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0);
-      const key = `${s.criterion_type}_${title}`;
-      if (!criterionMap.has(key)) criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title, desc, weight, type: s.criterion_type });
+      const normalized = normalizeTitle(rawTitle);
+      const key = `${s.criterion_type}_${normalized}`;
+      if (!criterionMap.has(key)) {
+        criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title: rawTitle, desc, weight, type: s.criterion_type });
+      }
       const entry = criterionMap.get(key)!;
+      // Prefer the prefix-free title for display so a merged row reads
+      // cleanly even if one of the source rows had the redundant
+      // "معيار " prefix.
+      if (rawTitle && entry.title.startsWith('معيار ') && !rawTitle.startsWith('معيار ')) {
+        entry.title = rawTitle;
+      }
       entry.totalScore += s.score_1_to_5;
       entry.totalWeighted += s.weighted_result;
       entry.count += 1;
