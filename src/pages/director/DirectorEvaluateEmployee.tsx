@@ -451,9 +451,19 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
       .order('month', { ascending: false });
 
     setAllPeriods(periods || []);
-    const active = (periods || []).find((p: any) => p.status === 'نشطة') || null;
+    // Honour the table dropdown's selection first — multiple periods can
+    // be active simultaneously (Jan/Feb/Mar/Apr open at once), and the
+    // form needs to evaluate for whichever month the user picked, not
+    // whichever happens to come first in the active list. Same fix shape
+    // as supervisor's fetchActivePeriod.
+    const fromTable = tablePeriodId
+      ? (periods || []).find((p: any) => p.id === tablePeriodId)
+      : null;
+    const active = fromTable
+      || (periods || []).find((p: any) => p.status === 'نشطة')
+      || null;
     setActivePeriod(active);
-  }, []);
+  }, [tablePeriodId]);
 
   const fetchCriteria = useCallback(async () => {
     if (!user) return;
@@ -598,9 +608,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
     }
     // selectedDirectorateForEval is part of the deps so re-entering the
     // form for the same employee under a different directorate reloads
-    // criteria for THAT directorate's group.
+    // criteria for THAT directorate's group. tablePeriodId is included
+    // so a switch to a different open period (Jan/Feb/Mar/Apr) clears
+    // stale scores and reloads the form against the new month.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, employeeId, selectedDirectorateForEval]);
+  }, [user, employeeId, selectedDirectorateForEval, tablePeriodId]);
 
   useEffect(() => {
     if (employeeId && activePeriod && user) {
