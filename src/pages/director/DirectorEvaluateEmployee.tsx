@@ -875,7 +875,12 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
           </button>
         </div>
 
-        {activeTab === 'evaluation' && (<>
+        {activeTab === 'evaluation' && (
+          // Re-key on the table's period dropdown so the stats + table
+          // softly fade-in whenever the user switches the month at the
+          // top of the page — same UX cue as the form-side period
+          // switcher.
+          <div key={tablePeriodId || 'no-period'} className="hl-period-fade-in space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardBody>
@@ -1078,7 +1083,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             )}
           </CardBody>
         </Card>
-        </>)}
+        </div>
+        )}
 
         {activeTab === 'criteria' && (
           <DirectorCriteriaSection embedded />

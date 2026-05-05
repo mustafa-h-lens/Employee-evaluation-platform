@@ -742,6 +742,10 @@ export const SupervisorEvaluateForm: React.FC = () => {
           />
         </div>
 
+        {/* Re-key on tablePeriodId so the stats + table softly fade-in
+            when the user switches the month at the top — same UX cue as
+            the form-side period switcher. */}
+        <div key={tablePeriodId || 'no-period'} className="hl-period-fade-in space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardBody>
@@ -925,6 +929,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
             )}
           </CardBody>
         </Card>
+        </div>
 
         <StartEvaluationConfirmModal
           isOpen={!!confirmEvalFor}

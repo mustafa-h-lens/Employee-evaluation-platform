@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { BarChart3, Search, User, Calendar, Star, MessageSquare, FileText, ChevronDown, Crown, UserCheck } from 'lucide-react';
+import { BarChart3, Search, User, Calendar, Star, MessageSquare, FileText, ChevronDown, Crown, UserCheck, X } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
 import { getEvaluableMonths, getLeavesForEmployeeInRange, annualRange, quarterlyRange, LeaveSummary } from '../../lib/leaves';
@@ -115,6 +115,20 @@ export const CeoReports: React.FC = () => {
   const [selectedPerson, setSelectedPerson] = useState<PersonOption | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeOption | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the search dropdown when the user clicks anywhere outside the
+  // search wrapper. Without this, the list stayed open until the user
+  // clicked the input again or picked a result.
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Period filters
   const [periodMode, setPeriodMode] = useState<PeriodMode>('monthly');
@@ -609,7 +623,7 @@ export const CeoReports: React.FC = () => {
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
-            <div className="relative flex-1 min-w-[280px]">
+            <div className="relative flex-1 min-w-[280px]" ref={searchWrapRef}>
               <label className="block text-sm font-medium text-ds-muted mb-1">{selectedLabel}</label>
               <div className="relative">
                 <input
@@ -625,12 +639,45 @@ export const CeoReports: React.FC = () => {
                     setSelectedEmployee(null);
                     setDropdownOpen(true);
                   }}
-                  onFocus={() => setDropdownOpen(true)}
+                  onFocus={() => {
+                    // Allow the user to search again even when a person is
+                    // already selected — clearing the selection here makes
+                    // the dropdown's gating condition pass on focus, so the
+                    // list reappears immediately.
+                    if (selectedEmployee || selectedPerson) {
+                      setSearchQuery('');
+                      setSelectedEmployee(null);
+                      setSelectedPerson(null);
+                    }
+                    setDropdownOpen(true);
+                  }}
                   placeholder="ابحث بالاسم..."
-                  className="w-full px-4 py-2 pr-10 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none"
+                  className="w-full px-4 py-2 pr-10 pl-16 border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint rounded-lg focus:ring-2 focus:ring-ds-accent focus:border-ds-accent outline-none"
                 />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
-                <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint pointer-events-none" />
+                {(searchQuery || selectedEmployee || selectedPerson) && (
+                  <button
+                    type="button"
+                    aria-label="مسح البحث"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedEmployee(null);
+                      setSelectedPerson(null);
+                      setDropdownOpen(true);
+                    }}
+                    className="absolute left-9 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-ds-overlay text-ds-faint hover:text-ds-text"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  aria-label="فتح القائمة"
+                  onClick={() => setDropdownOpen(o => !o)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-ds-overlay text-ds-faint hover:text-ds-text"
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
               </div>
 
               {dropdownOpen && !selectedPerson && !selectedEmployee && (
