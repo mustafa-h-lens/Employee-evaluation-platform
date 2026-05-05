@@ -956,6 +956,17 @@ textarea.input { height: auto; min-height: 90px; padding: 10px 14px; resize: ver
   animation: shimmer 2s infinite;
 }
 @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* Subtle fade+lift used by evaluation forms when the user switches the
+   active period. Applied via a `key={activePeriod.id}` on the form body
+   so the animation re-fires each time React remounts the wrapper for a
+   new period. ~280ms — long enough to read as motion, short enough not
+   to feel laggy. */
+@keyframes hl-period-fade-in {
+  0%   { opacity: 0.45; transform: translateY(6px); }
+  100% { opacity: 1;    transform: translateY(0);   }
+}
+.hl-period-fade-in { animation: hl-period-fade-in 280ms ease-out; }
 .pf-blue   { background: linear-gradient(90deg, var(--accent), var(--accent-light)); }
 .pf-green  { background: linear-gradient(90deg, #059669, var(--success)); }
 .pf-amber  { background: linear-gradient(90deg, #d97706, var(--warning)); }

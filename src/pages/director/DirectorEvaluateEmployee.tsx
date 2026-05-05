@@ -1179,7 +1179,11 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
         </Card>
       )}
 
-      {!dataLoading && activePeriod && <>
+      {!dataLoading && activePeriod && (
+        // Re-key on activePeriod.id so React remounts the form body with a
+        // soft fade-in whenever the user switches the period dropdown —
+        // gives the eye a clean "yes the month changed" cue.
+        <div key={activePeriod.id} className="hl-period-fade-in space-y-6">
         {/* Rejection Comment */}
         {evaluationStatus === 'مرفوض' && ceoComment && (
           <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-4 flex items-start gap-3">
@@ -1432,7 +1436,8 @@ export const DirectorEvaluateEmployee: React.FC<{ employeeId?: string }> = ({ em
             </Button>
           </div>
         )}
-      </>}
+        </div>
+      )}
     </div>
   );
 };

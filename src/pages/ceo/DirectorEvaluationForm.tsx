@@ -349,6 +349,18 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
 
   useEffect(() => {
     if (directorId && activePeriod && user) {
+      // Reset form state before fetching the new period's evaluation.
+      // loadExistingEvaluation only writes back when it finds a row, so
+      // without this reset the previous period's scores/notes/status
+      // would leak forward and the form would incorrectly behave as
+      // already-submitted for a fresh, un-evaluated period.
+      setScores({});
+      setSpecificScores({});
+      setEvaluatorNotes('');
+      setDirectorReply('');
+      setEvaluationStatus('');
+      setExistingEvaluationId(null);
+      setCeoComment('');
       loadExistingEvaluation();
     }
   }, [directorId, activePeriod, user, loadExistingEvaluation]);
@@ -906,7 +918,11 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
         </Card>
       )}
 
-      {!dataLoading && activePeriod && <>
+      {!dataLoading && activePeriod && (
+        // Re-key on activePeriod.id so the form body fades back in when
+        // the user switches the period dropdown — same UX cue as the
+        // employee evaluation form.
+        <div key={activePeriod.id} className="hl-period-fade-in space-y-6">
       {/* Rejection Comment */}
       {evaluationStatus === 'مرفوض' && ceoComment && (
         <div className="bg-ds-danger-bg border border-ds-danger-border rounded-lg p-4 flex items-start gap-3">
@@ -1172,7 +1188,8 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
           </Button>
         </div>
       )}
-      </>}
+      </div>
+      )}
     </div>
   );
 };

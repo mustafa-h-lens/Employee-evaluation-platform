@@ -1008,7 +1008,11 @@ export const SupervisorEvaluateForm: React.FC = () => {
         </Card>
       )}
 
-      {!dataLoading && activePeriod && <>
+      {!dataLoading && activePeriod && (
+        // Re-key on activePeriod.id so the form body fades back in when
+        // the user switches the period dropdown — same UX cue as the
+        // director→employee evaluation form.
+        <div key={activePeriod.id} className="hl-period-fade-in space-y-6">
         {/* Submitted Notice */}
         {evaluationStatus === 'تم الإرسال' && (
           <div className="bg-ds-success-bg border border-ds-success-border rounded-lg p-4 flex items-start gap-3">
@@ -1245,7 +1249,8 @@ export const SupervisorEvaluateForm: React.FC = () => {
             </Button>
           </div>
         )}
-      </>}
+        </div>
+      )}
     </div>
   );
 };
