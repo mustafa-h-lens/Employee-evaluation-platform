@@ -212,9 +212,30 @@ export const CeoEvaluationForm: React.FC = () => {
       }
 
       const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-      const scoreData = criteria
+
+      // Clear any existing rows so a re-submit replaces rather than
+      // appends. The RPC `save_ceo_evaluation_scores` that used to be
+      // called here was never defined in any migration, which raised
+      // "function not found in schema cache". Direct delete+insert is
+      // the same pattern the other forms (DirectorEvaluateEmployee,
+      // SupervisorEvaluateForm, DirectorEvaluationForm) already use,
+      // and the existing RLS policy `evaluator_manage_ceo_eval_scores`
+      // permits both operations for the evaluator on their own rows.
+      const { error: delErr } = await supabase
+        .from('ceo_evaluation_scores')
+        .delete()
+        .eq('evaluation_id', evaluationId);
+      if (delErr) {
+        console.error('Error clearing CEO evaluation scores:', delErr);
+        toast.error('خطأ في حفظ درجات المعايير: ' + delErr.message);
+        setLoading(false);
+        return;
+      }
+
+      const scoreInserts = criteria
         .filter((c) => scores[c.id] && scores[c.id] > 0)
         .map((criterion) => ({
+          evaluation_id: evaluationId,
           criterion_id: criterion.id,
           score_1_to_5: scores[criterion.id],
           weighted_result: totalWeight > 0
@@ -222,11 +243,10 @@ export const CeoEvaluationForm: React.FC = () => {
             : 0,
         }));
 
-      if (scoreData.length > 0) {
-        const { error: scoresError } = await supabase.rpc('save_ceo_evaluation_scores', {
-          p_evaluation_id: evaluationId,
-          p_scores: scoreData,
-        });
+      if (scoreInserts.length > 0) {
+        const { error: scoresError } = await supabase
+          .from('ceo_evaluation_scores')
+          .insert(scoreInserts);
         if (scoresError) {
           console.error('Error saving CEO evaluation scores:', scoresError);
           toast.error('خطأ في حفظ درجات المعايير: ' + scoresError.message);
