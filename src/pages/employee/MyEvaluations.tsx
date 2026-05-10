@@ -535,7 +535,7 @@ export const MyEvaluations: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <FileX className="h-16 w-16 text-ds-faint mx-auto mb-4" />
                     <p className="text-ds-faint text-lg">{evaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
                   </>
                 )}
@@ -576,7 +576,7 @@ export const MyEvaluations: React.FC = () => {
                 onClick={() => toggleExpand(ev.id)}
                 className="w-full text-right"
               >
-                <div className={`px-6 py-5 flex items-center justify-between transition-colors ${isExpanded ? 'bg-gradient-to-l from-blue-50 to-white' : 'hover:bg-ds-bg'}`}>
+                <div className={`px-6 py-5 flex items-center justify-between transition-colors ${isExpanded ? 'bg-ds-overlay' : 'hover:bg-ds-bg'}`}>
                   <div className="flex items-center gap-3">
                     <Badge variant={statusVariant(ev.status)}>
                       {statusLabel(ev.status, !!ev.employee_note)}
@@ -588,24 +588,24 @@ export const MyEvaluations: React.FC = () => {
 
                   <div className="flex items-center gap-4">
                     <span className="text-xs text-ds-faint bg-ds-overlay px-2 py-0.5 rounded">{sourceLabel}</span>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-ds-faint">|</span>
                     <span className="font-bold text-lg text-ds-text">
                       {ev.percentage?.toFixed(1)}%
                     </span>
                     {ev.general_rating && (
                       <>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-ds-faint">|</span>
                         <Badge variant={ratingVariant(ev.general_rating)} size="sm">
                           {ev.general_rating}
                         </Badge>
                       </>
                     )}
-                    <span className="text-gray-300">|</span>
+                    <span className="text-ds-faint">|</span>
                     <span className="text-ds-muted flex items-center gap-1.5">
                       <User className="h-3.5 w-3.5" />
                       {ev.manager?.full_name || '—'}
                     </span>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-ds-faint">|</span>
                     <span className="text-ds-muted font-semibold flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-ds-faint" />
                       {ev.period
@@ -668,7 +668,7 @@ export const MyEvaluations: React.FC = () => {
                       )}
 
                       {/* Summary Cards */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-5 bg-gradient-to-l from-slate-50 to-white">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-5 bg-ds-bg">
                         <div className="bg-ds-surface rounded-xl border border-ds-border p-4 text-center shadow-sm">
                           <div className="w-10 h-10 bg-ds-info-bg rounded-full flex items-center justify-center mx-auto mb-2">
                             <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -779,7 +779,7 @@ export const MyEvaluations: React.FC = () => {
 
                       {(!activeScores || activeScores.length === 0) && (
                         <div className="text-center py-8 px-6">
-                          <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                          <BarChart3 className="h-10 w-10 text-ds-faint mx-auto mb-2" />
                           <p className="text-ds-faint">لا توجد تفاصيل درجات لهذا التقييم</p>
                         </div>
                       )}
@@ -789,7 +789,7 @@ export const MyEvaluations: React.FC = () => {
                           THAT evaluator's note (hidden if empty). */}
                       {activeUnderlying ? (
                         activeUnderlying.manager_note && (
-                          <div className="mx-6 mb-4 bg-ds-info-bg border border-blue-100 rounded-xl p-4">
+                          <div className="mx-6 mb-4 bg-ds-info-bg border border-ds-info-border rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <MessageSquare className="h-4 w-4 text-blue-600" />
                               <p className="text-sm font-bold text-ds-info-text">ملاحظات المقيّم</p>
@@ -799,7 +799,7 @@ export const MyEvaluations: React.FC = () => {
                         )
                       ) : ev.is_combined ? (
                         ev.manager_notes_breakdown && ev.manager_notes_breakdown.length > 0 && (
-                          <div className="mx-6 mb-4 bg-ds-info-bg border border-blue-100 rounded-xl p-4">
+                          <div className="mx-6 mb-4 bg-ds-info-bg border border-ds-info-border rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-3">
                               <MessageSquare className="h-4 w-4 text-blue-600" />
                               <p className="text-sm font-bold text-ds-info-text">ملاحظات المقيّمين</p>
@@ -816,7 +816,7 @@ export const MyEvaluations: React.FC = () => {
                         )
                       ) : (
                         ev.manager_note && (
-                          <div className="mx-6 mb-4 bg-ds-info-bg border border-blue-100 rounded-xl p-4">
+                          <div className="mx-6 mb-4 bg-ds-info-bg border border-ds-info-border rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <MessageSquare className="h-4 w-4 text-blue-600" />
                               <p className="text-sm font-bold text-ds-info-text">ملاحظات المقيّم</p>
@@ -831,7 +831,7 @@ export const MyEvaluations: React.FC = () => {
                           row), so duplicating it on each evaluator tab would
                           be misleading. */}
                       {!activeUnderlying && (ev.status === 'موافقة' || ev.status === 'اطلع الموظف' || ev.status === 'مغلق' || ev.status === 'تم الإرسال') && (
-                        <div className="mx-6 mb-5 bg-ds-info-bg border border-teal-100 rounded-xl p-4">
+                        <div className="mx-6 mb-5 bg-ds-info-bg border border-ds-info-border rounded-xl p-4">
                           <h4 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                             <MessageSquare className="h-4 w-4" />
                             ردك على التقييم

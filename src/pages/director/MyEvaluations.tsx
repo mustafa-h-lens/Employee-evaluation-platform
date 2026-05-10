@@ -432,7 +432,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <FileX className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <FileX className="h-16 w-16 text-ds-faint mx-auto mb-4" />
                   <p className="text-ds-faint text-lg">{combinedEvaluations.length === 0 ? 'لا توجد تقييمات حتى الآن' : 'لا توجد تقييمات للفترة المحددة'}</p>
                 </>
               )}
@@ -484,20 +484,20 @@ export const DirectorMyEvaluations: React.FC = () => {
                         <span className="font-bold text-lg text-ds-text">
                           {combined.avg_percentage.toFixed(1)}%
                         </span>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-ds-faint">|</span>
                         <span className="text-sm font-semibold text-blue-600">
                           {combined.avg_score_5.toFixed(2)} / 5
                         </span>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-ds-faint">|</span>
                         <Badge variant={ratingVariant(combined.avg_rating)} size="sm">
                           {combined.avg_rating}
                         </Badge>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-ds-faint">|</span>
                         <span className="text-ds-muted flex items-center gap-1">
                           <Award className="h-4 w-4 text-amber-500" />
                           الإدارة العليا
                         </span>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-ds-faint">|</span>
                         <span className="text-ds-muted font-semibold">
                           {combined.period
                             ? `${monthLabels[combined.period.month]} - ${combined.period.year}`
@@ -665,14 +665,14 @@ export const DirectorMyEvaluations: React.FC = () => {
                             CEO's note (hidden if empty). */}
                         {activeUnderlying ? (
                           activeUnderlying.evaluator_note && (
-                            <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                            <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-4">
                               <p className="text-xs font-medium text-ds-info-text mb-2">ملاحظات المقيّم</p>
                               <p className="text-sm text-ds-info-text leading-relaxed">{activeUnderlying.evaluator_note}</p>
                             </div>
                           )
                         ) : (
                           combined.evaluator_notes.length > 0 && (
-                            <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                            <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-4">
                               <p className="text-xs font-medium text-ds-info-text mb-2">ملاحظات الإدارة العليا</p>
                               {combined.evaluator_notes.map((note, idx) => (
                                 <p key={idx} className="text-sm text-ds-info-text leading-relaxed">{note}</p>
@@ -686,7 +686,7 @@ export const DirectorMyEvaluations: React.FC = () => {
                             duplicating it on each evaluator tab would mislead
                             about scope. */}
                         {!activeUnderlying && (combined.status === 'بانتظار الموافقة' || combined.status === 'موافقة') && (
-                          <div className="bg-ds-info-bg border border-teal-100 rounded-lg p-4">
+                          <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-4">
                             <h4 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                               <MessageSquare className="h-4 w-4" />
                               ردك على التقييم
