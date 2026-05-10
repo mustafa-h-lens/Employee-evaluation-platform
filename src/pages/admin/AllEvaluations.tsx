@@ -268,14 +268,17 @@ export const AllEvaluations: React.FC = () => {
 
     if (filterPeriod) query = query.eq('period_id', filterPeriod);
     if (filterDirectorate) {
+      // Evaluations can be linked to a directorate two ways: directly via
+      // evaluations.directorate_id (newer rows where the employee is
+      // attached to a directorate without a department) or transitively
+      // via department_id when the employee is in a department of that
+      // directorate. Match BOTH so directorates with no departments and
+      // legacy rows with no directorate_id both surface.
       const deptIds = departments.filter(d => d.directorate_id === filterDirectorate).map(d => d.id);
       if (deptIds.length > 0) {
-        query = query.in('department_id', deptIds);
+        query = query.or(`directorate_id.eq.${filterDirectorate},department_id.in.(${deptIds.join(',')})`);
       } else {
-        // No departments under this directorate — return empty
-        setEmployeeEvals([]);
-        setLoading(false);
-        return;
+        query = query.eq('directorate_id', filterDirectorate);
       }
     }
 
