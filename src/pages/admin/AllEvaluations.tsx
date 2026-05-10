@@ -142,6 +142,31 @@ interface ScoreDetail {
   type: 'general' | 'specific';
 }
 
+// Per-evaluator slice of a combined detail modal. When more than one
+// evaluator contributed to the same evaluatee + period, the modal shows
+// a tab strip — Summary tab uses the averaged figures, per-evaluator
+// tabs render the raw scores below from this array.
+interface UnderlyingEvalDetail {
+  id: string;
+  evaluatorName: string;
+  scopeLabel: string | null; // e.g. directorate name; CEO→Director leaves null
+  scores: ScoreDetail[];
+  finalScore500: number;
+  finalScore5: number;
+  percentage: number;
+  generalRating: string | null;
+  evaluatorNote: string | null;
+  status: string;
+}
+
+// Trim whitespace and strip a leading "معيار " prefix so criteria with
+// equivalent titles collapse together when averaging across evaluators.
+// Mirrors the helper in PendingApprovals.tsx.
+const normalizeCriterionTitle = (t: string): string => {
+  const trimmed = (t || '').replace(/\s+/g, ' ').trim();
+  return trimmed.startsWith('معيار ') ? trimmed.slice('معيار '.length).trim() : trimmed;
+};
+
 type TabType = 'ceo' | 'directors' | 'supervisors' | 'ceo-eval';
 
 export const AllEvaluations: React.FC = () => {
@@ -175,8 +200,13 @@ export const AllEvaluations: React.FC = () => {
     evaluatorNote: string | null;
     subjectNote: string | null;
     status: string;
+    // Populated only for combined cards where >1 evaluator contributed.
+    // Drives the per-evaluator tab strip in the modal.
+    underlyingEvals?: UnderlyingEvalDetail[];
   } | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  // 'summary' (default, averaged view) or an underlying eval id.
+  const [selectedEvalTab, setSelectedEvalTab] = useState<string>('summary');
 
   const fetchFilters = useCallback(async () => {
     const [{ data: periodsData }, { data: deptsData }, { data: dirsData }] = await Promise.all([
@@ -486,9 +516,8 @@ export const AllEvaluations: React.FC = () => {
   const viewCombinedEmployeeDetail = async (combined: CombinedEmployeeEval) => {
     setDetailLoading(true);
     setDetailModal(true);
-    // Pre-fetch each source evaluation's scores so the modal can render
-    // a per-directorate breakdown (criteria can differ between groups,
-    // so they can't be averaged at the criterion level).
+    setSelectedEvalTab('summary');
+
     const allIds = combined.evals.map(e => e.id);
     const { data: scores } = await supabase
       .from('evaluation_scores')
@@ -499,20 +528,75 @@ export const AllEvaluations: React.FC = () => {
       `)
       .in('evaluation_id', allIds);
 
-    const flat: ScoreDetail[] = ((scores || []) as any[]).map((s: any) => ({
-      criterion_title: s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || ''),
-      criterion_description: s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || ''),
-      criterion_weight: s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0),
-      score: s.score_1_to_5,
-      weighted_result: s.weighted_result,
-      type: s.criterion_type || 'general',
+    const titleOf = (s: any): string =>
+      s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || '');
+    const descOf = (s: any): string =>
+      s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || '');
+    const weightOf = (s: any): number =>
+      s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0);
+
+    // Bucket A — per-evaluator score lists for the per-director tabs.
+    const perEvalScores = new Map<string, ScoreDetail[]>();
+    (scores || []).forEach((s: any) => {
+      const arr = perEvalScores.get(s.evaluation_id) ?? [];
+      arr.push({
+        criterion_title: titleOf(s),
+        criterion_description: descOf(s),
+        criterion_weight: weightOf(s),
+        score: s.score_1_to_5,
+        weighted_result: s.weighted_result,
+        type: (s.criterion_type || 'general') as 'general' | 'specific',
+      });
+      perEvalScores.set(s.evaluation_id, arr);
+    });
+
+    // Bucket B — averaged across evaluators for the Summary tab. Title
+    // normalization collapses "X" / "معيار X" pairs and any whitespace
+    // variants. Criteria that exist for only one evaluator (e.g. specific
+    // criteria that differ between directorates) just show with count=1.
+    const criterionMap = new Map<string, { totalScore: number; totalWeighted: number; count: number; title: string; desc: string; weight: number; type: string }>();
+    (scores || []).forEach((s: any) => {
+      const rawTitle = titleOf(s);
+      const key = `${s.criterion_type}_${normalizeCriterionTitle(rawTitle)}`;
+      if (!criterionMap.has(key)) {
+        criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title: rawTitle, desc: descOf(s), weight: weightOf(s), type: s.criterion_type });
+      }
+      const entry = criterionMap.get(key)!;
+      if (rawTitle && entry.title.startsWith('معيار ') && !rawTitle.startsWith('معيار ')) {
+        entry.title = rawTitle;
+      }
+      entry.totalScore += s.score_1_to_5;
+      entry.totalWeighted += s.weighted_result;
+      entry.count += 1;
+    });
+
+    const summaryScores: ScoreDetail[] = Array.from(criterionMap.values()).map(entry => ({
+      criterion_title: entry.title,
+      criterion_description: entry.desc,
+      criterion_weight: entry.weight,
+      score: Math.round((entry.totalScore / entry.count) * 100) / 100,
+      weighted_result: entry.totalWeighted / entry.count,
+      type: (entry.type || 'general') as 'general' | 'specific',
+    }));
+
+    const underlyingEvals: UnderlyingEvalDetail[] = combined.evals.map(ev => ({
+      id: ev.id,
+      evaluatorName: ev.manager?.full_name || '—',
+      scopeLabel: ev.directorate?.name || null,
+      scores: perEvalScores.get(ev.id) ?? [],
+      finalScore500: ev.final_score_500,
+      finalScore5: ev.final_score_5,
+      percentage: ev.percentage,
+      generalRating: ev.general_rating,
+      evaluatorNote: ev.manager_note,
+      status: ev.status,
     }));
 
     setDetailData({
       name: combined.employee?.full_name || '',
       jobTitle: combined.employee?.job_title || '',
       period: combined.period ? `${monthLabels[combined.period.month]} ${combined.period.year}` : '',
-      scores: flat,
+      scores: summaryScores,
       finalScore500: combined.avg_score_500,
       finalScore5: combined.avg_score_5,
       percentage: combined.avg_percentage,
@@ -520,6 +604,7 @@ export const AllEvaluations: React.FC = () => {
       evaluatorNote: combined.evals.map(e => e.manager_note).filter(Boolean).join(' • '),
       subjectNote: combined.evals.map(e => e.employee_note).filter(Boolean).join(' • '),
       status: combined.evals.length === combined.total_directorates ? combined.evals[0]?.status : 'بانتظار الاكتمال',
+      underlyingEvals,
     });
     setDetailLoading(false);
   };
@@ -551,9 +636,10 @@ export const AllEvaluations: React.FC = () => {
     });
   }, [directorEvals]);
 
-  const viewCombinedDirectorDetail = async (combined: { evals: DirectorEval[]; avg_percentage: number; avg_score_500: number; avg_score_5: number; avg_rating: string | null; director: DirectorEval['director']; period: DirectorEval['period'] }) => {
+  const viewCombinedDirectorDetail = async (combined: { evals: DirectorEval[]; avg_percentage: number; avg_score_500: number; avg_score_5: number; avg_rating: string | null; director: DirectorEval['director']; period: DirectorEval['period']; status: string }) => {
     setDetailLoading(true);
     setDetailModal(true);
+    setSelectedEvalTab('summary');
 
     const allIds = combined.evals.map(e => e.id);
     const { data: scores } = await supabase
@@ -564,14 +650,36 @@ export const AllEvaluations: React.FC = () => {
       `)
       .in('evaluation_id', allIds);
 
+    // Bucket A — per-evaluator score lists for the per-CEO tabs.
+    const perEvalScores = new Map<string, ScoreDetail[]>();
+    (scores || []).forEach((s: any) => {
+      const arr = perEvalScores.get(s.evaluation_id) ?? [];
+      arr.push({
+        criterion_title: s.criterion?.title || '',
+        criterion_description: s.criterion?.description || '',
+        criterion_weight: s.criterion?.weight || 0,
+        score: s.score_1_to_5,
+        weighted_result: s.weighted_result,
+        type: (s.criterion_type || 'general') as 'general' | 'specific',
+      });
+      perEvalScores.set(s.evaluation_id, arr);
+    });
+
+    // Bucket B — averaged across evaluators for the Summary tab. Title is
+    // normalized (trim + strip "معيار " prefix) so equivalent criteria
+    // collapse instead of showing twice.
     const criterionMap = new Map<string, { totalScore: number; totalWeighted: number; count: number; title: string; desc: string; weight: number; type: string }>();
     (scores || []).forEach((s: any) => {
-      const title = s.criterion?.title || '';
+      const rawTitle = s.criterion?.title || '';
       const desc = s.criterion?.description || '';
       const weight = s.criterion?.weight || 0;
-      const key = `${s.criterion_type}_${title}`;
-      if (!criterionMap.has(key)) criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title, desc, weight, type: s.criterion_type });
+      const key = `${s.criterion_type}_${normalizeCriterionTitle(rawTitle)}`;
+      if (!criterionMap.has(key)) criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title: rawTitle, desc, weight, type: s.criterion_type });
       const entry = criterionMap.get(key)!;
+      // Prefer the prefix-free spelling so the merged row reads cleanly.
+      if (rawTitle && entry.title.startsWith('معيار ') && !rawTitle.startsWith('معيار ')) {
+        entry.title = rawTitle;
+      }
       entry.totalScore += s.score_1_to_5;
       entry.totalWeighted += s.weighted_result;
       entry.count += 1;
@@ -584,6 +692,19 @@ export const AllEvaluations: React.FC = () => {
       score: Math.round((entry.totalScore / entry.count) * 100) / 100,
       weighted_result: entry.totalWeighted / entry.count,
       type: (entry.type || 'general') as 'general' | 'specific',
+    }));
+
+    const underlyingEvals: UnderlyingEvalDetail[] = combined.evals.map(ev => ({
+      id: ev.id,
+      evaluatorName: ev.evaluator?.full_name || '—',
+      scopeLabel: null,
+      scores: perEvalScores.get(ev.id) ?? [],
+      finalScore500: ev.final_score_500,
+      finalScore5: ev.final_score_5,
+      percentage: ev.percentage,
+      generalRating: ev.general_rating,
+      evaluatorNote: ev.evaluator_note,
+      status: ev.status,
     }));
 
     const evaluatorNames = combined.evals.map(ev => `${ev.evaluator?.full_name} (${ev.percentage?.toFixed(0)}%)`).join(' | ');
@@ -600,12 +721,40 @@ export const AllEvaluations: React.FC = () => {
       evaluatorNote: combined.evals.map(ev => ev.evaluator_note).filter(Boolean).join('\n---\n') || null,
       subjectNote: combined.evals.find(ev => ev.director_note)?.director_note || null,
       status: combined.status,
+      underlyingEvals,
     });
     setDetailLoading(false);
   };
 
-  const generalScores = detailData?.scores.filter(s => s.type === 'general') || [];
-  const specificScores = detailData?.scores.filter(s => s.type === 'specific') || [];
+  // Tab-aware view: when the modal is showing a combined card with >1
+  // evaluator AND a per-evaluator tab is active, swap the header/scores/
+  // notes to the selected evaluator's slice. Summary tab keeps the
+  // averaged view.
+  const isMultiEval = !!detailData?.underlyingEvals && detailData.underlyingEvals.length > 1;
+  const activeEval = isMultiEval && selectedEvalTab !== 'summary'
+    ? (detailData!.underlyingEvals!.find(u => u.id === selectedEvalTab) ?? null)
+    : null;
+  const dispScores = activeEval ? activeEval.scores : (detailData?.scores ?? []);
+  const dispPercentage = activeEval ? activeEval.percentage : (detailData?.percentage ?? 0);
+  const dispFinalScore5 = activeEval ? activeEval.finalScore5 : (detailData?.finalScore5 ?? 0);
+  const dispFinalScore500 = activeEval ? activeEval.finalScore500 : (detailData?.finalScore500 ?? 0);
+  const dispRating = activeEval ? activeEval.generalRating : (detailData?.generalRating ?? null);
+  const dispEvaluatorNote = activeEval ? activeEval.evaluatorNote : (detailData?.evaluatorNote ?? null);
+  // Subject note is per-period, not per-evaluator — always show the
+  // unified note from the summary level so the per-evaluator tab doesn't
+  // show stale or duplicated text.
+  const dispSubjectNote = activeEval ? null : (detailData?.subjectNote ?? null);
+  const generalScores = dispScores.filter(s => s.type === 'general');
+  const specificScores = dispScores.filter(s => s.type === 'specific');
+
+  // Tab label for an underlying eval — directorate-prefixed when sibling
+  // tabs span multiple directorates, otherwise just the evaluator's name.
+  const underlyingEvalTabLabel = (u: UnderlyingEvalDetail, siblings: UnderlyingEvalDetail[]): string => {
+    const distinctScopes = new Set(siblings.map(s => s.scopeLabel ?? ''));
+    return distinctScopes.size > 1 && u.scopeLabel
+      ? `${u.scopeLabel} — ${u.evaluatorName}`
+      : u.evaluatorName;
+  };
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode; color: string }[] = [
     { key: 'ceo', label: 'تقييمات الإدارة العليا', icon: <Crown className="h-4 w-4" />, color: 'amber' },
@@ -986,7 +1135,7 @@ export const AllEvaluations: React.FC = () => {
       {/* Detail Modal */}
       <Modal
         isOpen={detailModal}
-        onClose={() => { setDetailModal(false); setDetailData(null); }}
+        onClose={() => { setDetailModal(false); setDetailData(null); setSelectedEvalTab('summary'); }}
         title={detailData ? `تفاصيل تقييم: ${detailData.name}` : 'تفاصيل التقييم'}
         size="lg"
       >
@@ -1008,24 +1157,54 @@ export const AllEvaluations: React.FC = () => {
               </div>
             </div>
 
+            {/* Per-evaluator tabs — visible only when more than one
+                evaluator contributed. Default tab is "الملخص" (the
+                averaged view); remaining tabs drill into each evaluator's
+                raw scores so duplicate criteria don't appear. */}
+            {isMultiEval && (
+              <div className="tabs" role="tablist" aria-label="عرض حسب المقيّم">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedEvalTab === 'summary'}
+                  className={`tab ${selectedEvalTab === 'summary' ? 'on' : ''}`}
+                  onClick={() => setSelectedEvalTab('summary')}
+                >
+                  الملخص
+                </button>
+                {detailData.underlyingEvals!.map(u => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selectedEvalTab === u.id}
+                    className={`tab ${selectedEvalTab === u.id ? 'on' : ''}`}
+                    onClick={() => setSelectedEvalTab(u.id)}
+                  >
+                    {underlyingEvalTabLabel(u, detailData.underlyingEvals!)}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Final Results */}
             <div className="grid grid-cols-4 gap-3">
               <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
-                <p className="text-xl font-bold text-ds-info-text">{detailData.finalScore500?.toFixed(1)}</p>
+                <p className="text-xl font-bold text-ds-info-text">{dispFinalScore500?.toFixed(1)}</p>
               </div>
               <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-purple-600 mb-1">النتيجة / 5</p>
-                <p className="text-xl font-bold text-ds-purple-text">{detailData.finalScore5?.toFixed(2)}</p>
+                <p className="text-xl font-bold text-ds-purple-text">{dispFinalScore5?.toFixed(2)}</p>
               </div>
               <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-teal-600 mb-1">النسبة المئوية</p>
-                <p className="text-xl font-bold text-ds-info-text">{detailData.percentage?.toFixed(0)}%</p>
+                <p className="text-xl font-bold text-ds-info-text">{dispPercentage?.toFixed(0)}%</p>
               </div>
               <div className="bg-ds-warning-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
-                {detailData.generalRating ? (
-                  <Badge variant={getRatingVariant(detailData.generalRating)}>{detailData.generalRating}</Badge>
+                {dispRating ? (
+                  <Badge variant={getRatingVariant(dispRating)}>{dispRating}</Badge>
                 ) : (
                   <span className="text-ds-faint text-sm">-</span>
                 )}
@@ -1103,18 +1282,18 @@ export const AllEvaluations: React.FC = () => {
             )}
 
             {/* Notes */}
-            {(detailData.evaluatorNote || detailData.subjectNote) && (
+            {(dispEvaluatorNote || dispSubjectNote) && (
               <div className="space-y-3">
-                {detailData.evaluatorNote && (
+                {dispEvaluatorNote && (
                   <div className="bg-ds-info-bg rounded-lg p-4">
                     <p className="text-xs font-medium text-ds-info-text mb-1">ملاحظات المقيّم</p>
-                    <p className="text-sm text-ds-text">{detailData.evaluatorNote}</p>
+                    <p className="text-sm text-ds-text">{dispEvaluatorNote}</p>
                   </div>
                 )}
-                {detailData.subjectNote && (
+                {dispSubjectNote && (
                   <div className="bg-ds-bg rounded-lg p-4">
                     <p className="text-xs font-medium text-ds-muted mb-1">ملاحظات المُقيَّم</p>
-                    <p className="text-sm text-ds-text">{detailData.subjectNote}</p>
+                    <p className="text-sm text-ds-text">{dispSubjectNote}</p>
                   </div>
                 )}
               </div>
