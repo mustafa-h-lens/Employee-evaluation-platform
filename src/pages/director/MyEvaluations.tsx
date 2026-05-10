@@ -64,8 +64,23 @@ interface EvaluationRow {
   evaluator_note: string | null;
   created_at: string;
   period_id: string;
+  evaluator_id: string;
   period: { id: string; year: number; month: number } | null;
   evaluator: { full_name: string } | null;
+}
+
+// Per-evaluator slice of a combined CEO→Director card. Drives the
+// per-evaluator tabs so the director can see exactly what each CEO scored
+// for each criterion instead of only the averaged summary.
+interface UnderlyingCeoEval {
+  id: string;
+  evaluator_id: string;
+  evaluator_full_name: string;
+  percentage: number;
+  final_score_5: number | null;
+  general_rating: string;
+  evaluator_note: string | null;
+  status: string;
 }
 
 interface CombinedEval {
@@ -79,6 +94,7 @@ interface CombinedEval {
   evaluator_notes: string[];
   director_note: string | null;
   eval_count: number;
+  underlying_evals: UnderlyingCeoEval[];
 }
 
 interface ScoreDetail {
@@ -94,7 +110,12 @@ export const DirectorMyEvaluations: React.FC = () => {
   const [rawEvaluations, setRawEvaluations] = useState<EvaluationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  // `scores` keys by combined-card key and stores the averaged list for the
+  // Summary tab. `scoresPerEval` keys by underlying eval id and stores each
+  // CEO's own un-averaged criterion list, used by the per-evaluator tabs.
   const [scores, setScores] = useState<Record<string, ScoreDetail[]>>({});
+  const [scoresPerEval, setScoresPerEval] = useState<Record<string, ScoreDetail[]>>({});
+  const [selectedTabByCard, setSelectedTabByCard] = useState<Record<string, string>>({});
   const [scoresLoading, setScoresLoading] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [replySaving, setReplySaving] = useState<string | null>(null);
@@ -116,7 +137,7 @@ export const DirectorMyEvaluations: React.FC = () => {
       const { data } = await supabase
         .from('director_evaluations')
         .select(`
-          id, percentage, final_score_5, general_rating, status, director_note, evaluator_note, created_at, period_id,
+          id, percentage, final_score_5, general_rating, status, director_note, evaluator_note, created_at, period_id, evaluator_id,
           period:evaluation_periods(id, year, month),
           evaluator:users!director_evaluations_evaluator_id_fkey(full_name)
         `)
@@ -178,6 +199,16 @@ export const DirectorMyEvaluations: React.FC = () => {
         evaluator_notes: notes,
         director_note: dirNote,
         eval_count: evals.length,
+        underlying_evals: evals.map(e => ({
+          id: e.id,
+          evaluator_id: e.evaluator_id,
+          evaluator_full_name: e.evaluator?.full_name || '—',
+          percentage: Number(e.percentage) || 0,
+          final_score_5: e.final_score_5 != null ? Number(e.final_score_5) : null,
+          general_rating: e.general_rating || percentageToRating(Number(e.percentage) || 0),
+          evaluator_note: e.evaluator_note || null,
+          status: e.status,
+        })),
       });
     });
 
@@ -206,7 +237,9 @@ export const DirectorMyEvaluations: React.FC = () => {
     if (!scores[key]) {
       setScoresLoading(key);
       try {
-        // Fetch scores for ALL evaluations in this group, then average by criterion
+        // Single round-trip — fetch every score row tied to this period
+        // group, then bucket the same data twice: per-evaluator (no
+        // averaging) for the per-CEO tabs, and averaged for the Summary tab.
         const allIds = combined.eval_ids;
         const { data } = await supabase
           .from('director_evaluation_scores')
@@ -217,7 +250,29 @@ export const DirectorMyEvaluations: React.FC = () => {
           `)
           .in('evaluation_id', allIds);
 
-        // Group by criterion title+type and average
+        // Bucket A — per-evaluator rows (no averaging).
+        const perEval = new Map<string, ScoreDetail[]>();
+        (data || []).forEach((s: any) => {
+          const title = s.criterion_type === 'general'
+            ? s.criterion?.title
+            : s.department_criterion?.title;
+          const weight = s.criterion_type === 'general'
+            ? s.criterion?.weight
+            : s.department_criterion?.weight;
+          if (!title) return;
+          const arr = perEval.get(s.evaluation_id) ?? [];
+          arr.push({
+            criterion_title: title,
+            criterion_weight: weight || 0,
+            criterion_type: s.criterion_type,
+            avg_score: Math.round(s.score_1_to_5 * 100) / 100,
+            avg_weighted: Math.round(s.weighted_result * 10) / 10,
+          });
+          perEval.set(s.evaluation_id, arr);
+        });
+        setScoresPerEval(prev => ({ ...prev, ...Object.fromEntries(perEval) }));
+
+        // Bucket B — averaged for the Summary tab. Same math as before.
         const criterionMap = new Map<string, { title: string; weight: number; type: string; totalScore: number; totalWeighted: number; count: number }>();
         (data || []).forEach((s: any) => {
           const title = s.criterion_type === 'general'
@@ -390,6 +445,23 @@ export const DirectorMyEvaluations: React.FC = () => {
             const isExpanded = expandedKey === combined.key;
             const scorePercent = combined.avg_percentage;
             const barColor = scorePercent >= 80 ? 'bg-emerald-500' : scorePercent >= 60 ? 'bg-blue-500' : scorePercent >= 40 ? 'bg-amber-500' : 'bg-red-500';
+            // Tabs surface only when more than one CEO contributed.
+            const isMultiEvalCombined = combined.underlying_evals.length > 1;
+            const activeTab = selectedTabByCard[combined.key] ?? 'summary';
+            const activeUnderlying = isMultiEvalCombined && activeTab !== 'summary'
+              ? (combined.underlying_evals.find(u => u.id === activeTab) ?? null)
+              : null;
+            // Pick which ScoreDetail array to render — averaged for Summary,
+            // per-eval for an evaluator tab.
+            const activeScores: ScoreDetail[] | undefined = activeUnderlying
+              ? scoresPerEval[activeUnderlying.id]
+              : scores[combined.key];
+            const dispPercentage = activeUnderlying ? activeUnderlying.percentage : combined.avg_percentage;
+            const dispScore5 = activeUnderlying
+              ? (activeUnderlying.final_score_5 ?? 0)
+              : combined.avg_score_5;
+            const dispRating = activeUnderlying ? activeUnderlying.general_rating : combined.avg_rating;
+            const dispEvaluator = activeUnderlying ? activeUnderlying.evaluator_full_name : 'الإدارة العليا';
 
             return (
               <Card key={combined.key} className="overflow-hidden">
@@ -447,39 +519,82 @@ export const DirectorMyEvaluations: React.FC = () => {
                       <div className="page-loading-placeholder" aria-hidden="true" />
                     ) : (
                       <>
+                        {/* Tab strip — only when more than one CEO
+                            contributed. Default tab is the Summary; the
+                            remaining tabs drill into each CEO's individual
+                            scores so the director can see who gave what. */}
+                        {isMultiEvalCombined && (
+                          <div className="tabs" role="tablist" aria-label="عرض حسب المقيّم">
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={activeTab === 'summary'}
+                              className={`tab ${activeTab === 'summary' ? 'on' : ''}`}
+                              onClick={() => setSelectedTabByCard(p => ({ ...p, [combined.key]: 'summary' }))}
+                            >
+                              الملخص
+                            </button>
+                            {combined.underlying_evals.map(u => (
+                              <button
+                                key={u.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={activeTab === u.id}
+                                className={`tab ${activeTab === u.id ? 'on' : ''}`}
+                                onClick={() => setSelectedTabByCard(p => ({ ...p, [combined.key]: u.id }))}
+                              >
+                                {u.evaluator_full_name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Per-evaluator status chip — visible only when a
+                            specific evaluator's tab is open so the director
+                            can tell whether THIS contribution is still
+                            pending while the aggregate badge in the header
+                            tracks the card-level status. */}
+                        {activeUnderlying && (
+                          <div className="flex items-center justify-end gap-2">
+                            <Badge variant={statusVariant(activeUnderlying.status)} size="sm">
+                              {statusLabel(activeUnderlying.status, !!activeUnderlying.evaluator_note)}
+                            </Badge>
+                          </div>
+                        )}
+
                         {/* Summary Cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <TrendingUp className="h-5 w-5 text-blue-500 mx-auto mb-1" />
                             <p className="text-xs text-ds-faint">النسبة المئوية</p>
-                            <p className="text-lg font-bold text-ds-text">{combined.avg_percentage.toFixed(1)}%</p>
+                            <p className="text-lg font-bold text-ds-text">{dispPercentage.toFixed(1)}%</p>
                           </div>
                           <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <BarChart3 className="h-5 w-5 text-emerald-500 mx-auto mb-1" />
                             <p className="text-xs text-ds-faint">الدرجة من 5</p>
-                            <p className="text-lg font-bold text-ds-text">{combined.avg_score_5.toFixed(2)}</p>
+                            <p className="text-lg font-bold text-ds-text">{dispScore5.toFixed(2)}</p>
                           </div>
                           <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <Star className="h-5 w-5 text-amber-500 mx-auto mb-1" />
                             <p className="text-xs text-ds-faint">التقدير العام</p>
-                            <Badge variant={ratingVariant(combined.avg_rating)} size="sm">{combined.avg_rating}</Badge>
+                            <Badge variant={ratingVariant(dispRating)} size="sm">{dispRating}</Badge>
                           </div>
                           <div className="bg-ds-surface rounded-xl p-4 border border-ds-border text-center">
                             <User className="h-5 w-5 text-indigo-500 mx-auto mb-1" />
                             <p className="text-xs text-ds-faint">جهة التقييم</p>
-                            <p className="text-sm font-semibold text-ds-text">الإدارة العليا</p>
+                            <p className="text-sm font-semibold text-ds-text truncate">{dispEvaluator}</p>
                           </div>
                         </div>
 
                         {/* General Criteria Scores */}
-                        {scores[combined.key]?.filter(s => s.criterion_type === 'general').length > 0 && (
+                        {(activeScores?.filter(s => s.criterion_type === 'general').length ?? 0) > 0 && (
                           <div>
                             <h4 className="text-sm font-bold text-ds-info-text mb-3 flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                               معايير التقييم العامة
                             </h4>
                             <div className="space-y-2">
-                              {scores[combined.key]
+                              {activeScores!
                                 .filter(s => s.criterion_type === 'general')
                                 .map((score, idx) => {
                                   const pct = (score.avg_score / 5) * 100;
@@ -507,14 +622,14 @@ export const DirectorMyEvaluations: React.FC = () => {
                         )}
 
                         {/* Specific Criteria Scores */}
-                        {scores[combined.key]?.filter(s => s.criterion_type === 'specific').length > 0 && (
+                        {(activeScores?.filter(s => s.criterion_type === 'specific').length ?? 0) > 0 && (
                           <div>
                             <h4 className="text-sm font-bold text-ds-success-text mb-3 flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                               معايير التقييم الخاصة
                             </h4>
                             <div className="space-y-2">
-                              {scores[combined.key]
+                              {activeScores!
                                 .filter(s => s.criterion_type === 'specific')
                                 .map((score, idx) => {
                                   const pct = (score.avg_score / 5) * 100;
@@ -541,22 +656,36 @@ export const DirectorMyEvaluations: React.FC = () => {
                           </div>
                         )}
 
-                        {(!scores[combined.key] || scores[combined.key].length === 0) && (
+                        {(!activeScores || activeScores.length === 0) && (
                           <p className="text-center text-ds-faint py-4">لا توجد تفاصيل درجات لهذا التقييم</p>
                         )}
 
-                        {/* Evaluator Notes */}
-                        {combined.evaluator_notes.length > 0 && (
-                          <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
-                            <p className="text-xs font-medium text-ds-info-text mb-2">ملاحظات الإدارة العليا</p>
-                            {combined.evaluator_notes.map((note, idx) => (
-                              <p key={idx} className="text-sm text-ds-info-text leading-relaxed">{note}</p>
-                            ))}
-                          </div>
+                        {/* Evaluator Notes — Summary tab shows the full list
+                            of CEO notes; an evaluator tab shows only THAT
+                            CEO's note (hidden if empty). */}
+                        {activeUnderlying ? (
+                          activeUnderlying.evaluator_note && (
+                            <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                              <p className="text-xs font-medium text-ds-info-text mb-2">ملاحظات المقيّم</p>
+                              <p className="text-sm text-ds-info-text leading-relaxed">{activeUnderlying.evaluator_note}</p>
+                            </div>
+                          )
+                        ) : (
+                          combined.evaluator_notes.length > 0 && (
+                            <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4">
+                              <p className="text-xs font-medium text-ds-info-text mb-2">ملاحظات الإدارة العليا</p>
+                              {combined.evaluator_notes.map((note, idx) => (
+                                <p key={idx} className="text-sm text-ds-info-text leading-relaxed">{note}</p>
+                              ))}
+                            </div>
+                          )
                         )}
 
-                        {/* Reply Section */}
-                        {(combined.status === 'بانتظار الموافقة' || combined.status === 'موافقة') && (
+                        {/* Reply Section — only on Summary tab; reply applies
+                            to the period (saves to every underlying row), so
+                            duplicating it on each evaluator tab would mislead
+                            about scope. */}
+                        {!activeUnderlying && (combined.status === 'بانتظار الموافقة' || combined.status === 'موافقة') && (
                           <div className="bg-ds-info-bg border border-teal-100 rounded-lg p-4">
                             <h4 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                               <MessageSquare className="h-4 w-4" />
