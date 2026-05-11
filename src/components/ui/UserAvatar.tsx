@@ -90,7 +90,23 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           src={avatarUrl}
           alt={name}
           loading="lazy"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{
+            // The parent <span> uses inline-flex + align-items:center
+            // (needed for the initials fallback). For an <img> child
+            // that should fill the circle, the parent's centering wins
+            // over `height: 100%` in some browsers, leaving a gap at
+            // the bottom. `alignSelf: stretch` overrides the inherited
+            // align-items:center so the img fills the cross axis.
+            // `display: block` removes inline line-height padding.
+            // `objectPosition: center top` favours keeping the head
+            // when a portrait is wider/taller than the square crop.
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center top',
+            display: 'block',
+            alignSelf: 'stretch',
+          }}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = 'none';
           }}
