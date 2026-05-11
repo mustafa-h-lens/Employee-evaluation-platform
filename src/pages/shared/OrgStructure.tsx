@@ -115,77 +115,107 @@ const initials = (n: string) => {
 
 const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = ({ person, onClose }) => {
   const c = getColor(person.role);
+  const isMultiDir = !!person.dirAssignments && person.dirAssignments.length > 1;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease-out' }} />
-      <div className="relative bg-ds-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+      <div className="fixed inset-0 bg-black/55 backdrop-blur-md" style={{ animation: 'fadeIn 0.2s ease-out' }} />
+      <div
+        className="relative bg-ds-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-ds-border-subtle"
         onClick={e => e.stopPropagation()}
-        style={{ animation: 'modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-        <div className={`relative bg-gradient-to-br ${c.gradient} px-6 pt-8 pb-12 overflow-hidden`}>
-          <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-ds-surface/10" />
-          <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-ds-surface/10" />
-          <button onClick={onClose} className="absolute top-4 left-4 text-white/80 hover:text-white bg-ds-surface/20 rounded-xl p-2 hover:bg-ds-surface/30 backdrop-blur-sm transition-colors">
+        style={{ animation: 'modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+      >
+        {/* Header band — slim, role-colored, with a soft radial wash. The
+            avatar is no longer anchored here; it overlaps into the body
+            below for a modern "profile card" feel. */}
+        <div className={`relative bg-gradient-to-br ${c.gradient} px-6 pt-7 pb-20 overflow-hidden`}>
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), transparent 55%)' }}
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-4 left-4 text-white/85 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl p-2 backdrop-blur-sm transition-colors z-10"
+            aria-label="إغلاق"
+          >
             <X className="h-4 w-4" />
           </button>
-          <div className="relative flex flex-col items-center text-center">
-            <div
-              className="mb-3"
-              style={{
-                animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
-                borderRadius: '50%',
-                lineHeight: 0,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-              }}
-            >
-              <UserAvatar
-                name={person.name}
-                avatarUrl={person.avatarUrl}
-                size="2xl"
-                initialsLength={2}
-              />
-            </div>
-            <h3 className="text-xl font-bold text-white">{person.name}</h3>
-            <p className="text-white/80 text-sm mt-1">{person.jobTitle || roleLabel(person.role)}</p>
-            <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
-              <span className="text-xs bg-ds-surface/20 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
-                <RoleIcon role={person.role} className="h-3.5 w-3.5" />
-                {roleLabel(person.role)}
-              </span>
-              {person.isSupervisor && (
-                <span className="text-xs bg-orange-500/80 text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
-                  <Shield className="h-3.5 w-3.5" />
-                  مشرف{person.supervisorMemberCount ? ` — ${person.supervisorMemberCount} عضو` : ''}
-                </span>
-              )}
-              {person.teamSize !== undefined && person.teamSize > 0 && (
-                <span className="text-xs bg-ds-surface/20 text-white px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
-                  <Users className="h-3.5 w-3.5" />{person.teamSize} موظف
-                </span>
-              )}
-            </div>
+          <div className="relative text-center">
+            <h3 className="text-2xl font-bold text-white tracking-tight">{person.name}</h3>
+            <p className="text-white/85 text-sm mt-1.5 font-medium">
+              {person.jobTitle || roleLabel(person.role)}
+            </p>
           </div>
         </div>
-        <div className="px-6 py-5 space-y-2.5 -mt-4">
-          <div className="bg-ds-surface rounded-2xl shadow-sm border border-ds-border-subtle p-4 space-y-2.5">
-            <DetailRow icon={<Mail />} label="البريد الإلكتروني" value={person.email} />
-            {person.phone && <DetailRow icon={<Phone />} label="الهاتف" value={person.phone} />}
-            {person.employeeNumber && <DetailRow icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} />}
-            {person.dirAssignments && person.dirAssignments.length > 1 ? (
-              person.dirAssignments.map((a, i) => (
-                <div key={i} className={i > 0 ? 'pt-2 border-t border-gray-50' : ''}>
-                  <DetailRow icon={<Landmark />} label="الإدارة" value={a.directorate} />
-                  {a.jobTitle && <DetailRow icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />}
-                </div>
-              ))
+
+        {/* Floating avatar — overlaps the header band */}
+        <div className="relative -mt-14 flex justify-center px-6">
+          <div
+            className="rounded-full p-1.5 bg-ds-surface shadow-2xl"
+            style={{
+              animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
+              boxShadow: `0 8px 24px ${c.glow}, 0 0 0 1px rgba(255,255,255,0.04)`,
+            }}
+          >
+            <UserAvatar
+              name={person.name}
+              avatarUrl={person.avatarUrl}
+              size="2xl"
+              initialsLength={2}
+            />
+          </div>
+        </div>
+
+        {/* Role / supervisor / team pills — DS-tokened so they theme */}
+        <div className="flex items-center gap-2 mt-4 mb-5 flex-wrap justify-center px-6">
+          <span className="text-xs font-semibold bg-ds-overlay text-ds-text px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-ds-border-subtle">
+            <RoleIcon role={person.role} className="h-3.5 w-3.5" />
+            {roleLabel(person.role)}
+          </span>
+          {person.isSupervisor && (
+            <span className="text-xs font-semibold bg-ds-warning-bg text-ds-warning-text px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-ds-warning-border">
+              <Shield className="h-3.5 w-3.5" />
+              مشرف{person.supervisorMemberCount ? ` — ${person.supervisorMemberCount} عضو` : ''}
+            </span>
+          )}
+          {person.teamSize !== undefined && person.teamSize > 0 && (
+            <span className="text-xs font-semibold bg-ds-info-bg text-ds-info-text px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-ds-info-border">
+              <Users className="h-3.5 w-3.5" />{person.teamSize} موظف
+            </span>
+          )}
+        </div>
+
+        {/* Info grid — compact 2-col with long-value fields spanning both
+            columns. Multi-directorate assignments stack vertically since
+            each pair (الإدارة + المسمى الوظيفي) reads better as a unit. */}
+        <div className="px-6 pb-6">
+          <div className="grid grid-cols-2 gap-2.5">
+            <InfoCell icon={<Mail />} label="البريد الإلكتروني" value={person.email} fullWidth />
+            {person.phone && <InfoCell icon={<Phone />} label="الهاتف" value={person.phone} />}
+            {person.employeeNumber && <InfoCell icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} />}
+            {isMultiDir ? (
+              <div className="col-span-2 grid grid-cols-1 gap-2.5 p-2.5 rounded-2xl border border-ds-border-subtle bg-ds-bg/40">
+                <p className="text-[10px] text-ds-faint font-bold uppercase tracking-wider px-1">
+                  الإدارات والمسميات
+                </p>
+                {person.dirAssignments!.map((a, i) => (
+                  <div key={i} className="grid grid-cols-2 gap-2.5">
+                    <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
+                    {a.jobTitle ? (
+                      <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
+                    ) : <div />}
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
-                {person.jobTitle && <DetailRow icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
-                {person.directorate && <DetailRow icon={<Landmark />} label="الإدارة" value={person.directorate} />}
+                {person.jobTitle && <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
+                {person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />}
               </>
             )}
-            {person.department && <DetailRow icon={<Building2 />} label="الوحدة" value={person.department} />}
-            {person.reportsTo && <DetailRow icon={<UserCog />} label="المدير المباشر" value={person.reportsTo} />}
-            {person.supervisorTitle && <DetailRow icon={<Shield />} label="مهمة الإشراف" value={person.supervisorTitle} accent />}
+            {person.department && <InfoCell icon={<Building2 />} label="الوحدة" value={person.department} />}
+            {person.reportsTo && <InfoCell icon={<UserCog />} label="المدير المباشر" value={person.reportsTo} fullWidth />}
+            {person.supervisorTitle && <InfoCell icon={<Shield />} label="مهمة الإشراف" value={person.supervisorTitle} accent fullWidth />}
           </div>
         </div>
       </div>
@@ -193,14 +223,41 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
   );
 };
 
-const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: boolean }> = ({ icon, label, value, accent }) => (
-  <div className={`flex items-center gap-3 p-3 rounded-xl ${accent ? 'bg-ds-warning-bg' : 'bg-ds-bg/80'} hover:bg-ds-overlay transition-colors`}>
-    <div className={`w-9 h-9 rounded-xl ${accent ? 'bg-ds-warning-bg text-ds-warning' : 'bg-ds-surface text-ds-faint shadow-sm'} flex items-center justify-center flex-shrink-0`}>
-      {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
-    </div>
-    <div className="min-w-0 flex-1">
-      <p className="text-[10px] text-ds-faint font-medium">{label}</p>
-      <p className="text-sm font-semibold text-ds-text truncate">{value}</p>
+const InfoCell: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent?: boolean;
+  fullWidth?: boolean;
+}> = ({ icon, label, value, accent, fullWidth }) => (
+  <div
+    className={[
+      fullWidth ? 'col-span-2' : '',
+      'group relative rounded-2xl p-3 border transition-all',
+      accent
+        ? 'bg-ds-warning-bg border-ds-warning-border'
+        : 'bg-ds-bg/60 border-ds-border-subtle hover:border-ds-border hover:bg-ds-overlay',
+    ].join(' ')}
+  >
+    <div className="flex items-center gap-3">
+      <div
+        className={[
+          'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105',
+          accent
+            ? 'bg-ds-warning-bg text-ds-warning-text border border-ds-warning-border'
+            : 'bg-ds-surface text-ds-accent border border-ds-border-subtle',
+        ].join(' ')}
+      >
+        {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`text-[10px] font-bold uppercase tracking-wider ${accent ? 'text-ds-warning-text' : 'text-ds-faint'}`}>
+          {label}
+        </p>
+        <p className={`text-sm font-semibold truncate mt-0.5 ${accent ? 'text-ds-warning-text' : 'text-ds-text'}`}>
+          {value}
+        </p>
+      </div>
     </div>
   </div>
 );
