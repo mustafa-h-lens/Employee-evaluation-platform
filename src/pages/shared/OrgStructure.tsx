@@ -220,10 +220,11 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
             <InfoCell icon={<Mail />} label="البريد الإلكتروني" value={person.email} fullWidth copyable />
             {person.phone && <InfoCell icon={<Phone />} label="الهاتف" value={person.phone} fullWidth copyable />}
             {person.employeeNumber && <InfoCell icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} fullWidth copyable />}
-            {!isMultiDir && person.jobTitle && (
-              <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />
-            )}
-            {isMultiDir ? (
+            {/* Directorate + job title block — gets the "الإدارات
+                والمسميات" section header for EVERY employee with a
+                directorate, so single-dir profiles look visually
+                consistent with multi-dir ones. */}
+            {(isMultiDir || person.directorate || person.jobTitle) && (
               <div className="col-span-2 mt-1">
                 <div className="flex items-center gap-2 px-3 mb-1.5">
                   <div className="h-px flex-1 bg-ds-border-subtle" />
@@ -231,24 +232,29 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
                   <div className="h-px flex-1 bg-ds-border-subtle" />
                 </div>
                 <div>
-                  {person.dirAssignments!.map((a, i) => (
-                    <React.Fragment key={i}>
-                      {/* Divider between assignments so multi-dir
-                          pairs read as distinct groupings instead of
-                          one continuous block. */}
-                      {i > 0 && <div className="h-px bg-ds-border-subtle mx-3 my-2" />}
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                        <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
-                        {a.jobTitle ? (
-                          <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
-                        ) : <div />}
-                      </div>
-                    </React.Fragment>
-                  ))}
+                  {isMultiDir ? (
+                    person.dirAssignments!.map((a, i) => (
+                      <React.Fragment key={i}>
+                        {/* Divider between assignments so multi-dir
+                            pairs read as distinct groupings instead of
+                            one continuous block. */}
+                        {i > 0 && <div className="h-px bg-ds-border-subtle mx-3 my-2" />}
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                          <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
+                          {a.jobTitle ? (
+                            <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
+                          ) : <div />}
+                        </div>
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                      {person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />}
+                      {person.jobTitle && <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : (
-              person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />
             )}
             {person.department && <InfoCell icon={<Building2 />} label="الوحدة" value={person.department} />}
             {person.reportsTo && (() => {
