@@ -32,6 +32,7 @@ import {
   Trash2,
   ChevronUp,
   Check,
+  Copy,
   Palette,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
@@ -86,13 +87,26 @@ interface SelectedPerson {
 const roleLabel = (r: string) =>
   ({ ceo: 'الإدارة العليا', director: 'مدير إدارة', employee: 'موظف', admin: 'الموارد البشرية' }[r] || r);
 
-const ROLE_COLORS: Record<string, { bg: string; border: string; gradient: string; text: string; badge: string; edge: string; glow: string; minimap: string }> = {
-  ceo:        { bg: '#fffbeb', border: '#fbbf24', gradient: 'from-amber-500 to-orange-600', text: '#92400e', badge: 'bg-amber-500', edge: '#f59e0b', glow: 'rgba(245,158,11,0.4)', minimap: '#f59e0b' },
-  director:   { bg: '#faf5ff', border: '#a78bfa', gradient: 'from-purple-500 to-violet-600', text: '#5b21b6', badge: 'bg-purple-500', edge: '#8b5cf6', glow: 'rgba(139,92,246,0.4)', minimap: '#8b5cf6' },
-  employee:   { bg: '#ecfdf5', border: '#34d399', gradient: 'from-emerald-500 to-teal-600', text: '#065f46', badge: 'bg-emerald-500', edge: '#10b981', glow: 'rgba(16,185,129,0.4)', minimap: '#10b981' },
-  directorate:{ bg: '#faf5ff', border: '#a78bfa', gradient: 'from-purple-500 to-violet-600', text: '#5b21b6', badge: 'bg-purple-500', edge: '#8b5cf6', glow: 'rgba(139,92,246,0.4)', minimap: '#8b5cf6' },
-  department: { bg: '#f0fdfa', border: '#5eead4', gradient: 'from-teal-500 to-cyan-600', text: '#134e4a', badge: 'bg-teal-500', edge: '#14b8a6', glow: 'rgba(20,184,166,0.4)', minimap: '#14b8a6' },
-  unassigned: { bg: '#f9fafb', border: '#d1d5db', gradient: 'from-gray-400 to-gray-500', text: '#374151', badge: 'bg-gray-500', edge: '#9ca3af', glow: 'rgba(156,163,175,0.3)', minimap: '#9ca3af' },
+// Per-role palette for the profile modal. Values reference DS
+// stat-card tokens so the header reads as a sophisticated dark gradient
+// in dark mode and a soft pastel card in light mode. Employee + dept
+// moved off emerald onto the calmer blue tone, since the bright green
+// was clashing with the surrounding UI.
+interface RoleColor {
+  gradient: string;        // header background (CSS gradient via DS var)
+  glow: string;            // halo color for the floating avatar shadow
+  titleColor: string;      // person name color on the header
+  subtitleColor: string;   // job-title color on the header
+  closeBtnBg: string;      // close-button background fill
+  closeBtnIcon: string;    // close-button icon color
+}
+const ROLE_COLORS: Record<string, RoleColor> = {
+  ceo:        { gradient: 'var(--sc-amber-grad)',  glow: 'var(--sc-amber-glow)',  titleColor: 'var(--sc-amber-val)',  subtitleColor: 'var(--sc-amber-label)',  closeBtnBg: 'var(--sc-amber-icon-bg)',  closeBtnIcon: 'var(--sc-amber-icon-c)' },
+  director:   { gradient: 'var(--sc-purple-grad)', glow: 'var(--sc-purple-glow)', titleColor: 'var(--sc-purple-val)', subtitleColor: 'var(--sc-purple-label)', closeBtnBg: 'var(--sc-purple-icon-bg)', closeBtnIcon: 'var(--sc-purple-icon-c)' },
+  directorate:{ gradient: 'var(--sc-purple-grad)', glow: 'var(--sc-purple-glow)', titleColor: 'var(--sc-purple-val)', subtitleColor: 'var(--sc-purple-label)', closeBtnBg: 'var(--sc-purple-icon-bg)', closeBtnIcon: 'var(--sc-purple-icon-c)' },
+  employee:   { gradient: 'var(--sc-blue-grad)',   glow: 'var(--sc-blue-glow)',   titleColor: 'var(--sc-blue-val)',   subtitleColor: 'var(--sc-blue-label)',   closeBtnBg: 'var(--sc-blue-icon-bg)',   closeBtnIcon: 'var(--sc-blue-icon-c)' },
+  department: { gradient: 'var(--sc-blue-grad)',   glow: 'var(--sc-blue-glow)',   titleColor: 'var(--sc-blue-val)',   subtitleColor: 'var(--sc-blue-label)',   closeBtnBg: 'var(--sc-blue-icon-bg)',   closeBtnIcon: 'var(--sc-blue-icon-c)' },
+  unassigned: { gradient: 'linear-gradient(135deg, var(--bg-elevated), var(--bg-overlay))', glow: 'rgba(0,0,0,0.4)', titleColor: 'var(--text-primary)', subtitleColor: 'var(--text-secondary)', closeBtnBg: 'rgba(255,255,255,0.08)', closeBtnIcon: 'var(--text-secondary)' },
 };
 const getColor = (role: string) => ROLE_COLORS[role] || ROLE_COLORS.employee;
 
@@ -125,24 +139,30 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
         onClick={e => e.stopPropagation()}
         style={{ animation: 'modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
       >
-        {/* Header band — slim, role-colored, with a soft radial wash. The
-            avatar is no longer anchored here; it overlaps into the body
-            below for a modern "profile card" feel. */}
-        <div className={`relative bg-gradient-to-br ${c.gradient} px-6 pt-7 pb-20 overflow-hidden`}>
+        {/* Header band — role-toned gradient via DS stat-card tokens
+            (themes in light + dark, no harsh fixed colors). The avatar
+            overlaps from below for a modern profile-card feel. */}
+        <div
+          className="relative px-6 pt-7 pb-20 overflow-hidden"
+          style={{ background: c.gradient }}
+        >
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), transparent 55%)' }}
+            style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.18), transparent 55%)' }}
           />
           <button
             onClick={onClose}
-            className="absolute top-4 left-4 text-white/85 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl p-2 backdrop-blur-sm transition-colors z-10"
+            className="absolute top-4 left-4 rounded-xl p-2 backdrop-blur-sm transition-opacity hover:opacity-80 z-10"
+            style={{ background: c.closeBtnBg, color: c.closeBtnIcon }}
             aria-label="إغلاق"
           >
             <X className="h-4 w-4" />
           </button>
           <div className="relative text-center">
-            <h3 className="text-2xl font-bold text-white tracking-tight">{person.name}</h3>
-            <p className="text-white/85 text-sm mt-1.5 font-medium">
+            <h3 className="text-2xl font-bold tracking-tight" style={{ color: c.titleColor }}>
+              {person.name}
+            </h3>
+            <p className="text-sm mt-1.5 font-medium" style={{ color: c.subtitleColor }}>
               {person.jobTitle || roleLabel(person.role)}
             </p>
           </div>
@@ -150,9 +170,8 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
 
         {/* Floating avatar — overlaps the header band. The ring is a
             pure box-shadow outset (4px of `--bg-surface`) so the photo
-            fills edge-to-edge; no padded wrapper means no double-frame
-            artefact between the body-color ring and the avatar's own
-            1px soft border. */}
+            fills edge-to-edge with one clean rim of body color and a
+            tinted halo from the role glow. */}
         <div className="relative -mt-14 flex justify-center px-6">
           <div
             className="rounded-full inline-block"
@@ -171,7 +190,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
         </div>
 
         {/* Role / supervisor / team pills — DS-tokened so they theme */}
-        <div className="flex items-center gap-2 mt-4 mb-5 flex-wrap justify-center px-6">
+        <div className="flex items-center gap-2 mt-5 mb-6 flex-wrap justify-center px-6">
           <span className="text-xs font-semibold bg-ds-overlay text-ds-text px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-ds-border-subtle">
             <RoleIcon role={person.role} className="h-3.5 w-3.5" />
             {roleLabel(person.role)}
@@ -189,21 +208,25 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
           )}
         </div>
 
-        {/* Info grid — compact 2-col with long-value fields spanning both
-            columns. Multi-directorate assignments stack vertically since
-            each pair (الإدارة + المسمى الوظيفي) reads better as a unit. */}
-        <div className="px-6 pb-6">
-          <div className="grid grid-cols-2 gap-2.5">
-            <InfoCell icon={<Mail />} label="البريد الإلكتروني" value={person.email} fullWidth />
-            {person.phone && <InfoCell icon={<Phone />} label="الهاتف" value={person.phone} />}
+        {/* Info grid — lighter rows (no per-cell border), more vertical
+            gap, smaller icon tiles. Email + phone now get a copy button
+            (always visible, becomes prominent on hover). Long-value
+            fields span both columns; the rest pair compactly. */}
+        <div className="px-5 pb-6">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+            <InfoCell icon={<Mail />} label="البريد الإلكتروني" value={person.email} fullWidth copyable />
+            {person.phone && <InfoCell icon={<Phone />} label="الهاتف" value={person.phone} fullWidth copyable />}
             {person.employeeNumber && <InfoCell icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} />}
+            {!isMultiDir && person.jobTitle && (
+              <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />
+            )}
             {isMultiDir ? (
-              <div className="col-span-2 grid grid-cols-1 gap-2.5 p-2.5 rounded-2xl border border-ds-border-subtle bg-ds-bg/40">
-                <p className="text-[10px] text-ds-faint font-bold uppercase tracking-wider px-1">
+              <div className="col-span-2 mt-1 rounded-2xl bg-ds-bg/50 p-3 space-y-2">
+                <p className="text-[10px] text-ds-faint font-bold uppercase tracking-wider px-1 mb-1">
                   الإدارات والمسميات
                 </p>
                 {person.dirAssignments!.map((a, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-2.5">
+                  <div key={i} className="grid grid-cols-2 gap-x-2 gap-y-1.5">
                     <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
                     {a.jobTitle ? (
                       <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
@@ -212,10 +235,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
                 ))}
               </div>
             ) : (
-              <>
-                {person.jobTitle && <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />}
-                {person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />}
-              </>
+              person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />
             )}
             {person.department && <InfoCell icon={<Building2 />} label="الوحدة" value={person.department} />}
             {person.reportsTo && <InfoCell icon={<UserCog />} label="المدير المباشر" value={person.reportsTo} fullWidth />}
@@ -233,38 +253,70 @@ const InfoCell: React.FC<{
   value: string;
   accent?: boolean;
   fullWidth?: boolean;
-}> = ({ icon, label, value, accent, fullWidth }) => (
-  <div
-    className={[
-      fullWidth ? 'col-span-2' : '',
-      'group relative rounded-2xl p-3 border transition-all',
-      accent
-        ? 'bg-ds-warning-bg border-ds-warning-border'
-        : 'bg-ds-bg/60 border-ds-border-subtle hover:border-ds-border hover:bg-ds-overlay',
-    ].join(' ')}
-  >
-    <div className="flex items-center gap-3">
+  copyable?: boolean;
+}> = ({ icon, label, value, accent, fullWidth, copyable }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    }).catch(() => { /* ignore */ });
+  };
+  return (
+    <div className={fullWidth ? 'col-span-2' : ''}>
       <div
         className={[
-          'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105',
+          'group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
           accent
-            ? 'bg-ds-warning-bg text-ds-warning-text border border-ds-warning-border'
-            : 'bg-ds-surface text-ds-accent border border-ds-border-subtle',
+            ? 'bg-ds-warning-bg'
+            : 'hover:bg-ds-overlay/60',
         ].join(' ')}
       >
-        {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className={`text-[10px] font-bold uppercase tracking-wider ${accent ? 'text-ds-warning-text' : 'text-ds-faint'}`}>
-          {label}
-        </p>
-        <p className={`text-sm font-semibold truncate mt-0.5 ${accent ? 'text-ds-warning-text' : 'text-ds-text'}`}>
-          {value}
-        </p>
+        <div
+          className={[
+            'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+            accent
+              ? 'bg-ds-warning-bg text-ds-warning-text'
+              : 'bg-ds-overlay text-ds-accent',
+          ].join(' ')}
+        >
+          {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className={`text-[10px] font-bold uppercase tracking-wider ${accent ? 'text-ds-warning-text' : 'text-ds-faint'}`}>
+            {label}
+          </p>
+          <p
+            className={`text-sm font-semibold truncate mt-0.5 ${accent ? 'text-ds-warning-text' : 'text-ds-text'}`}
+            dir="auto"
+          >
+            {value}
+          </p>
+        </div>
+        {copyable && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={[
+              'flex-shrink-0 p-1.5 rounded-lg transition-all',
+              copied
+                ? 'bg-ds-success-bg text-ds-success-text'
+                : 'text-ds-faint hover:text-ds-text hover:bg-ds-overlay',
+            ].join(' ')}
+            aria-label={copied ? 'تم النسخ' : 'نسخ'}
+            title={copied ? 'تم النسخ' : 'نسخ'}
+          >
+            {copied
+              ? <Check className="h-3.5 w-3.5" />
+              : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ═══════════════════════════════════════════════════════════════════════
    OrgTree — Pure HTML/CSS Dark-Themed Org Chart
