@@ -792,6 +792,15 @@ body {
   background-repeat: no-repeat; background-position: left 12px center;
   padding-left: 36px; cursor: pointer;
 }
+/* Without an explicit background/color on <option>, browsers fall back
+   to native OS colors — typically white on white in dark mode, which
+   makes options invisible. Forcing DS tokens so the dropdown list
+   themes alongside the trigger. */
+.select option,
+select.input option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
 
 textarea.input { height: auto; min-height: 90px; padding: 10px 14px; resize: vertical; line-height: 1.6; }
 
