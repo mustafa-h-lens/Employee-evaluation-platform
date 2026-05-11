@@ -1243,7 +1243,19 @@ const JobTitlesTab: React.FC = () => {
                                 {titleRow.title}
                               </p>
                               {isDir && (
-                                <span className="inline-block text-[9px] font-bold mt-0.5 px-2 py-0.5 rounded-full" style={{ background: c.badgeBg, color: c.badgeText, boxShadow: `0 0 0 1px ${c.line}` }}>
+                                // Use the dept's dot color at low alpha
+                                // for the bg + full alpha for text instead
+                                // of the prior hardcoded pastel hex pair.
+                                // That pair was tuned for light mode only
+                                // and looked washed out against dark.
+                                <span
+                                  className="inline-block text-[9px] font-bold mt-0.5 px-2 py-0.5 rounded-full"
+                                  style={{
+                                    background: `${c.dot}22`,
+                                    color: c.dot,
+                                    boxShadow: `0 0 0 1px ${c.dot}55`,
+                                  }}
+                                >
                                   قائد الإدارة
                                 </span>
                               )}
