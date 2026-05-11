@@ -924,19 +924,19 @@ interface JobLadderPalette {
   hoverBg: string; gradFrom: string; gradTo: string; label: string;
 }
 // gradFrom / gradTo render the colorful header band at the top of each
-// job-ladder card. Now sitting at Tailwind 700/800 so the cards read
-// deep and sophisticated rather than vivid against the dark surface.
-// `dot`, `line`, etc. left untouched — accents inside the list still
-// benefit from the brighter 400/500-range colors.
+// job-ladder card. Sitting at Tailwind 600/700 — a sweet spot between
+// vivid Tailwind-default and overly muted. `dot`, `line`, etc. left
+// untouched since they're used for accents inside the list where
+// brighter 400/500-range colors still help.
 const JOB_LADDER_PALETTES: Record<string, JobLadderPalette> = {
-  teal:   { dot: '#2dd4bf', line: '#99f6e4', badgeBg: '#f0fdfa', badgeText: '#0f766e', hoverBg: 'rgba(20,184,166,0.06)', gradFrom: '#0f766e', gradTo: '#155e75', label: 'تركوازي' },
-  purple: { dot: '#a78bfa', line: '#c4b5fd', badgeBg: '#f5f3ff', badgeText: '#6d28d9', hoverBg: 'rgba(139,92,246,0.06)', gradFrom: '#6d28d9', gradTo: '#5b21b6', label: 'بنفسجي' },
-  blue:   { dot: '#60a5fa', line: '#93c5fd', badgeBg: '#eff6ff', badgeText: '#1d4ed8', hoverBg: 'rgba(59,130,246,0.06)', gradFrom: '#1d4ed8', gradTo: '#3730a3', label: 'أزرق' },
-  green:  { dot: '#34d399', line: '#6ee7b7', badgeBg: '#ecfdf5', badgeText: '#047857', hoverBg: 'rgba(16,185,129,0.06)', gradFrom: '#047857', gradTo: '#065f46', label: 'أخضر' },
-  amber:  { dot: '#fbbf24', line: '#fcd34d', badgeBg: '#fffbeb', badgeText: '#b45309', hoverBg: 'rgba(245,158,11,0.06)', gradFrom: '#b45309', gradTo: '#9a3412', label: 'برتقالي' },
-  rose:   { dot: '#fb7185', line: '#fda4af', badgeBg: '#fff1f2', badgeText: '#be123c', hoverBg: 'rgba(244,63,94,0.06)', gradFrom: '#be123c', gradTo: '#9f1239', label: 'وردي' },
-  cyan:   { dot: '#22d3ee', line: '#67e8f9', badgeBg: '#ecfeff', badgeText: '#0e7490', hoverBg: 'rgba(6,182,212,0.06)', gradFrom: '#0e7490', gradTo: '#155e75', label: 'سماوي' },
-  indigo: { dot: '#818cf8', line: '#a5b4fc', badgeBg: '#eef2ff', badgeText: '#4338ca', hoverBg: 'rgba(99,102,241,0.06)', gradFrom: '#4338ca', gradTo: '#3730a3', label: 'نيلي' },
+  teal:   { dot: '#2dd4bf', line: '#99f6e4', badgeBg: '#f0fdfa', badgeText: '#0f766e', hoverBg: 'rgba(20,184,166,0.06)', gradFrom: '#0d9488', gradTo: '#0e7490', label: 'تركوازي' },
+  purple: { dot: '#a78bfa', line: '#c4b5fd', badgeBg: '#f5f3ff', badgeText: '#6d28d9', hoverBg: 'rgba(139,92,246,0.06)', gradFrom: '#7c3aed', gradTo: '#6d28d9', label: 'بنفسجي' },
+  blue:   { dot: '#60a5fa', line: '#93c5fd', badgeBg: '#eff6ff', badgeText: '#1d4ed8', hoverBg: 'rgba(59,130,246,0.06)', gradFrom: '#2563eb', gradTo: '#4338ca', label: 'أزرق' },
+  green:  { dot: '#34d399', line: '#6ee7b7', badgeBg: '#ecfdf5', badgeText: '#047857', hoverBg: 'rgba(16,185,129,0.06)', gradFrom: '#059669', gradTo: '#047857', label: 'أخضر' },
+  amber:  { dot: '#fbbf24', line: '#fcd34d', badgeBg: '#fffbeb', badgeText: '#b45309', hoverBg: 'rgba(245,158,11,0.06)', gradFrom: '#d97706', gradTo: '#c2410c', label: 'برتقالي' },
+  rose:   { dot: '#fb7185', line: '#fda4af', badgeBg: '#fff1f2', badgeText: '#be123c', hoverBg: 'rgba(244,63,94,0.06)', gradFrom: '#e11d48', gradTo: '#be123c', label: 'وردي' },
+  cyan:   { dot: '#22d3ee', line: '#67e8f9', badgeBg: '#ecfeff', badgeText: '#0e7490', hoverBg: 'rgba(6,182,212,0.06)', gradFrom: '#0891b2', gradTo: '#0e7490', label: 'سماوي' },
+  indigo: { dot: '#818cf8', line: '#a5b4fc', badgeBg: '#eef2ff', badgeText: '#4338ca', hoverBg: 'rgba(99,102,241,0.06)', gradFrom: '#4f46e5', gradTo: '#4338ca', label: 'نيلي' },
 };
 const getLadderPalette = (key: string): JobLadderPalette =>
   JOB_LADDER_PALETTES[key] || JOB_LADDER_PALETTES.teal;
