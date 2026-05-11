@@ -116,7 +116,7 @@ function PasswordBanner({ onDismiss, onGoSettings }: { onDismiss: () => void; on
         <div className="flex-1 min-w-0 text-right">
           <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>تنبيه أمان</p>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            لا تنسَ تغيير كلمة المرور الافتراضية من صفحة{' '}
+            كلمة المرور الحالية قصيرة وضعيفة، ننصح بتغييرها من صفحة{' '}
             <button
               onClick={() => { onGoSettings(); close(); }}
               className="inline-flex items-center gap-1 font-bold transition-colors"

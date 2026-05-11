@@ -76,10 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
     }
 
-    // Show the security banner on every login while the password is still
-    // the default ("12345678"). Once the user changes their password and
-    // logs in with the new one, the banner stops appearing automatically.
-    setIsFirstLogin(password === '12345678');
+    // Show the security banner on every login while the password is short
+    // enough to be considered weak (1–8 characters). This covers the
+    // default "12345678" plus any other short password a user may have
+    // chosen. Once they switch to a 9+ character password and log in
+    // with it, the banner stops appearing automatically.
+    setIsFirstLogin(password.length >= 1 && password.length <= 8);
   };
 
   const logout = async () => {
