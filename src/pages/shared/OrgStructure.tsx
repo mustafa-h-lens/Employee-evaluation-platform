@@ -1219,19 +1219,18 @@ const JobTitlesTab: React.FC = () => {
                               <Shield className="h-2.5 w-2.5 text-white" />
                             </div>
                           ) : (
-                            // Regular titles — a soft gradient circle with a
-                            // ring of body color and a tiny inner dot. More
-                            // polished than the previous flat colored dot.
+                            // Regular titles — solid bright dept color so
+                            // the dot reads as a vivid filled circle in
+                            // both modes (the previous transparent
+                            // gradient went pale on the white light-mode
+                            // card). Differentiated from director /
+                            // supervisor dots by being a single solid
+                            // color rather than a deep gradient.
                             <div
                               className="w-5 h-5 rounded-full ring-2 ring-white shadow-sm flex items-center justify-center"
-                              style={{
-                                background: `linear-gradient(135deg, ${c.gradFrom}88, ${c.gradTo}55)`,
-                              }}
+                              style={{ background: c.dot }}
                             >
-                              <div
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ background: c.dot }}
-                              />
+                              <div className="w-1.5 h-1.5 rounded-full bg-white opacity-90" />
                             </div>
                           )}
                         </div>
