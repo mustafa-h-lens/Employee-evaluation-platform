@@ -251,7 +251,21 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
               person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />
             )}
             {person.department && <InfoCell icon={<Building2 />} label="الوحدة" value={person.department} />}
-            {person.reportsTo && <InfoCell icon={<Crown />} label="المدير المباشر" value={person.reportsTo} accent fullWidth />}
+            {person.reportsTo && (() => {
+              // Crown only when the manager is the high-management duo
+              // (أحمد + سعد). For any other direct manager, drop the
+              // royal connotation and use UserCog instead.
+              const isCeoDuo = person.reportsTo.includes('أحمد') && person.reportsTo.includes('سعد');
+              return (
+                <InfoCell
+                  icon={isCeoDuo ? <Crown /> : <UserCog />}
+                  label="المدير المباشر"
+                  value={person.reportsTo}
+                  accent
+                  fullWidth
+                />
+              );
+            })()}
           </div>
         </div>
       </div>
