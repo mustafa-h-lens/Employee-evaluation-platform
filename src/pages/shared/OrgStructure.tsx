@@ -1609,37 +1609,43 @@ export const OrgStructure: React.FC = () => {
         ))}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap bg-ds-surface rounded-xl border border-ds-border-subtle shadow-sm p-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      {/* Toolbar — search hugs the RTL start (right), action group is
+          pushed to the END (left) via justify-between. Falls back to a
+          natural stack on narrow screens thanks to flex-wrap. Dividers
+          themed with `bg-ds-border-subtle` so they don't disappear in
+          dark mode (previously hardcoded `bg-gray-200`). */}
+      <div className="flex items-center justify-between gap-3 flex-wrap bg-ds-surface rounded-xl border border-ds-border-subtle shadow-sm p-3">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ds-faint" />
           <input type="text" placeholder="بحث بالاسم أو البريد..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             className="w-full pr-10 pl-4 py-2 border border-ds-border rounded-lg text-sm bg-ds-bg focus:bg-ds-surface focus:ring-2 focus:ring-ds-accent focus:border-ds-accent transition-all" />
         </div>
-        <div className="h-7 w-px bg-gray-200" />
-        <button onClick={expandAll} className="text-xs text-blue-600 hover:text-ds-info-text font-medium px-2 py-1.5 hover:bg-ds-info-bg rounded-lg transition-colors">توسيع الكل</button>
-        <button onClick={collapseAll} className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors">طي الكل</button>
-        <div className="h-7 w-px bg-gray-200" />
-        <button onClick={toggleFullscreen}
-          className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors flex items-center gap-1.5"
-          title={isFullscreen ? 'خروج من ملء الشاشة' : 'ملء الشاشة'}>
-          {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          {isFullscreen ? 'تصغير' : 'ملء الشاشة'}
-        </button>
-        <div className="h-7 w-px bg-gray-200" />
-        <div className="flex items-center gap-1">
-          <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
-            className="p-1.5 rounded-lg text-ds-faint hover:text-ds-muted hover:bg-ds-bg transition-colors" title="تصغير">
-            <ZoomOut className="h-4 w-4" />
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <button onClick={expandAll} className="text-xs text-blue-600 hover:text-ds-info-text font-medium px-2 py-1.5 hover:bg-ds-info-bg rounded-lg transition-colors">توسيع الكل</button>
+          <button onClick={collapseAll} className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors">طي الكل</button>
+          <div className="h-7 w-px bg-ds-border-subtle" />
+          <button onClick={toggleFullscreen}
+            className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1.5 hover:bg-ds-bg rounded-lg transition-colors flex items-center gap-1.5"
+            title={isFullscreen ? 'خروج من ملء الشاشة' : 'ملء الشاشة'}>
+            {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            {isFullscreen ? 'تصغير' : 'ملء الشاشة'}
           </button>
-          <button onClick={() => setZoom(1)}
-            className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1 hover:bg-ds-bg rounded-lg transition-colors min-w-[3rem] text-center" title="إعادة تعيين">
-            {Math.round(zoom * 100)}%
-          </button>
-          <button onClick={() => setZoom(z => Math.min(2, z + 0.1))}
-            className="p-1.5 rounded-lg text-ds-faint hover:text-ds-muted hover:bg-ds-bg transition-colors" title="تكبير">
-            <ZoomIn className="h-4 w-4" />
-          </button>
+          <div className="h-7 w-px bg-ds-border-subtle" />
+          <div className="flex items-center gap-1">
+            <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
+              className="p-1.5 rounded-lg text-ds-faint hover:text-ds-muted hover:bg-ds-bg transition-colors" title="تصغير">
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <button onClick={() => setZoom(1)}
+              className="text-xs text-ds-faint hover:text-ds-muted font-medium px-2 py-1 hover:bg-ds-bg rounded-lg transition-colors min-w-[3rem] text-center" title="إعادة تعيين">
+              {Math.round(zoom * 100)}%
+            </button>
+            <button onClick={() => setZoom(z => Math.min(2, z + 0.1))}
+              className="p-1.5 rounded-lg text-ds-faint hover:text-ds-muted hover:bg-ds-bg transition-colors" title="تكبير">
+              <ZoomIn className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
