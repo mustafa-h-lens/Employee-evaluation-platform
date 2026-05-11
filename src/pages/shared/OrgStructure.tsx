@@ -180,11 +180,14 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
               boxShadow: `0 0 0 4px var(--bg-surface), 0 14px 32px ${c.glow}`,
             }}
           >
+            {/* !border-0 strips the UserAvatar's own 1px inline border so
+                the photo fills edge-to-edge inside the shadow ring. */}
             <UserAvatar
               name={person.name}
               avatarUrl={person.avatarUrl}
               size="2xl"
               initialsLength={2}
+              className="!border-0"
             />
           </div>
         </div>
@@ -221,18 +224,22 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
               <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />
             )}
             {isMultiDir ? (
-              <div className="col-span-2 mt-1 rounded-2xl bg-ds-bg/50 p-3 space-y-2">
-                <p className="text-[10px] text-ds-faint font-bold uppercase tracking-wider px-1 mb-1">
-                  الإدارات والمسميات
-                </p>
-                {person.dirAssignments!.map((a, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                    <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
-                    {a.jobTitle ? (
-                      <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
-                    ) : <div />}
-                  </div>
-                ))}
+              <div className="col-span-2 mt-1">
+                <div className="flex items-center gap-2 px-3 mb-1.5">
+                  <div className="h-px flex-1 bg-ds-border-subtle" />
+                  <p className="text-[11px] text-ds-faint font-semibold">الإدارات والمسميات</p>
+                  <div className="h-px flex-1 bg-ds-border-subtle" />
+                </div>
+                <div className="space-y-1.5">
+                  {person.dirAssignments!.map((a, i) => (
+                    <div key={i} className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                      <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
+                      {a.jobTitle ? (
+                        <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
+                      ) : <div />}
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />
@@ -268,7 +275,7 @@ const InfoCell: React.FC<{
     <div className={fullWidth ? 'col-span-2' : ''}>
       <div
         className={[
-          'group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
+          'group flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors',
           accent
             ? 'bg-ds-warning-bg'
             : 'hover:bg-ds-overlay/60',
@@ -276,7 +283,7 @@ const InfoCell: React.FC<{
       >
         <div
           className={[
-            'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+            'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
             accent
               ? 'bg-ds-warning-bg text-ds-warning-text'
               : 'bg-ds-overlay text-ds-accent',
@@ -284,13 +291,16 @@ const InfoCell: React.FC<{
         >
           {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className={`text-[10px] font-bold uppercase tracking-wider ${accent ? 'text-ds-warning-text' : 'text-ds-faint'}`}>
+        <div className="min-w-0 flex-1 text-right">
+          <p className={`text-[11px] font-medium ${accent ? 'text-ds-warning-text' : 'text-ds-faint'}`}>
             {label}
           </p>
+          {/* No `dir="auto"` — keeping the paragraph in the parent's RTL
+              direction makes the value right-aligned next to its label,
+              even when the content is Latin/digits (still rendered LTR
+              internally by Unicode bidi, but positioned at the start). */}
           <p
-            className={`text-sm font-semibold truncate mt-0.5 ${accent ? 'text-ds-warning-text' : 'text-ds-text'}`}
-            dir="auto"
+            className={`text-sm font-semibold leading-snug break-words ${accent ? 'text-ds-warning-text' : 'text-ds-text'}`}
           >
             {value}
           </p>
@@ -300,7 +310,7 @@ const InfoCell: React.FC<{
             type="button"
             onClick={handleCopy}
             className={[
-              'flex-shrink-0 p-1.5 rounded-lg transition-all',
+              'flex-shrink-0 mt-1 p-1.5 rounded-lg transition-all',
               copied
                 ? 'bg-ds-success-bg text-ds-success-text'
                 : 'text-ds-faint hover:text-ds-text hover:bg-ds-overlay',
