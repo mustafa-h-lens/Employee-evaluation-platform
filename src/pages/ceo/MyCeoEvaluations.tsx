@@ -63,9 +63,33 @@ export const MyCeoEvaluations: React.FC = () => {
   const fetchEvaluations = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase.rpc('get_ceo_evaluations_anonymous', {
-      p_ceo_id: user.id,
-    });
+    // Direct query instead of the legacy `get_ceo_evaluations_anonymous`
+    // RPC. Two reasons:
+    //   1) The RPC filtered by `ce.ceo_id = p_ceo_id`, but the collective
+    //      migration switched submissions to `ceo_id IS NULL` — so the
+    //      old RPC version returns zero rows in any DB where the update
+    //      migration hasn't run.
+    //   2) The RPC's row shape exposed `final_score_5` but the page
+    //      stores it under `total_score`; reading directly lets us map
+    //      the field in one place.
+    // RLS policy `ceo_read_collective_ceo_eval` (migration
+    // 20260427002000) permits CEO users to read collective rows.
+    // `ceo_evaluation_scores!inner(id)` forces an INNER join, so only
+    // evaluations that actually have at least one criterion score come
+    // back. Hides orphan parent rows that the legacy save flow created
+    // before the score insert was wired up (status='تم الإرسال' with
+    // no underlying scores), which would otherwise expand to an empty
+    // "لا توجد تفاصيل" card.
+    const { data, error } = await supabase
+      .from('ceo_evaluations')
+      .select(`
+        id, final_score_5, percentage, evaluator_note, created_at,
+        period:ceo_evaluation_periods(quarter, year),
+        scores:ceo_evaluation_scores!inner(id)
+      `)
+      .is('ceo_id', null)
+      .eq('status', 'تم الإرسال')
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching CEO evaluations:', error);
@@ -73,7 +97,17 @@ export const MyCeoEvaluations: React.FC = () => {
       return;
     }
 
-    setEvaluations((data as CeoEvaluation[]) || []);
+    const flat: CeoEvaluation[] = ((data || []) as any[]).map(r => ({
+      id: r.id,
+      total_score: Number(r.final_score_5) || 0,
+      percentage: Number(r.percentage) || 0,
+      evaluator_note: r.evaluator_note,
+      quarter: r.period?.quarter ?? 0,
+      year: r.period?.year ?? 0,
+      created_at: r.created_at,
+    }));
+
+    setEvaluations(flat);
     setLoading(false);
   };
 
