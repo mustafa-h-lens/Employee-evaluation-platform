@@ -148,13 +148,17 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
           </div>
         </div>
 
-        {/* Floating avatar — overlaps the header band */}
+        {/* Floating avatar — overlaps the header band. The ring is a
+            pure box-shadow outset (4px of `--bg-surface`) so the photo
+            fills edge-to-edge; no padded wrapper means no double-frame
+            artefact between the body-color ring and the avatar's own
+            1px soft border. */}
         <div className="relative -mt-14 flex justify-center px-6">
           <div
-            className="rounded-full p-1.5 bg-ds-surface shadow-2xl"
+            className="rounded-full inline-block"
             style={{
               animation: 'avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
-              boxShadow: `0 8px 24px ${c.glow}, 0 0 0 1px rgba(255,255,255,0.04)`,
+              boxShadow: `0 0 0 4px var(--bg-surface), 0 14px 32px ${c.glow}`,
             }}
           >
             <UserAvatar
@@ -1193,16 +1197,35 @@ const JobTitlesTab: React.FC = () => {
         )}
       </div>
 
-      {/* Motivational Footer */}
-      <div className="relative overflow-hidden rounded-2xl border p-6" style={{ background: 'linear-gradient(to left, #f0fdfa, #ecfeff)', borderColor: '#99f6e4' }}>
-        <div className="absolute left-0 top-0 w-32 h-32 rounded-full blur-2xl" style={{ background: 'rgba(153,246,228,0.2)' }} />
+      {/* Motivational Footer — uses the DS stat-card-green palette so it
+          reads as a deep emerald card in dark mode and a soft mint card
+          in light mode. Previously it was hardcoded teal hex codes that
+          looked washed-out against the dark surface. */}
+      <div
+        className="relative overflow-hidden rounded-2xl border p-6"
+        style={{ background: 'var(--sc-green-grad)', borderColor: 'var(--sc-green-border)' }}
+      >
+        <div
+          className="absolute left-0 top-0 w-32 h-32 rounded-full blur-2xl pointer-events-none"
+          style={{ background: 'var(--sc-green-glow)', opacity: 0.18 }}
+        />
         <div className="relative flex items-center gap-4 justify-center flex-wrap">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #14b8a6, #0891b2)', boxShadow: '0 10px 15px -3px rgba(20,184,166,0.3)' }}>
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, var(--sc-green-glow), var(--info))',
+              boxShadow: '0 10px 15px -3px var(--sc-green-border)',
+            }}
+          >
             <Target className="h-5 w-5 text-white" />
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold" style={{ color: '#134e4a' }}>طموحك هو بداية رحلتك</p>
-            <p className="text-xs mt-0.5" style={{ color: '#0d9488' }}>كل مسمى وظيفي هو فرصة جديدة للنمو والتطور — ابدأ اليوم واصنع مستقبلك.</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--sc-green-val)' }}>
+              طموحك هو بداية رحلتك
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--sc-green-label)' }}>
+              كل مسمى وظيفي هو فرصة جديدة للنمو والتطور — ابدأ اليوم واصنع مستقبلك.
+            </p>
           </div>
         </div>
       </div>
