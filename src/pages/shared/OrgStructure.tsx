@@ -1631,25 +1631,6 @@ export const OrgStructure: React.FC = () => {
             <ZoomIn className="h-4 w-4" />
           </button>
         </div>
-        <div className="h-7 w-px bg-gray-200" />
-        <div className="flex items-center gap-3 text-[10px] text-ds-faint mr-auto flex-wrap">
-          <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" />إدارة عليا</span>
-          <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" />مديري إدارات</span>
-          <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-teal-500" />أقسام</span>
-          <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" />موظفون</span>
-          <span className="flex items-center gap-1">
-            <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-              <Shield className="h-2 w-2 text-white" />
-            </div>مشرف
-          </span>
-        </div>
-      </div>
-
-      {/* Interactive help hint */}
-      <div className="flex items-center gap-4 text-[11px] text-ds-faint px-1 flex-wrap">
-        <span className="flex items-center gap-1">اضغط على الإدارة للتوسيع/الطي</span>
-        <span className="flex items-center gap-1">اضغط على أي شخص لعرض التفاصيل</span>
-        <span className="flex items-center gap-1">Ctrl + تمرير للتكبير/التصغير</span>
       </div>
 
       {/* Dark-themed Org Tree */}
