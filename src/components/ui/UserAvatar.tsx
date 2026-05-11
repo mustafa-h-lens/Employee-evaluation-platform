@@ -65,25 +65,27 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 }) => {
   const px = SIZE_PX[size];
   const fontPx = FONT_PX[size];
-  const baseStyle: React.CSSProperties = {
-    width: px,
-    height: px,
-    borderRadius: '50%',
-    flexShrink: 0,
-    overflow: 'hidden',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
 
+  // Image case — uses `display: block` parent so the <img> child can
+  // fill the entire content box. Avoids the height-resolution glitch
+  // that happens when the parent is inline-flex + align-items:center:
+  // for some browsers, `height: 100%` on a flex item is computed
+  // against intrinsic height (not the explicit parent height), which
+  // would leave the img smaller than the circle and show a dark band.
   if (avatarUrl) {
     return (
       <span
         className={`${ringClassName} ${className}`}
         style={{
-          ...baseStyle,
+          width: px,
+          height: px,
+          borderRadius: '50%',
+          flexShrink: 0,
+          overflow: 'hidden',
+          display: 'block',
           background: 'var(--bg-overlay)',
           border: '1px solid var(--border-soft)',
+          lineHeight: 0, // prevents the inline-baseline gap that pushes the img up
         }}
       >
         <img
@@ -91,21 +93,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           alt={name}
           loading="lazy"
           style={{
-            // The parent <span> uses inline-flex + align-items:center
-            // (needed for the initials fallback). For an <img> child
-            // that should fill the circle, the parent's centering wins
-            // over `height: 100%` in some browsers, leaving a gap at
-            // the bottom. `alignSelf: stretch` overrides the inherited
-            // align-items:center so the img fills the cross axis.
-            // `display: block` removes inline line-height padding.
-            // `objectPosition: center top` favours keeping the head
-            // when a portrait is wider/taller than the square crop.
             width: '100%',
             height: '100%',
+            display: 'block',
             objectFit: 'cover',
             objectPosition: 'center top',
-            display: 'block',
-            alignSelf: 'stretch',
           }}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -115,6 +107,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     );
   }
 
+  // Initials fallback — uses inline-flex centering for the text glyphs.
   const palette = hashToPalette(name);
   const initials = getInitials(name, initialsLength);
 
@@ -122,7 +115,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     <span
       className={`${ringClassName} ${className}`}
       style={{
-        ...baseStyle,
+        width: px,
+        height: px,
+        borderRadius: '50%',
+        flexShrink: 0,
+        overflow: 'hidden',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         background: palette.bg,
         border: `1px solid ${palette.border}`,
         color: palette.color,
