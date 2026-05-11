@@ -24,10 +24,29 @@ const PAGE_SIZE = 20;
 const entityTypeLabels: Record<string, string> = {
   evaluation_criteria: 'معايير التقييم',
   evaluation_periods: 'فترات التقييم',
-  departments: 'الإدارات',
+  departments: 'الأقسام',
+  directorates: 'الإدارات',
   employees: 'الموظفين',
   evaluations: 'التقييمات',
   users: 'المستخدمين',
+  ceo_evaluation_criteria: 'معايير تقييم الإدارة العليا',
+  ceo_evaluation_periods: 'فترات تقييم الإدارة العليا',
+  ceo_evaluations: 'تقييمات الإدارة العليا',
+  director_evaluations: 'تقييمات مدراء الإدارات',
+  director_evaluation_scores: 'درجات تقييم المدراء',
+  supervisor_evaluations: 'تقييمات المشرفين',
+  supervisor_evaluation_scores: 'درجات تقييم المشرفين',
+  supervisor_assignments: 'تعيينات المشرفين',
+  supervisor_criteria: 'معايير المشرفين',
+  department_criteria: 'معايير الإدارات',
+  department_criteria_groups: 'مجموعات معايير الإدارات',
+  evaluation_scores: 'درجات التقييم',
+  evaluation_settings: 'إعدادات التقييم',
+  high_management_weight_settings: 'أوزان الإدارة العليا',
+  employee_leaves: 'إجازات الموظفين',
+  employee_leave_types: 'أنواع الإجازات',
+  development_plans: 'خطط التطوير',
+  job_ladder_titles: 'المسميات الوظيفية',
 };
 
 const getActionIcon = (action: string) => {
@@ -169,14 +188,12 @@ export const AuditLog: React.FC = () => {
     return <div className="page-loading-placeholder" aria-hidden="true" />;
   }
 
+  // Filter options — derived from the full label map so every entity
+  // type that the table can render is also filterable, and any future
+  // label additions show up here automatically.
   const entityTypes = [
     { value: 'all', label: 'جميع الأنواع' },
-    { value: 'evaluation_criteria', label: 'معايير التقييم' },
-    { value: 'evaluation_periods', label: 'فترات التقييم' },
-    { value: 'departments', label: 'الإدارات' },
-    { value: 'employees', label: 'الموظفين' },
-    { value: 'evaluations', label: 'التقييمات' },
-    { value: 'users', label: 'المستخدمين' },
+    ...Object.entries(entityTypeLabels).map(([value, label]) => ({ value, label })),
   ];
 
   return (
