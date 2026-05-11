@@ -230,14 +230,20 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
                   <p className="text-[11px] text-ds-faint font-semibold">الإدارات والمسميات</p>
                   <div className="h-px flex-1 bg-ds-border-subtle" />
                 </div>
-                <div className="space-y-1.5">
+                <div>
                   {person.dirAssignments!.map((a, i) => (
-                    <div key={i} className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                      <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
-                      {a.jobTitle ? (
-                        <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
-                      ) : <div />}
-                    </div>
+                    <React.Fragment key={i}>
+                      {/* Divider between assignments so multi-dir
+                          pairs read as distinct groupings instead of
+                          one continuous block. */}
+                      {i > 0 && <div className="h-px bg-ds-border-subtle mx-3 my-2" />}
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                        <InfoCell icon={<Landmark />} label="الإدارة" value={a.directorate} />
+                        {a.jobTitle ? (
+                          <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={a.jobTitle} />
+                        ) : <div />}
+                      </div>
+                    </React.Fragment>
                   ))}
                 </div>
               </div>
