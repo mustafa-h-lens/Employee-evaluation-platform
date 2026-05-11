@@ -251,8 +251,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
               person.directorate && <InfoCell icon={<Landmark />} label="الإدارة" value={person.directorate} />
             )}
             {person.department && <InfoCell icon={<Building2 />} label="الوحدة" value={person.department} />}
-            {person.reportsTo && <InfoCell icon={<UserCog />} label="المدير المباشر" value={person.reportsTo} fullWidth />}
-            {person.supervisorTitle && <InfoCell icon={<Shield />} label="مهمة الإشراف" value={person.supervisorTitle} accent fullWidth />}
+            {person.reportsTo && <InfoCell icon={<Crown />} label="المدير المباشر" value={person.reportsTo} accent fullWidth />}
           </div>
         </div>
       </div>
