@@ -1161,9 +1161,10 @@ const JobTitlesTab: React.FC = () => {
                     return (
                       <div
                         key={titleRow.id}
-                        className="relative flex items-start gap-3"
+                        className="ladder-row relative flex items-start gap-3"
                         style={{
                           animation: `titleSlide 0.4s ease-out ${0.1 + idx * 0.04}s both`,
+                          ['--dot-color' as string]: c.dot,
                         }}
                       >
                         {!isLast && (
@@ -1178,7 +1179,7 @@ const JobTitlesTab: React.FC = () => {
                             }}
                           />
                         )}
-                        <div className="relative z-10 flex-shrink-0 mt-1.5">
+                        <div className="ladder-dot relative z-10 flex-shrink-0 mt-1.5">
                           {isDir ? (
                             <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-md ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})` }}>
                               <Crown className="h-2.5 w-2.5 text-white" />
@@ -1578,8 +1579,12 @@ export const OrgStructure: React.FC = () => {
           from { opacity: 0; transform: translateX(-8px); }
           to { opacity: 1; transform: translateX(0); }
         }
+        .title-row {
+          transition: background 0.25s ease, padding 0.25s ease, color 0.25s ease;
+        }
         .title-row:hover {
           background: var(--hover-bg);
+          padding-right: 1rem;
         }
         .ladder-card:hover {
           transform: translateY(-4px);
@@ -1587,6 +1592,16 @@ export const OrgStructure: React.FC = () => {
         }
         .ladder-card {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        /* The dot scales up + glows with the dept color when its parent
+           row is hovered. `--dot-color` is set inline per item so the
+           glow tint matches the column's palette. */
+        .ladder-dot {
+          transition: transform 0.25s ease, filter 0.25s ease;
+        }
+        .ladder-row:hover .ladder-dot {
+          transform: scale(1.18);
+          filter: drop-shadow(0 0 6px var(--dot-color));
         }
       `}</style>
 
