@@ -219,7 +219,7 @@ const DetailModal: React.FC<{ person: SelectedPerson; onClose: () => void }> = (
           <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
             <InfoCell icon={<Mail />} label="البريد الإلكتروني" value={person.email} fullWidth copyable />
             {person.phone && <InfoCell icon={<Phone />} label="الهاتف" value={person.phone} fullWidth copyable />}
-            {person.employeeNumber && <InfoCell icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} copyable />}
+            {person.employeeNumber && <InfoCell icon={<Hash />} label="الرقم الوظيفي" value={person.employeeNumber} fullWidth copyable />}
             {!isMultiDir && person.jobTitle && (
               <InfoCell icon={<Briefcase />} label="المسمى الوظيفي" value={person.jobTitle} />
             )}
