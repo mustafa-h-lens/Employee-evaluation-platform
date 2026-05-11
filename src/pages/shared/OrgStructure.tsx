@@ -1594,8 +1594,8 @@ export const OrgStructure: React.FC = () => {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         /* The dot scales up + glows with the dept color when its parent
-           row is hovered. `--dot-color` is set inline per item so the
-           glow tint matches the column's palette. */
+           row is hovered. The --dot-color variable is set inline per
+           item so the glow tint matches the column palette. */
         .ladder-dot {
           transition: transform 0.25s ease, filter 0.25s ease;
         }
