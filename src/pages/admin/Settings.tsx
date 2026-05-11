@@ -241,7 +241,7 @@ export const AdminSettings: React.FC = () => {
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
+                  className="w-full rounded-lg border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                   placeholder="أدخل الاسم الجديد"
                 />
               </div>
@@ -314,7 +314,7 @@ export const AdminSettings: React.FC = () => {
                     onChange={e => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
+                    className="w-full rounded-lg border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                     placeholder="أدخل كلمة المرور الجديدة"
                   />
                   <button type="button" onClick={() => setShowNew(!showNew)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted">
@@ -332,7 +332,7 @@ export const AdminSettings: React.FC = () => {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-ds-border px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
+                    className="w-full rounded-lg border border-ds-border bg-ds-input text-ds-text placeholder:text-ds-faint px-4 py-2.5 text-sm text-right focus:border-ds-accent focus:ring-1 focus:ring-ds-accent outline-none"
                     placeholder="أعد إدخال كلمة المرور الجديدة"
                   />
                   <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-faint hover:text-ds-muted">

@@ -1240,7 +1240,7 @@ const JobTitlesTab: React.FC = () => {
                                   const v = e.target.value.trim();
                                   if (v && v !== titleRow.title) handleUpdateTitle(titleRow.id, v);
                                 }}
-                                className={`flex-1 bg-ds-bg border border-ds-border rounded-md px-2 py-1 text-sm text-right ${isDir ? 'font-bold' : isSup ? 'font-semibold' : ''} focus:bg-ds-surface focus:border-blue-400 focus:outline-none`}
+                                className={`flex-1 bg-ds-input text-ds-text placeholder:text-ds-faint border border-ds-border rounded-md px-2 py-1 text-sm text-right ${isDir ? 'font-bold' : isSup ? 'font-semibold' : ''} focus:bg-ds-surface focus:border-ds-accent focus:outline-none`}
                               />
                               <button
                                 onClick={() => handleMoveTitle(dept.id, titleRow.id, -1)}
