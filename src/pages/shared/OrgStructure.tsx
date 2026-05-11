@@ -1072,7 +1072,10 @@ const JobTitlesTab: React.FC = () => {
           return (
             <div
               key={dept.id}
-              className="group bg-ds-surface rounded-2xl border border-ds-border-subtle shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col"
+              className="ladder-card group bg-ds-surface rounded-2xl border border-ds-border-subtle shadow-sm overflow-hidden flex flex-col"
+              style={{
+                animation: `cardFadeIn 0.5s ease-out ${deptIdx * 0.07}s both`,
+              }}
             >
               <div className="p-4 relative overflow-hidden" style={{ background: `linear-gradient(to left, ${c.gradFrom}, ${c.gradTo})` }}>
                 {editMode && (
@@ -1156,9 +1159,24 @@ const JobTitlesTab: React.FC = () => {
                     const isSup = titleRow.title === 'مشرف قسم';
                     const isLast = idx === list.length - 1;
                     return (
-                      <div key={titleRow.id} className="relative flex items-start gap-3">
+                      <div
+                        key={titleRow.id}
+                        className="relative flex items-start gap-3"
+                        style={{
+                          animation: `titleSlide 0.4s ease-out ${0.1 + idx * 0.04}s both`,
+                        }}
+                      >
                         {!isLast && (
-                          <div className="absolute right-[9px] top-5 bottom-0 w-[2px]" style={{ background: c.line, borderRadius: '1px' }} />
+                          // Gradient connector — dept color at the dot, fading
+                          // toward subtle as it travels down to the next item.
+                          // More visually interesting than a flat hex line.
+                          <div
+                            className="absolute right-[9px] top-5 bottom-0 w-[2px]"
+                            style={{
+                              background: `linear-gradient(to bottom, ${c.gradFrom}, ${c.line} 60%, transparent)`,
+                              borderRadius: '1px',
+                            }}
+                          />
                         )}
                         <div className="relative z-10 flex-shrink-0 mt-1.5">
                           {isDir ? (
@@ -1166,12 +1184,23 @@ const JobTitlesTab: React.FC = () => {
                               <Crown className="h-2.5 w-2.5 text-white" />
                             </div>
                           ) : isSup ? (
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})`, opacity: 0.8 }}>
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm ring-2 ring-white" style={{ background: `linear-gradient(135deg, ${c.gradFrom}, ${c.gradTo})`, opacity: 0.85 }}>
                               <Shield className="h-2.5 w-2.5 text-white" />
                             </div>
                           ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center" style={{ background: c.dot, boxShadow: `0 0 0 1px ${c.line}` }}>
-                              <div className="w-1.5 h-1.5 bg-ds-surface rounded-full" />
+                            // Regular titles — a soft gradient circle with a
+                            // ring of body color and a tiny inner dot. More
+                            // polished than the previous flat colored dot.
+                            <div
+                              className="w-5 h-5 rounded-full ring-2 ring-white shadow-sm flex items-center justify-center"
+                              style={{
+                                background: `linear-gradient(135deg, ${c.gradFrom}88, ${c.gradTo}55)`,
+                              }}
+                            >
+                              <div
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ background: c.dot }}
+                              />
                             </div>
                           )}
                         </div>
@@ -1210,7 +1239,7 @@ const JobTitlesTab: React.FC = () => {
                             </div>
                           ) : (
                             <>
-                              <p className={`text-sm font-medium text-right leading-relaxed ${isDir ? 'text-ds-text font-bold' : isSup ? 'text-ds-text font-semibold' : 'text-ds-muted'}`}>
+                              <p className={`text-sm text-right leading-relaxed ${isDir ? 'text-ds-text font-bold' : isSup ? 'text-ds-text font-semibold' : 'text-ds-text font-medium'}`}>
                                 {titleRow.title}
                               </p>
                               {isDir && (
@@ -1236,11 +1265,19 @@ const JobTitlesTab: React.FC = () => {
                 </div>
               </div>
 
-              <div className="px-4 py-2.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
-                <div className="flex items-center justify-center gap-1.5 text-[10px]" style={{ color: '#94a3b8' }}>
-                  <Target className="h-3 w-3" />
-                  <span>ارتقِ بمسيرتك المهنية</span>
-                </div>
+              {/* Dept-tinted footer strip — replaces the repetitive
+                  "ارتقِ بمسيرتك المهنية" line with a meaningful chip that
+                  shows how many growth levels exist in this department. */}
+              <div
+                className="px-4 py-2.5 border-t flex items-center justify-center gap-1.5 text-[10px] font-semibold"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  background: `linear-gradient(to left, ${c.gradFrom}10, ${c.gradTo}10)`,
+                  color: c.dot,
+                }}
+              >
+                <Target className="h-3 w-3" />
+                <span>{list.length} {list.length === 1 ? 'مستوى' : 'مستويات'} للنمو</span>
               </div>
             </div>
           );
@@ -1521,8 +1558,23 @@ export const OrgStructure: React.FC = () => {
           from { opacity: 0; transform: scale(0.5); }
           to { opacity: 1; transform: scale(1); }
         }
+        @keyframes cardFadeIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes titleSlide {
+          from { opacity: 0; transform: translateX(-8px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
         .title-row:hover {
           background: var(--hover-bg);
+        }
+        .ladder-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 40px -12px var(--shadow-glow, rgba(0,0,0,0.3));
+        }
+        .ladder-card {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
       `}</style>
 
