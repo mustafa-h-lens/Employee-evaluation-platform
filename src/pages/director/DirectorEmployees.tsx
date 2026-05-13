@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Users, Search, Mail, Briefcase, FileCheck, FileClock, Clipboard as ClipboardEdit, Eye, Calendar, AlertTriangle, Building2 } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { ModernSelect } from '../../components/ui/ModernSelect';
@@ -369,7 +371,8 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
               icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الموظف</TableHead>
@@ -443,7 +446,40 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={filtered.map(emp => {
+                const isPending = !emp.evaluation_status || emp.evaluation_status === 'مسودة';
+                const isEvalDisabled = isPending && !hasSpecificCriteria;
+                return (
+                  <MobileRow
+                    key={emp.id}
+                    leading={<UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="md" />}
+                    title={emp.full_name}
+                    subtitle={emp.job_title || ''}
+                    statusBadge={<Badge variant={getEvalStatusVariant(emp.evaluation_status)} size="sm">{getEvalStatusLabel(emp.evaluation_status)}</Badge>}
+                    fields={[
+                      { label: 'الرقم الوظيفي', value: emp.employee_number || '—' },
+                      { label: 'الإدارة', value: emp.department_name || '—' },
+                    ]}
+                    action={
+                      <button
+                        onClick={() => onNavigate?.(`/director-evaluate?employee=${emp.id}`)}
+                        disabled={isEvalDisabled}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          isEvalDisabled
+                            ? 'bg-ds-overlay text-ds-faint cursor-not-allowed'
+                            : isPending
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-ds-overlay text-ds-muted hover:bg-ds-overlay'
+                        }`}
+                      >
+                        {isPending ? <ClipboardEdit className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    }
+                  />
+                );
+              })}
+            />
           )}
         </CardBody>
       </Card>

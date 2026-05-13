@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Users, FileCheck, FileClock, Crown, Eye, ClipboardEdit } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 
@@ -178,7 +180,8 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
               icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الاسم</TableHead>
@@ -206,7 +209,17 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={directors.map(director => (
+                <MobileRow
+                  key={director.id}
+                  leading={<UserAvatar name={director.full_name} avatarUrl={director.avatar_url} size="md" />}
+                  title={director.full_name}
+                  subtitle={director.email}
+                  fields={director.job_title ? [{ label: 'المسمى الوظيفي', value: director.job_title }] : []}
+                />
+              ))}
+            />
           )}
         </CardBody>
       </Card>
