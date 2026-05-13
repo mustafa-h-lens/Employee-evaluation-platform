@@ -70,7 +70,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast, success, error, warning, info }}>
       {children}
       <div
-        className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-3 pointer-events-none"
+        className="fixed top-20 lg:top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-3 pointer-events-none px-3 w-full max-w-md lg:w-auto"
         dir="rtl"
       >
         {toasts.map(t => (

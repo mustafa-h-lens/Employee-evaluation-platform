@@ -1616,16 +1616,23 @@ export const OrgStructure: React.FC = () => {
         .title-row {
           transition: background 0.25s ease, padding 0.25s ease, color 0.25s ease;
         }
-        .title-row:hover {
-          background: var(--hover-bg);
-          padding-right: 1rem;
-        }
-        .ladder-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 40px -12px var(--shadow-glow, rgba(0,0,0,0.3));
+        @media (hover: hover) {
+          .title-row:hover {
+            background: var(--hover-bg);
+            padding-right: 1rem;
+          }
         }
         .ladder-card {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        /* Gate the lift effect behind hover-capable devices so touch
+           taps don't leave the card stuck in its "hovered" elevated
+           state until the next interaction. */
+        @media (hover: hover) {
+          .ladder-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -12px var(--shadow-glow, rgba(0,0,0,0.3));
+          }
         }
         /* The dot scales up + glows with the dept color when its parent
            row is hovered. The --dot-color variable is set inline per
@@ -1633,9 +1640,11 @@ export const OrgStructure: React.FC = () => {
         .ladder-dot {
           transition: transform 0.25s ease, filter 0.25s ease;
         }
-        .ladder-row:hover .ladder-dot {
-          transform: scale(1.18);
-          filter: drop-shadow(0 0 6px var(--dot-color));
+        @media (hover: hover) {
+          .ladder-row:hover .ladder-dot {
+            transform: scale(1.18);
+            filter: drop-shadow(0 0 6px var(--dot-color));
+          }
         }
       `}</style>
 
