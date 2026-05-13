@@ -1725,7 +1725,7 @@ export const OrgStructure: React.FC = () => {
             <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center`}>{s.icon}</div>
             <div>
               <p className="text-[10px] text-ds-faint font-medium">{s.l}</p>
-              <p className="text-xl font-bold text-ds-text">{s.v}</p>
+              <p className="text-lg sm:text-xl font-bold text-ds-text">{s.v}</p>
             </div>
           </div>
         ))}

@@ -449,15 +449,15 @@ export const CeoReports: React.FC = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="bg-ds-info-bg rounded-lg p-3 text-center">
               <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
-              <p className="text-xl font-bold text-ds-info-text">{ev.final_score_500?.toFixed(1)}</p>
+              <p className="text-lg sm:text-xl font-bold text-ds-info-text">{ev.final_score_500?.toFixed(1)}</p>
             </div>
             <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
               <p className="text-xs text-purple-600 mb-1">النتيجة / 5</p>
-              <p className="text-xl font-bold text-ds-purple-text">{ev.final_score_5?.toFixed(2)}</p>
+              <p className="text-lg sm:text-xl font-bold text-ds-purple-text">{ev.final_score_5?.toFixed(2)}</p>
             </div>
             <div className="bg-ds-info-bg rounded-lg p-3 text-center">
               <p className="text-xs text-teal-600 mb-1">النسبة المئوية</p>
-              <p className="text-xl font-bold text-ds-info-text">{ev.percentage?.toFixed(0)}%</p>
+              <p className="text-lg sm:text-xl font-bold text-ds-info-text">{ev.percentage?.toFixed(0)}%</p>
             </div>
             <div className="bg-ds-warning-bg rounded-lg p-3 text-center">
               <p className="text-xs text-amber-600 mb-1">التقدير العام</p>

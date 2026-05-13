@@ -229,7 +229,7 @@ export const AuditLog: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">إجمالي السجلات</p>
-                <p className="text-xl font-bold text-ds-text">{totalCount}</p>
+                <p className="text-lg sm:text-xl font-bold text-ds-text">{totalCount}</p>
               </div>
               <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Activity className="h-6 w-6" />
@@ -242,7 +242,7 @@ export const AuditLog: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">آخر نشاط</p>
-                <p className="text-xl font-bold text-ds-text">
+                <p className="text-lg sm:text-xl font-bold text-ds-text">
                   {logs.length > 0 ? formatDate(logs[0].created_at) : '-'}
                 </p>
               </div>
@@ -257,7 +257,7 @@ export const AuditLog: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">مستخدمين نشطين</p>
-                <p className="text-xl font-bold text-ds-text">
+                <p className="text-lg sm:text-xl font-bold text-ds-text">
                   {new Set(logs.map(l => l.user_id)).size}
                 </p>
               </div>

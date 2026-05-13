@@ -1401,7 +1401,7 @@ export const PendingApprovals: React.FC = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
-                <p className="text-xl font-bold text-ds-info-text">
+                <p className="text-lg sm:text-xl font-bold text-ds-info-text">
                   {(activeEval
                     ? activeEval.finalScore500
                     : (detailCombined ? detailCombined.avg_score_500 : (detailEval?.final_score_500 ?? detailDirEval?.final_score_500 ?? detailSupEval?.final_score_500))
@@ -1410,7 +1410,7 @@ export const PendingApprovals: React.FC = () => {
               </div>
               <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-purple-600 mb-1">النتيجة / 5</p>
-                <p className="text-xl font-bold text-ds-purple-text">
+                <p className="text-lg sm:text-xl font-bold text-ds-purple-text">
                   {(activeEval
                     ? activeEval.finalScore5
                     : (detailCombined ? detailCombined.avg_score_5 : (detailEval?.final_score_5 ?? detailDirEval?.final_score_5 ?? detailSupEval?.final_score_5))
@@ -1419,7 +1419,7 @@ export const PendingApprovals: React.FC = () => {
               </div>
               <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-teal-600 mb-1">النسبة المئوية</p>
-                <p className="text-xl font-bold text-ds-info-text">
+                <p className="text-lg sm:text-xl font-bold text-ds-info-text">
                   {(activeEval
                     ? activeEval.percentage
                     : (detailCombined ? detailCombined.avg_percentage : (detailEval?.percentage ?? detailDirEval?.percentage ?? detailSupEval?.percentage))

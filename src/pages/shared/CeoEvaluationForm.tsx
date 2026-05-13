@@ -329,7 +329,7 @@ export const CeoEvaluationForm: React.FC = () => {
                       <Crown className="h-6 w-6" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-ds-text">الإدارة العليا</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-ds-text">الإدارة العليا</h2>
                       <p className="text-sm text-ds-faint">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
                     </div>
                   </div>
@@ -418,7 +418,7 @@ export const CeoEvaluationForm: React.FC = () => {
                   <Crown className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-ds-text">الإدارة العليا</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-ds-text">الإدارة العليا</h2>
                   <p className="text-sm text-ds-faint">قيّم أداء فريق القيادة كوحدة واحدة — تقييم واحد لكل فترة</p>
                 </div>
               </div>

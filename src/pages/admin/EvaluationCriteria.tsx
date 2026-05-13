@@ -1534,7 +1534,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ds-muted mb-1">توزيع الأوزان</p>
-                    <p className="text-xl font-bold text-emerald-600">لكل مجموعة</p>
+                    <p className="text-lg sm:text-xl font-bold text-emerald-600">لكل مجموعة</p>
                     <p className="text-xs text-ds-faint mt-1">يحدده قسم الموارد البشرية في الإعدادات</p>
                   </div>
                   <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
@@ -1548,7 +1548,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ds-muted mb-1">عدد الإدارات</p>
-                    <p className="text-xl font-bold text-ds-text">{directorates.length}</p>
+                    <p className="text-lg sm:text-xl font-bold text-ds-text">{directorates.length}</p>
                   </div>
                   <div className="bg-ds-overlay text-ds-muted p-3 rounded-xl">
                     <Building2 className="h-6 w-6" />
@@ -1587,7 +1587,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <Building2 className="h-5 w-5 text-emerald-600" />
-                    <h2 className="text-xl font-bold text-ds-text">{dir.name}</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-ds-text">{dir.name}</h2>
                     <Badge variant="info" size="sm">{dirGroups.length} مجموعة</Badge>
                   </div>
                   <Button size="sm" onClick={() => openDirGroupCreateModal(dir.id)} className="flex items-center gap-1">
@@ -1766,7 +1766,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
-                    <p className="text-xl font-bold text-ds-text">{ceoCriteria.filter(c => c.is_active).length}</p>
+                    <p className="text-lg sm:text-xl font-bold text-ds-text">{ceoCriteria.filter(c => c.is_active).length}</p>
                   </div>
                   <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                     <ClipboardList className="h-6 w-6" />
@@ -1779,7 +1779,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
-                    <p className="text-xl font-bold text-ds-text">{ceoCriteria.filter(c => !c.is_active).length}</p>
+                    <p className="text-lg sm:text-xl font-bold text-ds-text">{ceoCriteria.filter(c => !c.is_active).length}</p>
                   </div>
                   <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl">
                     <EyeOff className="h-6 w-6" />
@@ -2107,7 +2107,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ds-muted mb-1">معايير نشطة</p>
-                    <p className="text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => c.is_active).length}</p>
+                    <p className="text-lg sm:text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => c.is_active).length}</p>
                   </div>
                   <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl"><ClipboardList className="h-6 w-6" /></div>
                 </div>
@@ -2118,7 +2118,7 @@ export const EvaluationCriteria: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ds-muted mb-1">معايير معطلة</p>
-                    <p className="text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => !c.is_active).length}</p>
+                    <p className="text-lg sm:text-xl font-bold text-ds-text">{ceoEvalCriteria.filter(c => !c.is_active).length}</p>
                   </div>
                   <div className="bg-ds-overlay text-ds-faint p-3 rounded-xl"><EyeOff className="h-6 w-6" /></div>
                 </div>

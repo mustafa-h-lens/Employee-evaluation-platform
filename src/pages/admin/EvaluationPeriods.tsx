@@ -463,7 +463,7 @@ export const EvaluationPeriods: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">الفترة النشطة</p>
-                <p className="text-xl font-bold text-ds-text">
+                <p className="text-lg sm:text-xl font-bold text-ds-text">
                   {activePeriod
                     ? `${monthLabels[activePeriod.month]} - ${activePeriod.year}`
                     : 'لا يوجد'}
@@ -480,7 +480,7 @@ export const EvaluationPeriods: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">فترات قادمة</p>
-                <p className="text-xl font-bold text-ds-text">{upcomingPeriods.length}</p>
+                <p className="text-lg sm:text-xl font-bold text-ds-text">{upcomingPeriods.length}</p>
               </div>
               <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Calendar className="h-6 w-6" />
@@ -493,7 +493,7 @@ export const EvaluationPeriods: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">فترات مغلقة</p>
-                <p className="text-xl font-bold text-ds-text">{closedPeriods.length}</p>
+                <p className="text-lg sm:text-xl font-bold text-ds-text">{closedPeriods.length}</p>
               </div>
               <div className="bg-ds-overlay text-ds-muted p-3 rounded-xl">
                 <Lock className="h-6 w-6" />

@@ -140,7 +140,7 @@ export const CriteriaOverview: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">وزن المعايير العامة</p>
-                <p className="text-xl font-bold text-blue-600">{generalWeight}%</p>
+                <p className="text-lg sm:text-xl font-bold text-blue-600">{generalWeight}%</p>
               </div>
               <div className="bg-ds-info-bg text-ds-info p-3 rounded-xl">
                 <Scale className="h-6 w-6" />
@@ -153,7 +153,7 @@ export const CriteriaOverview: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">وزن المعايير الخاصة</p>
-                <p className="text-xl font-bold text-emerald-600">{specificWeight}%</p>
+                <p className="text-lg sm:text-xl font-bold text-emerald-600">{specificWeight}%</p>
               </div>
               <div className="bg-ds-success-bg text-ds-success p-3 rounded-xl">
                 <Scale className="h-6 w-6" />
@@ -166,7 +166,7 @@ export const CriteriaOverview: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ds-muted mb-1">عدد الإدارات</p>
-                <p className="text-xl font-bold text-ds-text">{directorates.length}</p>
+                <p className="text-lg sm:text-xl font-bold text-ds-text">{directorates.length}</p>
               </div>
               <div className="bg-ds-overlay text-ds-muted p-3 rounded-xl">
                 <Building2 className="h-6 w-6" />
@@ -273,7 +273,7 @@ export const CriteriaOverview: React.FC = () => {
           <div key={dir.id} className="space-y-4">
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5 text-emerald-600" />
-              <h2 className="text-xl font-bold text-ds-text">{dir.name}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-ds-text">{dir.name}</h2>
               <Badge variant="info" size="sm">{dirGroups.length} مجموعة</Badge>
             </div>
             {dirGroups.length === 0 ? (
