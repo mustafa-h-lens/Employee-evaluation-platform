@@ -755,6 +755,21 @@ body {
    INPUT / FORM
 ═══════════════════════════════════════════════════════════════ */
 .input-group { display: flex; flex-direction: column; gap: 6px; }
+
+/* Form grid — single column on phones, two columns from md+ (768px+).
+   Use in place of `grid grid-cols-2` when a form should stack on
+   phones. Forms that need three or four columns at desktop can keep
+   using Tailwind's responsive grid prefixes directly. */
+.form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 768px) {
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Apply to any small icon-only tap target (e.g. close X, kebab menu,
+   sort arrow) to ensure it meets the 44x44 minimum on touch devices.
+   Visual size of the icon doesn't change — only the hit area expands
+   via padding. */
+.touch-target { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
 .input-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .input-label .req { color: var(--danger-text); margin-right: 3px; }
 
