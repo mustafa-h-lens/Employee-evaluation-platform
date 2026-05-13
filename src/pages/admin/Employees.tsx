@@ -5,6 +5,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { CreditCard as Edit, Trash2, Users, AlertTriangle, UserPlus, Plus, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -577,7 +579,8 @@ export const Employees: React.FC = () => {
               icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>اسم الموظف</TableHead>
@@ -695,7 +698,47 @@ export const Employees: React.FC = () => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+            mobile={employees.map(emp => {
+              const labels = renderDirAssignmentLabels(emp);
+              const dirText = !labels.directorates
+                ? '—'
+                : Array.isArray(labels.directorates)
+                  ? labels.directorates.join(' · ')
+                  : labels.directorates;
+              const deptText = !labels.departments
+                ? '—'
+                : Array.isArray(labels.departments)
+                  ? labels.departments.join(' · ')
+                  : labels.departments;
+              const jobTitleText = labels.jobTitles
+                ? labels.jobTitles.map(jt => jt.title).join(' · ')
+                : emp.job_title;
+              return (
+                <MobileRow
+                  key={emp.id}
+                  title={emp.full_name}
+                  subtitle={emp.email}
+                  fields={[
+                    { label: 'رقم الموظف', value: emp.employee_number },
+                    { label: 'المسمى الوظيفي', value: jobTitleText },
+                    { label: 'الإدارة', value: dirText },
+                    { label: 'القسم', value: deptText },
+                  ]}
+                  action={
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="outline" onClick={() => openEditModal(emp)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => confirmDelete(emp)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  }
+                />
+              );
+            })}
+          />
           )}
         </CardBody>
       </Card>
