@@ -70,6 +70,11 @@ const menuItems: MenuItem[] = [
 interface SidebarProps {
   currentPath: string;
   onNavigate: (path: string) => void;
+  // Drawer state on phones — at lg: (1024px+) the sidebar is always
+  // visible and these props have no effect. Below lg: the sidebar is
+  // translated off-screen when `isOpen` is false and slides in when
+  // `isOpen` flips to true. PageLayout owns the state.
+  isOpen?: boolean;
 }
 
 const navItemStyle = (active: boolean): React.CSSProperties => ({
@@ -93,7 +98,7 @@ const navItemStyle = (active: boolean): React.CSSProperties => ({
   boxShadow: active ? '0 4px 14px rgba(37,99,235,0.35)' : 'none',
 });
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, isOpen = true }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { runWithNavReveal } = useNavReveal();
@@ -177,12 +182,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
 
   return (
     <div
-      className="h-screen w-64 fixed right-0 top-0 flex flex-col"
+      className={`h-screen w-64 fixed right-0 top-0 z-50 flex flex-col transition-transform duration-300 ease-out ${
+        isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+      }`}
       style={{
         background: 'var(--bg-surface)',
         borderLeft: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-card)',
       }}
+      aria-hidden={!isOpen}
     >
       <div
         className="px-5 py-6 flex-shrink-0"

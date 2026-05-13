@@ -40,12 +40,16 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Cap maxWidth at min(95vw, desktop-target) so modals never overflow
+  // a phone viewport. On wide screens this resolves to the original
+  // px value (95vw is always larger). On a 360px phone, every size
+  // collapses to ~342px wide regardless of the requested desktop size.
   const maxWidth = {
-    sm: '448px',
-    md: '512px',
-    lg: '672px',
-    xl: '896px',
-    '2xl': '1152px',
+    sm: 'min(95vw, 448px)',
+    md: 'min(95vw, 512px)',
+    lg: 'min(95vw, 672px)',
+    xl: 'min(95vw, 896px)',
+    '2xl': 'min(95vw, 1152px)',
   }[size];
 
   // Portal to body so the modal escapes any parent stacking context
@@ -63,10 +67,17 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="flex items-center justify-center min-h-screen px-4 py-8">
         <div
           className="modal"
-          style={{ maxWidth, width: '100%', textAlign: 'right' }}
+          style={{
+            maxWidth,
+            width: '100%',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            textAlign: 'right',
+          }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="modal-hdr">
+          <div className="modal-hdr" style={{ flexShrink: 0 }}>
             <div>
               <div className="modal-ttl">{title}</div>
             </div>
@@ -79,7 +90,9 @@ export const Modal: React.FC<ModalProps> = ({
             </button>
           </div>
 
-          <div>
+          {/* Body becomes the only scrollable area so the header + any
+              modal-foot stay visible while long content scrolls. */}
+          <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
             {children}
           </div>
         </div>
