@@ -183,7 +183,7 @@ export const Departments: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>إدارة الأقسام</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>إدارة الأقسام</h1>
           <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>إدارة أقسام الشركة</p>
         </div>
         <Button onClick={openAddModal} className="flex items-center gap-2">

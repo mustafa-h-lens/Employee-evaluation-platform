@@ -655,7 +655,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-ds-text">التقييم كمشرف</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-ds-text">التقييم كمشرف</h1>
           <p className="text-ds-muted mt-2">تقييم أعضاء الفريق المعين لك كمشرف</p>
         </div>
         <Card>
@@ -725,7 +725,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
           }}
         >
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>التقييم كمشرف</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>التقييم كمشرف</h1>
             <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>تقييم أعضاء الفريق المعين لك كمشرف</p>
           </div>
           <ModernSelect
@@ -967,7 +967,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
         </button>
       </div>
       <div>
-        <h1 className="text-3xl font-bold text-ds-text">التقييم كمشرف</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-ds-text">التقييم كمشرف</h1>
         <p className="text-ds-muted mt-2">تقييم أعضاء الفريق المعين لك كمشرف</p>
       </div>
 
@@ -1177,15 +1177,15 @@ export const SupervisorEvaluateForm: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="text-center">
                   <p className="text-sm text-ds-muted mb-1">الدرجة من 500</p>
-                  <p className="text-3xl font-bold text-blue-600">{results.finalScore500.toFixed(0)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-600">{results.finalScore500.toFixed(0)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-ds-muted mb-1">التقييم من 5</p>
-                  <p className="text-3xl font-bold text-blue-600">{results.finalScore5.toFixed(2)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-600">{results.finalScore5.toFixed(2)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-ds-muted mb-1">النسبة المئوية</p>
-                  <p className="text-3xl font-bold text-blue-600">{results.percentage.toFixed(1)}%</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-600">{results.percentage.toFixed(1)}%</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-ds-muted mb-1">التقدير العام</p>

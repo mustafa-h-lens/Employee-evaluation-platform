@@ -114,7 +114,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
     <div className="space-y-6">
       {/* Header */}
       <div
-        className="rounded-ds-xl p-5 lg:p-8"
+        className="rounded-ds-xl p-4 sm:p-5 lg:p-8"
         style={{
           background: 'var(--sc-amber-grad)',
           border: '1px solid var(--sc-amber-border)',
@@ -123,7 +123,7 @@ export const CeoDirectors: React.FC<CeoDirectorsProps> = ({ onNavigate }) => {
       >
         <div className="flex items-center gap-3 mb-1">
           <Crown className="h-8 w-8" style={{ color: 'var(--sc-amber-icon-c)' }} />
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>مديري الإدارات</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>مديري الإدارات</h1>
         </div>
         <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>عرض وإدارة تقييمات مديري الإدارات</p>
       </div>

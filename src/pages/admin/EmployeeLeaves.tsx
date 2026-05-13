@@ -378,7 +378,7 @@ export const EmployeeLeaves: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>إجازات الموظفين</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>إجازات الموظفين</h1>
           <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>
             تسجيل فترات إجازة الموظفين — لن يتم تقييم الموظف خلال أشهر إجازته، ويتم استبعاد هذه الأشهر من حساب المتوسطات في التقارير
           </p>

@@ -535,7 +535,7 @@ export const SupervisorCriteria: React.FC = () => {
   if (assignments.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-ds-text">المعايير الخاصة بالمشرف</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-ds-text">المعايير الخاصة بالمشرف</h1>
         <Card>
           <CardBody>
             <EmptyState message="لا توجد مهام إشراف نشطة حالياً" icon={<Shield className="h-12 w-12 text-ds-faint" />} />
@@ -558,7 +558,7 @@ export const SupervisorCriteria: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>المعايير الخاصة بالمشرف</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>المعايير الخاصة بالمشرف</h1>
           <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>
             معايير التقييم الخاصة بمهمة الإشراف
             {currentAssignment && (

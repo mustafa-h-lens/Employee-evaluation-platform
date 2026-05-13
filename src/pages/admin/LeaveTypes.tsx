@@ -239,7 +239,7 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
           }}
         >
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>أنواع الإجازات</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>أنواع الإجازات</h1>
             <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>
               قائمة أنواع الإجازات المعتمدة في النظام — تُستخدم عند إضافة إجازة لموظف
             </p>

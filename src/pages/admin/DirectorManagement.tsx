@@ -286,7 +286,7 @@ export const DirectorManagement: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>مديري الإدارات</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>مديري الإدارات</h1>
           <p className="mt-2" style={{ color: 'var(--sc-amber-label)' }}>إدارة وتسجيل مديري الإدارات في المنظمة</p>
         </div>
         <Button onClick={() => { setIsRegisterModalOpen(true); setRegisterFeedback(null); setRegisterForm({ full_name: '', email: '', job_title: '', employee_number: '' }); }} className="flex items-center gap-2">

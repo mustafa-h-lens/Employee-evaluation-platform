@@ -93,7 +93,7 @@ export const CeoDashboard: React.FC<CeoDashboardProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-5 lg:p-8 flex items-center gap-4"
+        className="rounded-ds-xl p-4 sm:p-5 lg:p-8 flex items-center gap-3 sm:gap-4"
         style={{
           background: 'var(--sc-amber-grad)',
           border: '1px solid var(--sc-amber-border)',
@@ -101,18 +101,18 @@ export const CeoDashboard: React.FC<CeoDashboardProps> = ({ onNavigate }) => {
         }}
       >
         <div
-          className="p-3 rounded-xl flex items-center justify-center"
+          className="p-2.5 sm:p-3 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{
             background: 'var(--sc-amber-icon-bg)',
             border: '1px solid var(--sc-amber-icon-b)',
             color: 'var(--sc-amber-icon-c)',
           }}
         >
-          <Crown className="h-7 w-7" />
+          <Crown className="h-5 w-5 sm:h-7 sm:w-7" />
         </div>
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>لوحة تحكم الإدارة العليا</h1>
-          <p className="mt-1" style={{ color: 'var(--sc-amber-label)' }}>نظرة عامة على تقييمات مديري الإدارات</p>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold" style={{ color: 'var(--sc-amber-val)' }}>لوحة تحكم الإدارة العليا</h1>
+          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm lg:text-base" style={{ color: 'var(--sc-amber-label)' }}>نظرة عامة على تقييمات مديري الإدارات</p>
         </div>
       </div>
 

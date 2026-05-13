@@ -449,7 +449,7 @@ export const SupervisorAssignments: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>إدارة تعيينات المشرفين</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>إدارة تعيينات المشرفين</h1>
           <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>تعيين موظفين أو مدراء إدارات كمشرفين مؤقتين لتقييم موظفين محددين</p>
         </div>
         <Button onClick={openCreateModal} className="flex items-center gap-2">

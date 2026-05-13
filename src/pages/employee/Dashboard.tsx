@@ -198,15 +198,15 @@ export const EmployeeDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-5 lg:p-8"
+        className="rounded-ds-xl p-4 sm:p-5 lg:p-8"
         style={{
           background: 'var(--sc-blue-grad)',
           border: '1px solid var(--sc-blue-border)',
           boxShadow: 'var(--shadow-card)',
         }}
       >
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>لوحة التحكم</h1>
-        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>مرحبًا {user?.full_name}</p>
+        <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>لوحة التحكم</h1>
+        <p className="mt-1.5 sm:mt-2 text-sm sm:text-base" style={{ color: 'var(--sc-blue-label)' }}>مرحبًا {user?.full_name}</p>
       </div>
 
       {employeeData && (() => {
@@ -215,26 +215,26 @@ export const EmployeeDashboard: React.FC = () => {
         const directorateLabel = dirName && deptName ? `${dirName} — ${deptName}` : (dirName || deptName || '—');
 
         const fields: { label: string; value: string; icon: React.ReactNode; sc: 'blue' | 'green' | 'amber' | 'purple' }[] = [
-          { label: 'المسمى الوظيفي', value: employeeData.job_title || '—', icon: <Briefcase className="h-5 w-5" />, sc: 'blue' },
-          { label: 'الإدارة',         value: directorateLabel,              icon: <Building2 className="h-5 w-5" />, sc: 'green' },
-          { label: 'المدير المباشر',  value: resolveManagerLabel() || '—',  icon: <UserCheck className="h-5 w-5" />, sc: 'purple' },
-          { label: 'رقم الموظف',      value: String(employeeData.employee_number ?? '—'), icon: <Hash className="h-5 w-5" />, sc: 'amber' },
+          { label: 'المسمى الوظيفي', value: employeeData.job_title || '—', icon: <Briefcase className="h-4 w-4 sm:h-5 sm:w-5" />, sc: 'blue' },
+          { label: 'الإدارة',         value: directorateLabel,              icon: <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />, sc: 'green' },
+          { label: 'المدير المباشر',  value: resolveManagerLabel() || '—',  icon: <UserCheck className="h-4 w-4 sm:h-5 sm:w-5" />, sc: 'purple' },
+          { label: 'رقم الموظف',      value: String(employeeData.employee_number ?? '—'), icon: <Hash className="h-4 w-4 sm:h-5 sm:w-5" />, sc: 'amber' },
         ];
 
         return (
           <div
-            className="p-6 rounded-ds-lg"
+            className="p-4 sm:p-6 rounded-ds-lg"
             style={{
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-soft)',
               boxShadow: 'var(--shadow-card)',
             }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {fields.map((f) => (
                 <div
                   key={f.label}
-                  className="flex items-center gap-3 p-3 rounded-ds-md transition-all"
+                  className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-ds-md transition-all"
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
@@ -248,11 +248,8 @@ export const EmployeeDashboard: React.FC = () => {
                   }}
                 >
                   <div
-                    className="flex-shrink-0 flex items-center justify-center"
+                    className="flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-[42px] sm:h-[42px] rounded-ds-md"
                     style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: 'var(--radius-md)',
                       background: `var(--sc-${f.sc}-icon-bg)`,
                       border: `1px solid var(--sc-${f.sc}-icon-b)`,
                       color: `var(--sc-${f.sc}-icon-c)`,
@@ -268,7 +265,7 @@ export const EmployeeDashboard: React.FC = () => {
                       {f.label}
                     </p>
                     <p
-                      className="text-sm font-bold truncate"
+                      className="text-xs sm:text-sm font-bold truncate"
                       style={{ color: 'var(--text-primary)' }}
                       title={f.value}
                     >

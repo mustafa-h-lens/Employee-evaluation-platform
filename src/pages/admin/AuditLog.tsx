@@ -209,7 +209,7 @@ export const AuditLog: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>سجل النشاط</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>سجل النشاط</h1>
           <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>عرض جميع العمليات التي تمت في النظام</p>
         </div>
         <Button

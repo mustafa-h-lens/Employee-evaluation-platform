@@ -411,7 +411,7 @@ export const CeoEvaluationPeriods: React.FC<{ embedded?: boolean }> = ({ embedde
           }}
         >
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>فترات تقييم الإدارة العليا</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>فترات تقييم الإدارة العليا</h1>
             <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة فترات التقييم الربعية للإدارة العليا</p>
           </div>
           <Button onClick={openAddModal} className="flex items-center gap-2">

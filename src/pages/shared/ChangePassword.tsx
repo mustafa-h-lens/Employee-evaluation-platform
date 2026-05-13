@@ -63,14 +63,14 @@ export const ChangePassword: React.FC = () => {
       )}
 
       <div
-        className="rounded-ds-xl p-5 lg:p-8"
+        className="rounded-ds-xl p-4 sm:p-5 lg:p-8"
         style={{
           background: 'var(--sc-purple-grad)',
           border: '1px solid var(--sc-purple-border)',
           boxShadow: 'var(--shadow-card)',
         }}
       >
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>الإعدادات</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-purple-val)' }}>الإعدادات</h1>
         <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>إدارة إعدادات حسابك</p>
       </div>
 

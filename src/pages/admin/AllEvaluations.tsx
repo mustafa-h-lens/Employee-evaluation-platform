@@ -866,14 +866,14 @@ export const AllEvaluations: React.FC = () => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-5 lg:p-8"
+        className="rounded-ds-xl p-4 sm:p-5 lg:p-8"
         style={{
           background: 'var(--sc-blue-grad)',
           border: '1px solid var(--sc-blue-border)',
           boxShadow: 'var(--shadow-card)',
         }}
       >
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>جميع التقييمات</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>جميع التقييمات</h1>
         <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>عرض جميع تقييمات الإدارة العليا ومدراء الإدارات والمشرفين</p>
       </div>
 

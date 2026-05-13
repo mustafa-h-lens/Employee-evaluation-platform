@@ -357,7 +357,7 @@ export const Directorates: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>الإدارات</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-green-val)' }}>الإدارات</h1>
           <p className="mt-2" style={{ color: 'var(--sc-green-label)' }}>إدارة الإدارات والمديرين وتعيين الموظفين</p>
         </div>
         <div className="flex items-center gap-2">

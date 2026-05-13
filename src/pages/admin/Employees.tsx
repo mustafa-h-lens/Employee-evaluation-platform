@@ -531,7 +531,7 @@ export const Employees: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>إدارة الموظفين</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>إدارة الموظفين</h1>
           <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>إدارة بيانات الموظفين وتوزيعهم على الإدارات</p>
         </div>
         <Button onClick={() => setIsRegisterModalOpen(true)} className="flex items-center gap-2">

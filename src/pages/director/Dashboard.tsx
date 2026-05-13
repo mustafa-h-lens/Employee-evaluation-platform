@@ -139,17 +139,17 @@ export const DirectorDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-5 lg:p-8"
+        className="rounded-ds-xl p-4 sm:p-5 lg:p-8"
         style={{
           background: 'var(--sc-blue-grad)',
           border: '1px solid var(--sc-blue-border)',
           boxShadow: 'var(--shadow-card)',
         }}
       >
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>
+        <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--sc-blue-val)' }}>
           مرحباً، {user?.full_name}
         </h1>
-        <p className="mt-2" style={{ color: 'var(--sc-blue-label)' }}>لوحة تحكم مدير الإدارة</p>
+        <p className="mt-1.5 sm:mt-2 text-sm sm:text-base" style={{ color: 'var(--sc-blue-label)' }}>لوحة تحكم مدير الإدارة</p>
       </div>
 
       {activePeriod && (
@@ -249,7 +249,7 @@ export const DirectorDashboard: React.FC = () => {
                   <TrendingUp className="h-8 w-8" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--accent)' }}>
+                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--accent)' }}>
                     {latestEvaluation.percentage.toFixed(1)}%
                   </p>
                   <Badge variant={ratingVariant(latestEvaluation.general_rating)}>
