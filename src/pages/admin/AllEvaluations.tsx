@@ -949,7 +949,8 @@ export const AllEvaluations: React.FC = () => {
                 icon={<Crown className="h-12 w-12 text-ds-faint" />}
               />
             ) : (
-              <Table>
+              <ResponsiveTable
+                desktop={<Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>مدير الإدارة</TableHead>
@@ -1006,7 +1007,27 @@ export const AllEvaluations: React.FC = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </Table>}
+                mobile={combinedDirectorEvals.map(combined => (
+                  <MobileRow
+                    key={`${combined.director_id}_${combined.period_id}`}
+                    leading={<UserAvatar name={combined.director?.full_name || ''} avatarUrl={combined.director?.avatar_url} size="md" />}
+                    title={combined.director?.full_name || '—'}
+                    subtitle={combined.director?.job_title || ''}
+                    statusBadge={<Badge variant={getStatusVariant(combined.status)} size="sm">{getStatusLabel(combined.status, 'ceo')}</Badge>}
+                    fields={[
+                      { label: 'الفترة', value: combined.period ? `${monthLabels[combined.period.month]} ${combined.period.year}` : '—' },
+                      { label: 'النتيجة', value: (
+                        <span className="flex items-center gap-1.5">
+                          <span className="font-bold text-ds-text">{combined.avg_percentage?.toFixed(0)}%</span>
+                          {combined.avg_rating && <Badge variant={getRatingVariant(combined.avg_rating)} size="sm">{combined.avg_rating}</Badge>}
+                        </span>
+                      ) },
+                    ]}
+                    onClick={() => viewCombinedDirectorDetail(combined)}
+                  />
+                ))}
+              />
             )}
           </CardBody>
         </Card>
@@ -1019,7 +1040,8 @@ export const AllEvaluations: React.FC = () => {
                 icon={<Users className="h-12 w-12 text-ds-faint" />}
               />
             ) : (
-              <Table>
+              <ResponsiveTable
+                desktop={<Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>الموظف</TableHead>
@@ -1084,7 +1106,31 @@ export const AllEvaluations: React.FC = () => {
                     );
                   })}
                 </TableBody>
-              </Table>
+              </Table>}
+                mobile={combinedEmployeeEvals.map(c => {
+                  const partial = c.source_count < c.total_directorates;
+                  return (
+                    <MobileRow
+                      key={c.key}
+                      leading={<UserAvatar name={c.employee?.full_name || ''} avatarUrl={c.employee?.avatar_url} size="md" />}
+                      title={c.employee?.full_name || '—'}
+                      subtitle={c.employee?.job_title || ''}
+                      statusBadge={<Badge variant={getStatusVariant(c.evals[0].status)} size="sm">{getStatusLabel(c.evals[0].status)}</Badge>}
+                      fields={[
+                        { label: 'الفترة', value: c.period ? `${monthLabels[c.period.month]} ${c.period.year}` : '—' },
+                        { label: 'النتيجة', value: (
+                          <span className="flex items-center gap-1.5">
+                            <span className="font-bold text-ds-text">{c.avg_percentage.toFixed(0)}%</span>
+                            {c.avg_rating && <Badge variant={getRatingVariant(c.avg_rating)} size="sm">{c.avg_rating}</Badge>}
+                          </span>
+                        ) },
+                        { label: 'الإدارات', value: <Badge variant={partial ? 'warning' : 'default'} size="sm">{c.source_count} من {c.total_directorates}</Badge> },
+                      ]}
+                      onClick={() => viewCombinedEmployeeDetail(c)}
+                    />
+                  );
+                })}
+              />
             )}
           </CardBody>
         </Card>
@@ -1097,7 +1143,8 @@ export const AllEvaluations: React.FC = () => {
                 icon={<Shield className="h-12 w-12 text-ds-faint" />}
               />
             ) : (
-              <Table>
+              <ResponsiveTable
+                desktop={<Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>الموظف</TableHead>
@@ -1152,7 +1199,32 @@ export const AllEvaluations: React.FC = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </Table>}
+                mobile={supervisorEvals.map(ev => (
+                  <MobileRow
+                    key={ev.id}
+                    leading={
+                      <div className="w-10 h-10 bg-ds-success-bg text-ds-success rounded-full flex items-center justify-center font-bold">
+                        {ev.employee?.full_name?.charAt(0) || '?'}
+                      </div>
+                    }
+                    title={ev.employee?.full_name || '—'}
+                    subtitle={ev.employee?.job_title || ''}
+                    statusBadge={<Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>}
+                    fields={[
+                      { label: 'المشرف', value: ev.supervisor?.full_name || '—' },
+                      { label: 'الفترة', value: ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : '—' },
+                      { label: 'النتيجة', value: (
+                        <span className="flex items-center gap-1.5">
+                          <span className="font-bold text-ds-text">{ev.percentage?.toFixed(0)}%</span>
+                          {ev.general_rating && <Badge variant={getRatingVariant(ev.general_rating)} size="sm">{ev.general_rating}</Badge>}
+                        </span>
+                      ) },
+                    ]}
+                    onClick={() => viewSupervisorDetail(ev)}
+                  />
+                ))}
+              />
             )}
           </CardBody>
         </Card>
