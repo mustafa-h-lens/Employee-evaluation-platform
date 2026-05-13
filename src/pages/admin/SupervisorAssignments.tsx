@@ -7,6 +7,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { TextArea } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import {
   Users, UserPlus, Shield, ShieldCheck, ShieldOff, ShieldX,
   CreditCard as Edit, AlertTriangle, Search,
@@ -526,7 +528,8 @@ export const SupervisorAssignments: React.FC = () => {
               icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>المشرف</TableHead>
@@ -603,7 +606,37 @@ export const SupervisorAssignments: React.FC = () => {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={filteredAssignments.map(assignment => (
+                <MobileRow
+                  key={assignment.id}
+                  leading={<UserAvatar name={assignment.user?.full_name || ''} avatarUrl={assignment.user?.avatar_url} size="md" />}
+                  title={assignment.user?.full_name || '--'}
+                  subtitle={`${(assignment.members || []).length} موظف · ${assignment.creator?.full_name || '--'}`}
+                  statusBadge={getStatusBadge(assignment)}
+                  fields={[
+                    { label: 'نوع المستخدم', value: getUserTypeBadge(assignment.user_type) },
+                  ]}
+                  action={
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <Button size="sm" variant="outline" onClick={() => openEditModal(assignment)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {assignment.status !== 'ended' && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleToggleStatus(assignment)}>
+                            {assignment.status === 'active' ? <ShieldOff className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setConfirmEndTarget(assignment)} className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  }
+                />
+              ))}
+            />
           )}
         </CardBody>
       </Card>
