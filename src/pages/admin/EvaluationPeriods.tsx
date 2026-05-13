@@ -6,6 +6,8 @@ import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge, getStatusBadgeVariant } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Plus, CreditCard as Edit, Trash2, Calendar, AlertTriangle, Play, Lock, ArrowDown, ArrowUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ModernSelect } from '../../components/ui/ModernSelect';
@@ -509,7 +511,8 @@ export const EvaluationPeriods: React.FC = () => {
               icon={<Calendar className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الفترة</TableHead>
@@ -569,7 +572,33 @@ export const EvaluationPeriods: React.FC = () => {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={periods.map(period => (
+                <MobileRow
+                  key={period.id}
+                  title={`${monthLabels[period.month]} ${period.year}`}
+                  statusBadge={<Badge variant={getStatusBadgeVariant(period.status)} size="sm">{period.status}</Badge>}
+                  fields={[
+                    { label: 'من', value: formatDate(period.start_date) },
+                    { label: 'إلى', value: formatDate(period.end_date) },
+                    { label: 'عدد التقييمات', value: String(period.evaluation_count) },
+                  ]}
+                  action={
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {getStatusActionButtons(period)}
+                      <Button size="sm" variant="outline" onClick={() => openEditModal(period)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {period.evaluation_count === 0 && (
+                        <Button size="sm" variant="danger" onClick={() => confirmDelete(period)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  }
+                />
+              ))}
+            />
           )}
         </CardBody>
       </Card>

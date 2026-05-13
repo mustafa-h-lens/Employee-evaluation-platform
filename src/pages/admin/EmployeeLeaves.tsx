@@ -6,6 +6,8 @@ import { Input, TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { ModernSelect } from '../../components/ui/ModernSelect';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import {
@@ -434,7 +436,8 @@ export const EmployeeLeaves: React.FC = () => {
               icon={<CalendarOff className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الموظف</TableHead>
@@ -491,7 +494,41 @@ export const EmployeeLeaves: React.FC = () => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={filteredLeaves.map(l => {
+                const status = leaveStatus(l.start_month, l.end_month);
+                const months = monthsBetween(l.start_month, l.end_month);
+                return (
+                  <MobileRow
+                    key={l.id}
+                    leading={<UserAvatar name={l.employee?.full_name || '—'} avatarUrl={l.employee?.avatar_url || null} size="md" />}
+                    title={l.employee?.full_name || '—'}
+                    subtitle={[l.employee?.job_title, l.employee?.department_name].filter(Boolean).join(' — ')}
+                    statusBadge={
+                      <Badge variant={status === 'current' ? 'warning' : status === 'upcoming' ? 'info' : 'default'} size="sm">
+                        {status === 'current' ? 'حالية' : status === 'upcoming' ? 'قادمة' : 'منتهية'}
+                      </Badge>
+                    }
+                    fields={[
+                      { label: 'النوع', value: <Badge variant="info" size="sm">{l.leave_type?.name || '—'}</Badge> },
+                      { label: 'المدة', value: <span className="font-bold text-amber-600">{months} شهر</span> },
+                      { label: 'من', value: formatMonthArabic(l.start_month) },
+                      { label: 'إلى', value: formatMonthArabic(l.end_month) },
+                    ]}
+                    action={
+                      <div className="flex items-center gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => openEdit(l)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => confirmDelete(l)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    }
+                  />
+                );
+              })}
+            />
           )}
         </CardBody>
       </Card>
