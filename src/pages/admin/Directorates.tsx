@@ -6,6 +6,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import {
   Plus, CreditCard as Edit, Trash2, Landmark, AlertTriangle,
   ChevronDown, ChevronUp, UserPlus, Crown, Users, ArrowLeftRight, Building2
@@ -562,7 +564,8 @@ export const Directorates: React.FC = () => {
           {allDirectors.length === 0 ? (
             <EmptyState message="لا يوجد مديري إدارات" icon={<Crown className="h-12 w-12 text-ds-faint" />} />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الاسم</TableHead>
@@ -612,7 +615,41 @@ export const Directorates: React.FC = () => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={allDirectors.map(director => {
+                const dirNames = getDirectorateNames(director.id);
+                const isCeo = isCeoUser(director.email);
+                return (
+                  <MobileRow
+                    key={director.id}
+                    leading={<UserAvatar name={director.full_name} avatarUrl={(director as any).avatar_url} size="md" />}
+                    title={director.full_name}
+                    subtitle={director.email}
+                    statusBadge={isCeo ? <Badge variant="warning" size="sm">إدارة عليا</Badge> : null}
+                    fields={[
+                      { label: 'المسمى الوظيفي', value: director.job_title || '—' },
+                      { label: 'الإدارة', value: dirNames.length > 0 ? (
+                        <span className="flex flex-wrap gap-1">
+                          {dirNames.map((name, i) => <Badge key={i} variant="info" size="sm">{name}</Badge>)}
+                        </span>
+                      ) : '—' },
+                    ]}
+                    action={
+                      <div className="flex items-center gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => { setEditingDirector(director); setEditDirForm({ full_name: director.full_name, email: director.email, job_title: director.job_title || '' }); setIsEditDirOpen(true); }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {!isCeo && (
+                          <Button size="sm" variant="danger" onClick={() => setDeleteDirector(director)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    }
+                  />
+                );
+              })}
+            />
           )}
         </CardBody>
       </Card>
