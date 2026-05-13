@@ -91,7 +91,7 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
       };
 
   return (
-    <div className="flex items-start gap-2" ref={containerRef}>
+    <div className="flex items-start gap-1.5 sm:gap-2" ref={containerRef}>
       {[1, 2, 3, 4, 5].map(score => {
         const isSelected = baseInt === score;
         const hasFraction = isSelected && frac > 0;
@@ -108,8 +108,8 @@ export const FractionalScoreSelector: React.FC<FractionalScoreSelectorProps> = (
                 onChange(score);
                 setOpenDropdown(null);
               }}
-              className={`w-full py-3 px-2 font-bold transition-all tabular-nums truncate ${
-                hasFraction ? 'text-base' : 'text-lg'
+              className={`w-full py-2 px-1.5 sm:py-3 sm:px-2 font-bold transition-all tabular-nums truncate ${
+                hasFraction ? 'text-sm sm:text-base' : 'text-base sm:text-lg'
               } ${
                 score < 5 && !disabled ? 'rounded-t-lg border-b-0' : 'rounded-lg'
               } ${disabled ? 'cursor-default' : ''}`}
