@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Crown, Users, Eye, Filter, Star, Shield, ArrowUp } from 'lucide-react';
@@ -775,7 +777,8 @@ export const AllEvaluations: React.FC = () => {
             icon={<Users className="h-12 w-12 text-ds-faint" />}
           />
         ) : (
-          <Table>
+          <ResponsiveTable
+            desktop={<Table>
             <TableHeader>
               <TableRow>
                 <TableHead>الموظف</TableHead>
@@ -832,7 +835,29 @@ export const AllEvaluations: React.FC = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table>}
+          mobile={evals.map(ev => (
+            <MobileRow
+              key={ev.id}
+              leading={<UserAvatar name={ev.employee?.full_name || ''} avatarUrl={ev.employee?.avatar_url} size="md" />}
+              title={ev.employee?.full_name || '—'}
+              subtitle={ev.employee?.job_title || ''}
+              statusBadge={<Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>}
+              fields={[
+                { label: 'الإدارة', value: ev.department?.name || '—' },
+                { label: 'المدير المقيّم', value: ev.manager?.full_name || '—' },
+                { label: 'الفترة', value: ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : '—' },
+                { label: 'النتيجة', value: (
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-bold text-ds-text">{ev.percentage?.toFixed(0)}%</span>
+                    {ev.general_rating && <Badge variant={getRatingVariant(ev.general_rating)} size="sm">{ev.general_rating}</Badge>}
+                  </span>
+                ) },
+              ]}
+              onClick={() => viewEvalDetail(ev)}
+            />
+          ))}
+        />
         )}
       </CardBody>
     </Card>
