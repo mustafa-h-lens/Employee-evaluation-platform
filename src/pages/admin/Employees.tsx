@@ -707,7 +707,7 @@ export const Employees: React.FC = () => {
         size="lg"
       >
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {!editingEmployee && (
               <Input
                 label="رقم الموظف"
@@ -771,7 +771,7 @@ export const Employees: React.FC = () => {
                         </button>
                       </div>
                     )}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-ds-muted mb-1">الإدارة</label>
                         <ModernSelect

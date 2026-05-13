@@ -811,7 +811,7 @@ export const Directorates: React.FC = () => {
           </div>
         )}
         <form onSubmit={handleRegisterDirector} className="space-y-4" autoComplete="off">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="الاسم الكامل" name="full_name" value={registerForm.full_name} onChange={(e) => setRegisterForm(prev => ({ ...prev, full_name: e.target.value }))} required placeholder="أحمد محمد" />
             <Input label="البريد الإلكتروني" name="new-email" type="email" value={registerForm.email} onChange={(e) => setRegisterForm(prev => ({ ...prev, email: e.target.value }))} autoComplete="off" required placeholder="example@h-lens.co" />
             <Input label="المسمى الوظيفي" value={registerForm.job_title} onChange={(e) => setRegisterForm(prev => ({ ...prev, job_title: e.target.value }))} placeholder="مدير إدارة التقنية" />

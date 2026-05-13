@@ -422,7 +422,7 @@ export const DirectorManagement: React.FC = () => {
         )}
 
         <form onSubmit={handleRegister} className="space-y-4" autoComplete="off">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="الاسم الكامل"
               name="full_name"
