@@ -6,6 +6,8 @@ import { Input, TextArea } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import {
   Plus,
   CreditCard as Edit,
@@ -264,7 +266,8 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
               icon={<CalendarOff className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الاسم</TableHead>
@@ -323,7 +326,48 @@ export const LeaveTypes: React.FC<LeaveTypesProps> = ({ hideHero = false }) => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={types.map((t, index) => (
+                <MobileRow
+                  key={t.id}
+                  className={!t.is_active ? 'opacity-60' : ''}
+                  leading={
+                    <div className="w-10 h-10 bg-ds-warning-bg text-ds-warning rounded-lg flex items-center justify-center">
+                      <CalendarOff className="h-4 w-4" />
+                    </div>
+                  }
+                  title={t.name}
+                  subtitle={t.description || '—'}
+                  statusBadge={<Badge variant={t.is_active ? 'success' : 'default'} size="sm">{t.is_active ? 'نشط' : 'معطل'}</Badge>}
+                  fields={[
+                    { label: 'الترتيب', value: (
+                      <span className="flex items-center gap-1">
+                        <button onClick={() => handleReorder(t, 'up')} disabled={index === 0}
+                          className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 text-ds-faint">
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="font-mono w-5 text-center">{t.order}</span>
+                        <button onClick={() => handleReorder(t, 'down')} disabled={index === types.length - 1}
+                          className="p-1 rounded hover:bg-ds-overlay disabled:opacity-30 text-ds-faint">
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    ) },
+                  ]}
+                  action={
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(t)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Toggle checked={t.is_active} onChange={() => handleToggle(t)} size="sm" />
+                      <Button size="sm" variant="danger" onClick={() => confirmDelete(t)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            />
           )}
         </CardBody>
       </Card>

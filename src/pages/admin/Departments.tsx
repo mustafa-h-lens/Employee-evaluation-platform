@@ -5,6 +5,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Plus, CreditCard as Edit, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ModernSelect } from '../../components/ui/ModernSelect';
@@ -198,7 +200,8 @@ export const Departments: React.FC = () => {
               icon={<Building2 className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>اسم القسم</TableHead>
@@ -244,7 +247,28 @@ export const Departments: React.FC = () => {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={departments.map(dept => (
+                <MobileRow
+                  key={dept.id}
+                  title={dept.name}
+                  subtitle={dept.directorate?.name || 'غير محدد'}
+                  fields={[
+                    { label: 'عدد الموظفين', value: String(dept.employee_count) },
+                  ]}
+                  action={
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="outline" onClick={() => openEditModal(dept)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => confirmDelete(dept)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            />
           )}
         </CardBody>
       </Card>
