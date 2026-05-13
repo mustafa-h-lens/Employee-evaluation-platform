@@ -1706,7 +1706,7 @@ export const OrgStructure: React.FC = () => {
         <div className="page-loading-placeholder" aria-hidden="true" />
       ) : (<>
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
           { l: 'مديري إدارات', v: stats.directors, icon: <Landmark className="h-5 w-5" />, bg: 'bg-ds-purple-bg text-ds-purple' },
           { l: 'موظفون', v: stats.employees, icon: <Users className="h-5 w-5" />, bg: 'bg-ds-success-bg text-ds-success' },

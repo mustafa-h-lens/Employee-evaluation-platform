@@ -63,7 +63,7 @@ export const ChangePassword: React.FC = () => {
       )}
 
       <div
-        className="rounded-ds-xl p-8"
+        className="rounded-ds-xl p-5 lg:p-8"
         style={{
           background: 'var(--sc-purple-grad)',
           border: '1px solid var(--sc-purple-border)',

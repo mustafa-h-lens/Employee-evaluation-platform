@@ -107,7 +107,7 @@ export const MyNotes: React.FC = () => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-8"
+        className="rounded-ds-xl p-5 lg:p-8"
         style={{
           background: 'var(--sc-amber-grad)',
           border: '1px solid var(--sc-amber-border)',

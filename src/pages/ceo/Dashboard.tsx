@@ -93,7 +93,7 @@ export const CeoDashboard: React.FC<CeoDashboardProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-8 flex items-center gap-4"
+        className="rounded-ds-xl p-5 lg:p-8 flex items-center gap-4"
         style={{
           background: 'var(--sc-amber-grad)',
           border: '1px solid var(--sc-amber-border)',

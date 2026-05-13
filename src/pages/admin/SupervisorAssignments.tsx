@@ -439,7 +439,7 @@ export const SupervisorAssignments: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div
-        className="rounded-ds-xl p-8 flex items-center justify-between"
+        className="rounded-ds-xl p-5 lg:p-8 flex items-center justify-between"
         style={{
           background: 'var(--sc-blue-grad)',
           border: '1px solid var(--sc-blue-border)',

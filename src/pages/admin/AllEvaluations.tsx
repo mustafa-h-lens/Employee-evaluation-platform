@@ -841,7 +841,7 @@ export const AllEvaluations: React.FC = () => {
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-8"
+        className="rounded-ds-xl p-5 lg:p-8"
         style={{
           background: 'var(--sc-blue-grad)',
           border: '1px solid var(--sc-blue-border)',
@@ -1191,7 +1191,7 @@ export const AllEvaluations: React.FC = () => {
             )}
 
             {/* Final Results */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-600 mb-1">النتيجة / 500</p>
                 <p className="text-xl font-bold text-ds-info-text">{dispFinalScore500?.toFixed(1)}</p>

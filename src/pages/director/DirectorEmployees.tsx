@@ -259,7 +259,7 @@ export const DirectorEmployees: React.FC<DirectorEmployeesProps> = ({ onNavigate
   return (
     <div className="space-y-6">
       <div
-        className="rounded-ds-xl p-8"
+        className="rounded-ds-xl p-5 lg:p-8"
         style={{
           background: 'var(--sc-green-grad)',
           border: '1px solid var(--sc-green-border)',

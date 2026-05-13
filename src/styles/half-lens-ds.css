@@ -1093,7 +1093,9 @@ tbody td.td-primary { color: var(--text-primary); font-weight: 600; }
 /* ═══════════════════════════════════════════════════════════════
    TABS
 ═══════════════════════════════════════════════════════════════ */
-.tabs { display: flex; gap: 2px; background: var(--mode-badge-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 3px; width: fit-content; }
+.tabs { display: flex; gap: 2px; background: var(--mode-badge-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 3px; width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs .tab { flex-shrink: 0; }
 .tab { padding: 6px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition-fast); white-space: nowrap; }
 
 /* Colored Tabs */

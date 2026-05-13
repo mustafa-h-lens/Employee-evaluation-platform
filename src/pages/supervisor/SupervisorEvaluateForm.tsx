@@ -717,7 +717,7 @@ export const SupervisorEvaluateForm: React.FC = () => {
     return (
       <div className="space-y-6">
         <div
-          className="rounded-ds-xl p-8 flex items-center justify-between flex-wrap gap-4"
+          className="rounded-ds-xl p-5 lg:p-8 flex items-center justify-between flex-wrap gap-4"
           style={{
             background: 'var(--sc-green-grad)',
             border: '1px solid var(--sc-green-border)',

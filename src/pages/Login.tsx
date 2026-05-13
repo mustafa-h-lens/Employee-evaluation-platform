@@ -121,21 +121,26 @@ export const Login: React.FC = () => {
         .hl-right {
           width: 100%;
           display: flex; align-items: center; justify-content: center;
-          padding: 48px 32px;
+          padding: 32px 20px;
           background: #030b1a;
           border-right: 1px solid rgba(255,255,255,0.06);
         }
+        @media (min-width: 640px) { .hl-right { padding: 48px 32px; } }
         @media (min-width: 1024px) { .hl-right { width: 440px; flex-shrink: 0; } }
 
         .hl-form-wrap { width: 100%; max-width: 380px; }
 
         .hl-mobile-logo {
-          display: flex; justify-content: flex-end; margin-bottom: 48px; padding: 20px 0;
+          display: flex; justify-content: center; margin-bottom: 32px; padding: 12px 0;
           cursor: pointer; text-decoration: none;
           transition: opacity 0.2s;
         }
         .hl-mobile-logo:hover { opacity: 0.8; }
-        .hl-mobile-logo img { height: 176px; object-fit: contain; pointer-events: none; }
+        .hl-mobile-logo img { height: 112px; object-fit: contain; pointer-events: none; }
+        @media (min-width: 640px) {
+          .hl-mobile-logo { margin-bottom: 48px; padding: 20px 0; justify-content: flex-end; }
+          .hl-mobile-logo img { height: 144px; }
+        }
         @media (min-width: 1024px) { .hl-mobile-logo { display: none; } }
 
         .hl-title { font-size: 1.8rem; font-weight: 800; color: #f0f4ff; margin-bottom: 6px; text-align: right; }
