@@ -7,6 +7,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Users, UserPlus, CreditCard as Edit, Crown, FileCheck, FileClock, AlertTriangle, Trash2 } from 'lucide-react';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 
@@ -342,7 +344,8 @@ export const DirectorManagement: React.FC = () => {
               icon={<Users className="h-12 w-12 text-ds-faint" />}
             />
           ) : (
-            <Table>
+            <ResponsiveTable
+              desktop={<Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>الاسم</TableHead>
@@ -398,7 +401,29 @@ export const DirectorManagement: React.FC = () => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </Table>}
+              mobile={directors.map(director => (
+                <MobileRow
+                  key={director.id}
+                  leading={<UserAvatar name={director.full_name} avatarUrl={(director as any).avatar_url} size="md" />}
+                  title={director.full_name}
+                  subtitle={director.email}
+                  fields={[
+                    { label: 'المسمى الوظيفي', value: director.job_title || '—' },
+                  ]}
+                  action={
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="outline" onClick={() => openEditModal(director)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => setDeleteTarget(director)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            />
           )}
         </CardBody>
       </Card>
