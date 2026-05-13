@@ -5,6 +5,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from '../../components/ui/Table';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { MobileRow } from '../../components/ui/MobileRow';
 import { Activity, Plus, Trash2, RefreshCw, CreditCard as Edit3, ToggleRight, ToggleLeft, ChevronLeft, ChevronRight, Filter, Clock, User } from 'lucide-react';
 
 interface AuditLogEntry {
@@ -287,57 +289,83 @@ export const AuditLog: React.FC = () => {
             />
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>المستخدم</TableHead>
-                    <TableHead>العملية</TableHead>
-                    <TableHead>النوع</TableHead>
-                    <TableHead>التفاصيل</TableHead>
-                    <TableHead>التاريخ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getActionColor(log.action)}`}>
-                            {getActionIcon(log.action)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-ds-text text-sm">{log.user_full_name}</p>
-                            <p className="text-xs text-ds-faint">
-                              {log.user_role === 'admin' ? 'مدير النظام' : 'موظف'}
+              <ResponsiveTable
+                desktop={
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>المستخدم</TableHead>
+                        <TableHead>العملية</TableHead>
+                        <TableHead>النوع</TableHead>
+                        <TableHead>التفاصيل</TableHead>
+                        <TableHead>التاريخ</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {logs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getActionColor(log.action)}`}>
+                                {getActionIcon(log.action)}
+                              </div>
+                              <div>
+                                <p className="font-medium text-ds-text text-sm">{log.user_full_name}</p>
+                                <p className="text-xs text-ds-faint">
+                                  {log.user_role === 'admin' ? 'مدير النظام' : 'موظف'}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getActionBadgeVariant(log.action)} size="sm">
+                              {log.action}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-ds-muted text-sm">
+                              {entityTypeLabels[log.entity_type] || log.entity_type}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-ds-faint text-sm max-w-xs truncate">
+                              {formatDetails(log.details) || '-'}
                             </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getActionBadgeVariant(log.action)} size="sm">
-                          {log.action}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-ds-muted text-sm">
-                          {entityTypeLabels[log.entity_type] || log.entity_type}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-ds-faint text-sm max-w-xs truncate">
-                          {formatDetails(log.details) || '-'}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-right">
-                          <p className="text-sm text-ds-text">{formatDate(log.created_at)}</p>
-                          <p className="text-xs text-ds-faint">{formatTime(log.created_at)}</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-right">
+                              <p className="text-sm text-ds-text">{formatDate(log.created_at)}</p>
+                              <p className="text-xs text-ds-faint">{formatTime(log.created_at)}</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                }
+                mobile={logs.map(log => (
+                  <MobileRow
+                    key={log.id}
+                    leading={
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getActionColor(log.action)}`}>
+                        {getActionIcon(log.action)}
+                      </div>
+                    }
+                    title={log.user_full_name || '—'}
+                    subtitle={log.user_role === 'admin' ? 'مدير النظام' : 'موظف'}
+                    statusBadge={
+                      <Badge variant={getActionBadgeVariant(log.action)} size="sm">
+                        {log.action}
+                      </Badge>
+                    }
+                    fields={[
+                      { label: 'النوع', value: entityTypeLabels[log.entity_type] || log.entity_type },
+                      { label: 'التاريخ', value: `${formatDate(log.created_at)} · ${formatTime(log.created_at)}` },
+                      ...(formatDetails(log.details) ? [{ label: 'التفاصيل', value: formatDetails(log.details) }] : []),
+                    ]}
+                  />
+                ))}
+              />
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-ds-border">

@@ -1011,6 +1011,16 @@ tbody tr:hover { background: var(--bg-card); }
 tbody td { padding: 13px 16px; font-size: 13px; color: var(--text-secondary); vertical-align: middle; }
 tbody td.td-primary { color: var(--text-primary); font-weight: 600; }
 
+/* On phones / tablets, tighten table padding and shrink the header so
+   horizontal-scroll tables fit more columns per swipe. Pages that
+   adopt the ResponsiveTable pattern bypass this since they swap to a
+   card layout via Tailwind's hidden lg:block / lg:hidden, but pages
+   that keep raw tables still benefit. */
+@media (max-width: 1023px) {
+  thead th { padding: 9px 10px; font-size: 10px; letter-spacing: 0.5px; }
+  tbody td { padding: 10px 10px; font-size: 12.5px; }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    AVATAR
 ═══════════════════════════════════════════════════════════════ */
