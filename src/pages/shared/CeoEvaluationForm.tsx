@@ -122,9 +122,16 @@ export const CeoEvaluationForm: React.FC = () => {
         .select('*')
         .eq('evaluation_id', evaluation.id);
 
+      // Postgres numeric columns come back as strings via Supabase JS by
+      // default — coerce explicitly so the FractionalScoreSelector's
+      // strict-equality compare (`baseInt === score`) lands on a real
+      // number and the button highlights correctly.
       const scoresMap: Record<string, number> = {};
       evalScores?.forEach((s: any) => {
-        if (s.criterion_id) scoresMap[s.criterion_id] = s.score_1_to_5 || s.score || 0;
+        if (s.criterion_id) {
+          const raw = s.score_1_to_5 ?? s.score ?? 0;
+          scoresMap[s.criterion_id] = Number(raw);
+        }
       });
       setScores(scoresMap);
     } else {
@@ -267,7 +274,12 @@ export const CeoEvaluationForm: React.FC = () => {
 
   const results = calculateResults();
   const scoredCount = criteria.filter((c) => scores[c.id] && scores[c.id] > 0).length;
-  const isReadOnly = evaluationStatus === 'تم الإرسال';
+  // Treat a "submitted" row with zero stored scores as an orphan from
+  // an earlier failed save (the old RPC code created the parent row
+  // even when the score insert failed). Let the user re-fill and
+  // re-submit instead of locking them into a view that shows nothing.
+  const hasAnyScore = scoredCount > 0;
+  const isReadOnly = evaluationStatus === 'تم الإرسال' && hasAnyScore;
 
   if (dataLoading) {
     return (
