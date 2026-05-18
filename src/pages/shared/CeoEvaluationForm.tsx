@@ -319,7 +319,7 @@ export const CeoEvaluationForm: React.FC = () => {
       {activePeriod && (
         <>
           {/* Period banner */}
-          <div className="bg-ds-info-bg border border-ds-info-border rounded-lg px-4 py-2.5 flex items-center justify-between">
+          <div className="bg-ds-info-bg border border-ds-info-border rounded-lg px-4 py-2.5 flex items-center justify-between flex-wrap gap-2">
             <span className="text-sm text-ds-info-text">
               الفترة النشطة: {quarterLabels[activePeriod.quarter] || `الربع ${activePeriod.quarter}`} - {activePeriod.year}
             </span>
@@ -330,6 +330,21 @@ export const CeoEvaluationForm: React.FC = () => {
               </span>
             )}
           </div>
+
+          {/* Orphan recovery banner — when a submission exists but its
+              scores are missing, the user sees an editable form again
+              with this explanation so they know to re-enter and re-submit. */}
+          {evaluationStatus === 'تم الإرسال' && !hasAnyScore && (
+            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg px-4 py-3 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-ds-warning-text flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-bold text-ds-warning-text mb-1">تعذّر تحميل تقييمك السابق</p>
+                <p className="text-ds-warning-text">
+                  ربما حدث خلل أثناء حفظ التقييم في المحاولة السابقة. يرجى إعادة إدخال درجات المعايير وإرسال التقييم مجدداً.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Intro screen: show details first, then a button to start the evaluation */}
           {!started && (
