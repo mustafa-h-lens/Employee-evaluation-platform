@@ -362,7 +362,7 @@ export const CeoEvaluationForm: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardBody className="space-y-5">
-                  <div className="bg-ds-info-bg border border-blue-100 rounded-lg p-4 text-sm text-ds-info-text leading-relaxed">
+                  <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-4 text-sm text-ds-info-text leading-relaxed">
                     سيتم تقييم الإدارة العليا كفريق واحد بناءً على {criteria.length} معيار. تقييمك سرّي ولا يتم
                     عرض اسمك على أعضاء الإدارة العليا. يمكنك حفظ التقييم كمسودة والعودة إليه قبل الإرسال النهائي.
                   </div>
