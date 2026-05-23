@@ -164,6 +164,14 @@ export const CeoEvaluationForm: React.FC = () => {
     return computeFinalScores(percentage);
   }, [criteria, scores]);
 
+  // Minimum characters required for the evaluator note on FINAL submit.
+  // Drafts can still be saved with shorter notes. The same constant
+  // drives both validation and the live counter UI below.
+  const MIN_NOTE_LENGTH = 30;
+  const noteLength = evaluatorNote.trim().length;
+  const noteMet = noteLength >= MIN_NOTE_LENGTH;
+  const noteRemaining = Math.max(0, MIN_NOTE_LENGTH - noteLength);
+
   const handleSubmit = async (isDraft: boolean) => {
     if (!currentUserId || !activePeriod) return;
 
@@ -171,6 +179,10 @@ export const CeoEvaluationForm: React.FC = () => {
       const allScored = criteria.every((c) => scores[c.id] && scores[c.id] > 0);
       if (!allScored) {
         toast.warning('يرجى تقييم جميع المعايير قبل الإرسال');
+        return;
+      }
+      if (!noteMet) {
+        toast.warning(`يرجى إضافة ملاحظاتك على ألا تقل عن ${MIN_NOTE_LENGTH} حرف`);
         return;
       }
     }
@@ -514,22 +526,81 @@ export const CeoEvaluationForm: React.FC = () => {
             </Card>
           ))}
 
-          {/* Evaluator note */}
+          {/* Evaluator note — required, ≥ MIN_NOTE_LENGTH chars on final
+              submit. Live counter, progress bar, and a colour-shifting
+              border ride alongside the textarea so the user sees their
+              progress fill up as they type. Drafts can still be saved
+              shorter; the gate only triggers on الإرسال النهائي. */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-ds-muted" />
-                <h3 className="font-bold text-ds-text">ملاحظات المقيّم</h3>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-ds-muted" />
+                  <h3 className="font-bold text-ds-text">
+                    ملاحظات المقيّم
+                    <span className="text-ds-danger mr-1" aria-hidden="true">*</span>
+                  </h3>
+                </div>
+                {!isReadOnly && (
+                  <div
+                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                      noteMet
+                        ? 'bg-ds-success-bg text-ds-success-text border-ds-success-border'
+                        : noteLength === 0
+                          ? 'bg-ds-overlay text-ds-faint border-ds-border-subtle'
+                          : 'bg-ds-warning-bg text-ds-warning-text border-ds-warning-border'
+                    }`}
+                    aria-live="polite"
+                  >
+                    {noteMet
+                      ? `✓ تم استيفاء الحد الأدنى (${noteLength} حرف)`
+                      : `تبقى ${noteRemaining} حرف`}
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardBody>
-              <TextArea
-                value={evaluatorNote}
-                onChange={(e) => setEvaluatorNote(e.target.value)}
-                placeholder="أضف ملاحظاتك هنا (اختياري)..."
-                rows={4}
-                disabled={isReadOnly}
-              />
+              <div>
+                <textarea
+                  value={evaluatorNote}
+                  onChange={(e) => setEvaluatorNote(e.target.value)}
+                  placeholder={`أضف ملاحظاتك هنا — لا تقل عن ${MIN_NOTE_LENGTH} حرف...`}
+                  rows={4}
+                  disabled={isReadOnly}
+                  className="input"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    minHeight: '100px',
+                    padding: '10px 14px',
+                    resize: 'vertical',
+                    transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+                    ...(isReadOnly || noteLength === 0
+                      ? {}
+                      : noteMet
+                        ? {
+                            borderColor: 'var(--success-border)',
+                            boxShadow: '0 0 0 3px rgba(16,185,129,0.08)',
+                          }
+                        : {
+                            borderColor: 'var(--warning-border)',
+                            boxShadow: '0 0 0 3px rgba(245,158,11,0.08)',
+                          }),
+                  }}
+                />
+                {!isReadOnly && (
+                  <div className="mt-2 h-1 bg-ds-track rounded-full overflow-hidden" aria-hidden="true">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ease-out ${
+                        noteMet ? 'bg-ds-success' : 'bg-ds-warning'
+                      }`}
+                      style={{
+                        width: `${Math.min(100, (noteLength / MIN_NOTE_LENGTH) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </CardBody>
           </Card>
 
@@ -551,7 +622,8 @@ export const CeoEvaluationForm: React.FC = () => {
                 <Button
                   variant="primary"
                   onClick={() => handleSubmit(false)}
-                  disabled={loading}
+                  disabled={loading || !noteMet}
+                  title={!noteMet ? `يجب أن تكتب على الأقل ${MIN_NOTE_LENGTH} حرف في ملاحظات المقيّم` : undefined}
                 >
                   <Send className="h-4 w-4 ml-2" />
                   إرسال التقييم
