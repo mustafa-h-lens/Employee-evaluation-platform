@@ -356,8 +356,10 @@ export const Reports: React.FC = () => {
         <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>تقارير مفصلة عن أداء الموظفين حسب الفترة الزمنية</p>
       </div>
 
-      {/* Employee Search */}
-      <Card>
+      {/* Employee Search — `!overflow-visible` overrides the DS .card
+          rule so the dropdown panel below the input isn't clipped at
+          the card edge. */}
+      <Card className="!overflow-visible">
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}

@@ -659,8 +659,11 @@ export const CeoReports: React.FC = () => {
         ))}
       </div>
 
-      {/* Filters */}
-      <Card>
+      {/* Filters — `!overflow-visible` overrides the DS .card rule
+          (overflow: hidden) so the searchable-dropdown panel that's
+          absolutely positioned below the input isn't clipped to the
+          card edge. */}
+      <Card className="!overflow-visible">
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
