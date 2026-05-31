@@ -659,13 +659,11 @@ export const CeoReports: React.FC = () => {
         ))}
       </div>
 
-      {/* Filters — `!overflow-visible` overrides the DS .card rule so
-          the searchable-dropdown panel below the input isn't clipped
-          to the card edge. `hover:!translate-y-0` cancels the DS
-          .card:hover lift; without that, as the cursor moves down
-          through the dropdown the card toggled hover ↔ idle, shifting
-          the dropdown 2px up/down and causing item flicker. */}
-      <Card className="!overflow-visible hover:!translate-y-0">
+      {/* Filters — `!overflow-visible` lets the dropdown panel escape
+          the card's clip; `card-flat` removes the .card hover lift +
+          box-shadow transition that otherwise repaints/wiggles the
+          dropdown as the cursor moves through it (flickering cursor). */}
+      <Card className="!overflow-visible card-flat">
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
@@ -740,7 +738,7 @@ export const CeoReports: React.FC = () => {
                             setSearchQuery('');
                             setDropdownOpen(false);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-gray-50 last:border-0"
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-ds-border-subtle last:border-0"
                         >
                           <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                           <div className="flex-1 min-w-0">
@@ -762,7 +760,7 @@ export const CeoReports: React.FC = () => {
                             setSearchQuery('');
                             setDropdownOpen(false);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-gray-50 last:border-0"
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-ds-border-subtle last:border-0"
                         >
                           <UserAvatar name={person.full_name} avatarUrl={(person as any).avatar_url} size="sm" />
                           <div className="flex-1 min-w-0">

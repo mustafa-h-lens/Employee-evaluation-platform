@@ -878,6 +878,18 @@ textarea.input { height: auto; min-height: 90px; padding: 10px 14px; resize: ver
   box-shadow: var(--shadow-md);
 }
 
+/* Opt-out of the .card hover lift + transition. Used by cards that
+   contain an interactive popover (e.g. a search dropdown): the lift
+   transform + box-shadow transition cause the popover to repaint /
+   wiggle as the cursor moves through it, which reads as a flickering
+   cursor. Higher specificity (.card.card-flat) beats `.card:hover`. */
+.card.card-flat,
+.card.card-flat:hover {
+  transform: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.card.card-flat:hover { background: var(--bg-card); box-shadow: var(--shadow-card); }
+
 .card-glow { box-shadow: 0 0 0 1px var(--border-accent), var(--shadow-glow); border-color: var(--border-accent); }
 
 .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }

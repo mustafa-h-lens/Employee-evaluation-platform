@@ -356,12 +356,11 @@ export const Reports: React.FC = () => {
         <p className="mt-2" style={{ color: 'var(--sc-purple-label)' }}>تقارير مفصلة عن أداء الموظفين حسب الفترة الزمنية</p>
       </div>
 
-      {/* Employee Search — `!overflow-visible` overrides the DS .card
-          rule so the dropdown panel below the input isn't clipped at
-          the card edge. `hover:!translate-y-0` cancels the .card:hover
-          lift that would otherwise wiggle the dropdown 2px as the
-          cursor crosses the card boundary. */}
-      <Card className="!overflow-visible hover:!translate-y-0">
+      {/* Employee Search — `!overflow-visible` lets the dropdown panel
+          escape the card's clip; `card-flat` removes the .card hover
+          lift + box-shadow transition that otherwise repaints/wiggles
+          the dropdown as the cursor moves through it. */}
+      <Card className="!overflow-visible card-flat">
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
@@ -397,7 +396,7 @@ export const Reports: React.FC = () => {
                           setSearchQuery('');
                           setDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ds-info-bg text-right transition-colors border-b border-ds-border-subtle last:border-0"
                       >
                         <UserAvatar name={emp.full_name} avatarUrl={(emp as any).avatar_url} size="sm" />
                         <div className="flex-1 min-w-0">
