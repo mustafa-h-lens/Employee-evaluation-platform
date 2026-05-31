@@ -91,6 +91,9 @@ interface EmployeeEvalRecord {
   period: { year: number; month: number } | null;
   manager: { full_name: string } | null;
   department: { name: string } | null;
+  // 'director' = director→employee evaluation; 'supervisor' =
+  // supervisor→employee evaluation (pulled from supervisor_evaluations).
+  source: 'director' | 'supervisor';
 }
 
 interface ScoreDetail {
@@ -301,26 +304,81 @@ export const CeoReports: React.FC = () => {
       }));
       setScores(scoresMap);
     } else {
-      // Employees tab
-      const { data: evals } = await supabase
-        .from('evaluations')
-        .select(`
-          id, status, final_score_500, final_score_5, percentage, general_rating,
-          manager_note, employee_note, ceo_comment, submitted_at,
-          period:evaluation_periods(year, month),
-          manager:users!evaluations_manager_id_fkey(full_name),
-          department:departments(name)
-        `)
-        .eq('employee_id', selectedEmployee!.id)
-        .in('period_id', periodIds)
-        .in('status', ['بانتظار الموافقة', 'موافقة', 'مرفوض', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
-        .order('submitted_at', { ascending: false });
+      // Employees tab — pull BOTH director→employee and
+      // supervisor→employee evaluations so an employee assessed only by
+      // a supervisor (تقييم المشرف) still shows up.
+      const [{ data: dirEvals }, { data: supEvals }] = await Promise.all([
+        supabase
+          .from('evaluations')
+          .select(`
+            id, status, final_score_500, final_score_5, percentage, general_rating,
+            manager_note, employee_note, ceo_comment, submitted_at,
+            period:evaluation_periods(year, month),
+            manager:users!evaluations_manager_id_fkey(full_name),
+            department:departments(name)
+          `)
+          .eq('employee_id', selectedEmployee!.id)
+          .in('period_id', periodIds)
+          .in('status', ['بانتظار الموافقة', 'موافقة', 'مرفوض', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
+          .order('submitted_at', { ascending: false }),
+        supabase
+          .from('supervisor_evaluations')
+          .select(`
+            id, status, final_score_500, final_score_5, percentage, general_rating,
+            supervisor_note, employee_note, submitted_at,
+            period:evaluation_periods(year, month),
+            supervisor:users!supervisor_evaluations_supervisor_id_fkey(full_name)
+          `)
+          .eq('employee_id', selectedEmployee!.id)
+          .in('period_id', periodIds)
+          .in('status', ['تم الإرسال', 'اطلع الموظف', 'مغلق'])
+          .order('submitted_at', { ascending: false }),
+      ]);
 
-      const evalList = (evals as unknown as EmployeeEvalRecord[]) || [];
+      const dirList: EmployeeEvalRecord[] = ((dirEvals || []) as any[]).map(e => ({ ...e, source: 'director' as const }));
+      const supList: EmployeeEvalRecord[] = ((supEvals || []) as any[]).map(e => ({
+        id: e.id,
+        status: e.status,
+        final_score_500: e.final_score_500,
+        final_score_5: e.final_score_5,
+        percentage: e.percentage,
+        general_rating: e.general_rating,
+        manager_note: e.supervisor_note,
+        employee_note: e.employee_note,
+        ceo_comment: null,
+        submitted_at: e.submitted_at,
+        period: e.period,
+        manager: e.supervisor,
+        department: null,
+        source: 'supervisor' as const,
+      }));
+
+      const evalList = [...dirList, ...supList].sort((a, b) =>
+        (b.submitted_at || '').localeCompare(a.submitted_at || ''));
       setEmployeeEvals(evalList);
 
       const scoresMap: Record<string, ScoreDetail[]> = {};
       await Promise.all(evalList.map(async (ev) => {
+        if (ev.source === 'supervisor') {
+          const { data: scoreData } = await supabase
+            .from('supervisor_evaluation_scores')
+            .select(`
+              score_1_to_5, weighted_result, criterion_type,
+              criterion:evaluation_criteria(title, description, weight),
+              sup_criterion:supervisor_criteria(title, description, weight)
+            `)
+            .eq('evaluation_id', ev.id);
+          scoresMap[ev.id] = (scoreData || []).map((s: any) => ({
+            criterion_title: s.criterion_type === 'specific' ? (s.sup_criterion?.title || '') : (s.criterion?.title || ''),
+            criterion_description: s.criterion_type === 'specific' ? (s.sup_criterion?.description || '') : (s.criterion?.description || ''),
+            criterion_weight: s.criterion_type === 'specific' ? (s.sup_criterion?.weight || 0) : (s.criterion?.weight || 0),
+            score: s.score_1_to_5,
+            weighted_result: s.weighted_result,
+            type: s.criterion_type || 'general',
+          }));
+          return;
+        }
+
         const { data: scoreData } = await supabase
           .from('evaluation_scores')
           .select(`
@@ -359,7 +417,11 @@ export const CeoReports: React.FC = () => {
     if (activeTab !== 'employees') return currentEvals;
     const byPeriod = new Map<string, any[]>();
     currentEvals.forEach((e: any) => {
-      const key = e.period_id || `${e.period?.year}-${e.period?.month}`;
+      // Key includes the source so a director eval and a supervisor
+      // eval in the same period stay as two separate cards instead of
+      // being averaged together (only multi-directorate director evals
+      // should collapse into one mean).
+      const key = `${e.source || 'director'}::${e.period_id || `${e.period?.year}-${e.period?.month}`}`;
       if (!byPeriod.has(key)) byPeriod.set(key, []);
       byPeriod.get(key)!.push(e);
     });
@@ -459,12 +521,15 @@ export const CeoReports: React.FC = () => {
       evaluatorLabel = 'ملاحظات المقيّم';
       subjectLabel = 'رد مدير الإدارة';
     } else {
+      const isSup = ev.source === 'supervisor';
       evaluatorNote = ev.manager_note;
       subjectNote = ev.employee_note;
-      evaluatorLabel = 'ملاحظات المدير';
+      evaluatorLabel = isSup ? 'ملاحظات المشرف' : 'ملاحظات المدير';
       subjectLabel = 'رد الموظف';
-      subtitle = ev.manager ? `المقيّم: ${ev.manager.full_name}` : null;
+      subtitle = ev.manager ? `${isSup ? 'المشرف المقيّم' : 'المقيّم'}: ${ev.manager.full_name}` : null;
     }
+
+    const isSupCard = activeTab === 'employees' && ev.source === 'supervisor';
 
     return (
       <Card key={ev.id}>
@@ -481,7 +546,14 @@ export const CeoReports: React.FC = () => {
                 {subtitle && <p className="text-xs text-ds-faint">{subtitle}</p>}
               </div>
             </div>
-            <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
+            <div className="flex items-center gap-2">
+              {activeTab === 'employees' && (
+                <Badge variant={isSupCard ? 'info' : 'primary'} size="sm">
+                  {isSupCard ? 'تقييم المشرف' : 'تقييم المدير'}
+                </Badge>
+              )}
+              <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
+            </div>
           </div>
         </CardHeader>
 
