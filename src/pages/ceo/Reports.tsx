@@ -145,31 +145,52 @@ export const CeoReports: React.FC = () => {
 
   useEffect(() => {
     const fetchPeople = async () => {
-      // Directors list = whoever is assigned as a directorate director
-      // OR secondary director, regardless of their users.role. In this
-      // system CEO users frequently serve as directorate directors too,
-      // so a flat `.eq('role', 'director')` filter dropped them.
-      const { data: directorateAssignments } = await supabase
-        .from('directorates')
-        .select('director_id, secondary_director_id');
+      // Directors list = the union of:
+      //   1) Users whose users.role = 'director' (the simple case)
+      //   2) Anyone assigned as directorate.director_id / secondary_director_id
+      // (regardless of their users.role — CEO users frequently serve as
+      // directorate directors too in this org, and a flat .eq('role',
+      // 'director') filter dropped them, leaving the dropdown empty).
+      const [{ data: roleDirs }, { data: dirAssignments }, { data: emps }] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, full_name, job_title, role, email')
+          .eq('role', 'director')
+          .order('full_name'),
+        supabase
+          .from('directorates')
+          .select('director_id, secondary_director_id'),
+        supabase
+          .from('employees')
+          .select('id, full_name, job_title, employee_number, department:departments(name)')
+          .eq('status', 'active')
+          .order('full_name'),
+      ]);
 
-      const directorIds = new Set<string>();
-      (directorateAssignments || []).forEach((d: any) => {
-        if (d.director_id) directorIds.add(d.director_id);
-        if (d.secondary_director_id) directorIds.add(d.secondary_director_id);
+      const seenIds = new Set<string>();
+      const merged: any[] = [];
+      ((roleDirs || []) as any[]).forEach(u => {
+        if (!seenIds.has(u.id)) { seenIds.add(u.id); merged.push(u); }
       });
 
-      const [{ data: dirs }, { data: emps }] = await Promise.all([
-        directorIds.size > 0
-          ? supabase
-              .from('users')
-              .select('id, full_name, job_title, role, email')
-              .in('id', Array.from(directorIds))
-              .order('full_name')
-          : Promise.resolve({ data: [] as any[] }),
-        supabase.from('employees').select('id, full_name, job_title, employee_number, department:departments(name)').eq('status', 'active').order('full_name'),
-      ]);
-      setDirectors((dirs || []) as PersonOption[]);
+      const extraIds = new Set<string>();
+      ((dirAssignments || []) as any[]).forEach(d => {
+        if (d.director_id && !seenIds.has(d.director_id)) extraIds.add(d.director_id);
+        if (d.secondary_director_id && !seenIds.has(d.secondary_director_id)) extraIds.add(d.secondary_director_id);
+      });
+
+      if (extraIds.size > 0) {
+        const { data: extraUsers } = await supabase
+          .from('users')
+          .select('id, full_name, job_title, role, email')
+          .in('id', Array.from(extraIds));
+        ((extraUsers || []) as any[]).forEach(u => {
+          if (!seenIds.has(u.id)) { seenIds.add(u.id); merged.push(u); }
+        });
+      }
+
+      merged.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+      setDirectors(merged as PersonOption[]);
       setEmployees((emps || []) as unknown as EmployeeOption[]);
     };
 
