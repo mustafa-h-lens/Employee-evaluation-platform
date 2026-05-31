@@ -72,6 +72,10 @@ interface EvalRecord {
   submitted_at: string | null;
   period: { year: number; month: number } | null;
   manager: { full_name: string } | null;
+  // Distinguishes a director→employee evaluation from a
+  // supervisor→employee evaluation so the report can label each and
+  // pull scores from the right table.
+  source: 'director' | 'supervisor';
 }
 
 interface ScoreDetail {
@@ -215,28 +219,87 @@ export const Reports: React.FC = () => {
       return;
     }
 
-    const { data: evals } = await supabase
-      .from('evaluations')
-      .select(`
-        id, period_id, directorate_id, status, final_score_500, final_score_5, percentage, general_rating,
-        manager_note, employee_note, ceo_comment, submitted_at,
-        period:evaluation_periods(year, month),
-        manager:users!evaluations_manager_id_fkey(full_name),
-        directorate:directorates(id, name)
-      `)
-      .eq('employee_id', selectedEmployee.id)
-      .in('period_id', periodIds)
-      .in('status', ['بانتظار الموافقة', 'موافقة', 'مرفوض', 'تم الإرسال', 'اطلع الموظف', 'مغلق'])
-      .order('submitted_at', { ascending: false });
+    // Pull BOTH director→employee evaluations and supervisor→employee
+    // evaluations for this employee in the period. The page previously
+    // only queried `evaluations`, so an employee who was assessed only
+    // by a supervisor (تقييم المشرف) showed "no evaluations".
+    const allowedStatuses = ['بانتظار الموافقة', 'موافقة', 'مرفوض', 'تم الإرسال', 'اطلع الموظف', 'مغلق'];
+    const [{ data: dirEvals }, { data: supEvals }] = await Promise.all([
+      supabase
+        .from('evaluations')
+        .select(`
+          id, period_id, directorate_id, status, final_score_500, final_score_5, percentage, general_rating,
+          manager_note, employee_note, ceo_comment, submitted_at,
+          period:evaluation_periods(year, month),
+          manager:users!evaluations_manager_id_fkey(full_name),
+          directorate:directorates(id, name)
+        `)
+        .eq('employee_id', selectedEmployee.id)
+        .in('period_id', periodIds)
+        .in('status', allowedStatuses)
+        .order('submitted_at', { ascending: false }),
+      supabase
+        .from('supervisor_evaluations')
+        .select(`
+          id, period_id, status, final_score_500, final_score_5, percentage, general_rating,
+          supervisor_note, employee_note, submitted_at,
+          period:evaluation_periods(year, month),
+          supervisor:users!supervisor_evaluations_supervisor_id_fkey(full_name)
+        `)
+        .eq('employee_id', selectedEmployee.id)
+        .in('period_id', periodIds)
+        .in('status', ['تم الإرسال', 'اطلع الموظف', 'مغلق'])
+        .order('submitted_at', { ascending: false }),
+    ]);
 
-    const evalList = (evals as unknown as EvalRecord[]) || [];
+    const dirList: EvalRecord[] = ((dirEvals || []) as any[]).map(e => ({ ...e, source: 'director' as const }));
+    const supList: EvalRecord[] = ((supEvals || []) as any[]).map(e => ({
+      id: e.id,
+      status: e.status,
+      final_score_500: e.final_score_500,
+      final_score_5: e.final_score_5,
+      percentage: e.percentage,
+      general_rating: e.general_rating,
+      manager_note: e.supervisor_note,
+      employee_note: e.employee_note,
+      ceo_comment: null,
+      submitted_at: e.submitted_at,
+      period: e.period,
+      manager: e.supervisor,
+      source: 'supervisor' as const,
+    }));
+
+    const evalList = [...dirList, ...supList].sort((a, b) =>
+      (b.submitted_at || '').localeCompare(a.submitted_at || ''));
     setEvaluations(evalList);
 
-    // Fetch scores and dev plans for each evaluation
+    // Fetch scores and dev plans for each evaluation, pulling from the
+    // correct scores table per source.
     const scoresMap: Record<string, ScoreDetail[]> = {};
     const devMap: Record<string, DevPlan[]> = {};
 
     await Promise.all(evalList.map(async (ev) => {
+      if (ev.source === 'supervisor') {
+        const { data: scoreData } = await supabase
+          .from('supervisor_evaluation_scores')
+          .select(`
+            score_1_to_5, weighted_result, criterion_type,
+            criterion:evaluation_criteria(title, description, weight),
+            sup_criterion:supervisor_criteria(title, description, weight)
+          `)
+          .eq('evaluation_id', ev.id);
+        scoresMap[ev.id] = (scoreData || []).map((s: any) => ({
+          criterion_title: s.criterion_type === 'specific' ? (s.sup_criterion?.title || '') : (s.criterion?.title || ''),
+          criterion_description: s.criterion_type === 'specific' ? (s.sup_criterion?.description || '') : (s.criterion?.description || ''),
+          criterion_weight: s.criterion_type === 'specific' ? (s.sup_criterion?.weight || 0) : (s.criterion?.weight || 0),
+          score: s.score_1_to_5,
+          weighted_result: s.weighted_result,
+          type: s.criterion_type || 'general',
+        }));
+        devMap[ev.id] = [];
+        return;
+      }
+
       const [{ data: scoreData }, { data: devData }] = await Promise.all([
         supabase
           .from('evaluation_scores')
@@ -695,10 +758,17 @@ export const Reports: React.FC = () => {
                               <h2 className="text-lg font-semibold text-ds-text">
                                 {ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : 'غير محدد'}
                               </h2>
-                              <p className="text-xs text-ds-faint">المدير المقيّم: {ev.manager?.full_name || '-'}</p>
+                              <p className="text-xs text-ds-faint">
+                                {ev.source === 'supervisor' ? 'المشرف المقيّم' : 'المدير المقيّم'}: {ev.manager?.full_name || '-'}
+                              </p>
                             </div>
                           </div>
-                          <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={ev.source === 'supervisor' ? 'info' : 'primary'} size="sm">
+                              {ev.source === 'supervisor' ? 'تقييم المشرف' : 'تقييم المدير'}
+                            </Badge>
+                            <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
+                          </div>
                         </div>
                       </CardHeader>
 
