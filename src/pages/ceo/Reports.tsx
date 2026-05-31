@@ -117,6 +117,15 @@ export const CeoReports: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<PersonOption | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeOption | null>(null);
+  // Which evaluation cards are expanded (collapsed by default so a
+  // year's worth of monthly reports stays scannable).
+  const [expandedEvals, setExpandedEvals] = useState<Set<string>>(new Set());
+  const toggleEvalExpanded = (id: string) =>
+    setExpandedEvals(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const searchWrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -530,33 +539,48 @@ export const CeoReports: React.FC = () => {
     }
 
     const isSupCard = activeTab === 'employees' && ev.source === 'supervisor';
+    const isExpanded = expandedEvals.has(ev.id);
 
     return (
       <Card key={ev.id}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-ds-overlay p-2 rounded-lg">
-                <Calendar className="h-5 w-5 text-ds-muted" />
+        <button
+          type="button"
+          onClick={() => toggleEvalExpanded(ev.id)}
+          className="w-full text-right"
+          aria-expanded={isExpanded}
+        >
+          <CardHeader className="hover:bg-ds-bg/40 transition-colors">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <ChevronDown className={`h-5 w-5 text-ds-faint flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <div className="bg-ds-overlay p-2 rounded-lg flex-shrink-0">
+                  <Calendar className="h-5 w-5 text-ds-muted" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-ds-text truncate">
+                    {ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : 'غير محدد'}
+                  </h2>
+                  {subtitle && <p className="text-xs text-ds-faint truncate">{subtitle}</p>}
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-ds-text">
-                  {ev.period ? `${monthLabels[ev.period.month]} ${ev.period.year}` : 'غير محدد'}
-                </h2>
-                {subtitle && <p className="text-xs text-ds-faint">{subtitle}</p>}
+              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                {/* Compact summary shown even while collapsed */}
+                <span className="font-bold text-ds-text text-sm tabular-nums">{ev.percentage?.toFixed(0)}%</span>
+                {ev.general_rating && (
+                  <Badge variant={getRatingVariant(ev.general_rating)} size="sm">{ev.general_rating}</Badge>
+                )}
+                {activeTab === 'employees' && (
+                  <Badge variant={isSupCard ? 'info' : 'primary'} size="sm">
+                    {isSupCard ? 'تقييم المشرف' : 'تقييم المدير'}
+                  </Badge>
+                )}
+                <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {activeTab === 'employees' && (
-                <Badge variant={isSupCard ? 'info' : 'primary'} size="sm">
-                  {isSupCard ? 'تقييم المشرف' : 'تقييم المدير'}
-                </Badge>
-              )}
-              <Badge variant={getStatusVariant(ev.status)} size="sm">{getStatusLabel(ev.status)}</Badge>
-            </div>
-          </div>
-        </CardHeader>
+          </CardHeader>
+        </button>
 
+        {isExpanded && (
         <CardBody className="space-y-5">
           {/* Final Results */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -678,6 +702,7 @@ export const CeoReports: React.FC = () => {
             </div>
           )}
         </CardBody>
+        )}
       </Card>
     );
   };
