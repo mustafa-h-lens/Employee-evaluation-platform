@@ -55,6 +55,7 @@ interface EmployeeOption {
   job_title: string;
   employee_number: string;
   department_name: string;
+  directorate_name: string;
   department_id: string;
 }
 
@@ -121,19 +122,48 @@ export const Reports: React.FC = () => {
   // Fetch all employees
   useEffect(() => {
     const fetchEmployees = async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('id, full_name, job_title, employee_number, department_id, department:departments(name)')
-        .order('full_name');
+      // Pull employees plus their directorate links. An employee can be
+      // tied to one or more directorates via the employee_directorates
+      // junction (each optionally with a department). The header's
+      // "الإدارة" field previously showed only the department, so
+      // trainees attached straight to a directorate with no department
+      // rendered "-". Resolve the directorate name(s) here instead.
+      const [{ data }, { data: dirLinks }] = await Promise.all([
+        supabase
+          .from('employees')
+          .select('id, full_name, job_title, employee_number, department_id, department:departments(name)')
+          .order('full_name'),
+        supabase
+          .from('employee_directorates')
+          .select('employee_id, is_primary, directorate:directorates(name)'),
+      ]);
+
+      // employee_id → [directorate names], primary first
+      const dirMap = new Map<string, string[]>();
+      ((dirLinks || []) as any[]).forEach(link => {
+        const dirName = link.directorate?.name;
+        if (!dirName) return;
+        const arr = dirMap.get(link.employee_id) || [];
+        if (link.is_primary) arr.unshift(dirName);
+        else arr.push(dirName);
+        dirMap.set(link.employee_id, arr);
+      });
+
       if (data) {
-        setEmployees(data.map((e: any) => ({
-          id: e.id,
-          full_name: e.full_name,
-          job_title: e.job_title,
-          employee_number: e.employee_number,
-          department_name: e.department?.name || '-',
-          department_id: e.department_id,
-        })));
+        setEmployees(data.map((e: any) => {
+          const dirNames = dirMap.get(e.id);
+          return {
+            id: e.id,
+            full_name: e.full_name,
+            job_title: e.job_title,
+            employee_number: e.employee_number,
+            department_name: e.department?.name || '-',
+            directorate_name: dirNames && dirNames.length > 0
+              ? dirNames.join(' · ')
+              : (e.department?.name || '-'),
+            department_id: e.department_id,
+          };
+        }));
       }
     };
 
@@ -519,7 +549,7 @@ export const Reports: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">الإدارة</p>
-                    <p className="font-semibold text-ds-info-text">{selectedEmployee.department_name}</p>
+                    <p className="font-semibold text-ds-info-text">{selectedEmployee.directorate_name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-blue-600">الرقم الوظيفي</p>
