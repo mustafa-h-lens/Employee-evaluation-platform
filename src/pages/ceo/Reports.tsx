@@ -145,8 +145,28 @@ export const CeoReports: React.FC = () => {
 
   useEffect(() => {
     const fetchPeople = async () => {
+      // Directors list = whoever is assigned as a directorate director
+      // OR secondary director, regardless of their users.role. In this
+      // system CEO users frequently serve as directorate directors too,
+      // so a flat `.eq('role', 'director')` filter dropped them.
+      const { data: directorateAssignments } = await supabase
+        .from('directorates')
+        .select('director_id, secondary_director_id');
+
+      const directorIds = new Set<string>();
+      (directorateAssignments || []).forEach((d: any) => {
+        if (d.director_id) directorIds.add(d.director_id);
+        if (d.secondary_director_id) directorIds.add(d.secondary_director_id);
+      });
+
       const [{ data: dirs }, { data: emps }] = await Promise.all([
-        supabase.from('users').select('id, full_name, job_title, role, email').eq('role', 'director').order('full_name'),
+        directorIds.size > 0
+          ? supabase
+              .from('users')
+              .select('id, full_name, job_title, role, email')
+              .in('id', Array.from(directorIds))
+              .order('full_name')
+          : Promise.resolve({ data: [] as any[] }),
         supabase.from('employees').select('id, full_name, job_title, employee_number, department:departments(name)').eq('status', 'active').order('full_name'),
       ]);
       setDirectors((dirs || []) as PersonOption[]);
