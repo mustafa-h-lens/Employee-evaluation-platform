@@ -439,6 +439,32 @@ export const Reports: React.FC = () => {
 
   const annualSummary = periodMode === 'annual' ? buildSummary() : null;
   const quarterlySummary = periodMode === 'quarterly' && selectedQuarter > 0 ? buildSummary() : null;
+
+  // Per-quarter breakdown for the جميع الأرباع view — each quarter's
+  // average is the simple mean of its evaluations (intuitive for sparse
+  // data), mirroring the CEO report.
+  const quarterlySummaries = React.useMemo(() => {
+    if (periodMode !== 'quarterly' || selectedQuarter !== 0) return [] as Array<{
+      quarter: number; count: number; avgPercentage: number; avgScore5: number; avgScore500: number; generalRating: string;
+    }>;
+    const out: Array<{ quarter: number; count: number; avgPercentage: number; avgScore5: number; avgScore500: number; generalRating: string }> = [];
+    for (let q = 1; q <= 4; q++) {
+      const startMonth = (q - 1) * 3 + 1;
+      const endMonth = q * 3;
+      const qEvals = collapsedEvaluations.filter(e => {
+        const m = e.period?.month || 0;
+        return m >= startMonth && m <= endMonth;
+      });
+      if (qEvals.length === 0) continue;
+      const sum = qEvals.reduce((acc, e) => ({
+        pct: acc.pct + e.percentage, s5: acc.s5 + e.final_score_5, s500: acc.s500 + e.final_score_500,
+      }), { pct: 0, s5: 0, s500: 0 });
+      const avgPercentage = sum.pct / qEvals.length;
+      const generalRating = avgPercentage >= 90 ? 'ممتاز' : avgPercentage >= 80 ? 'جيد جدًا' : avgPercentage >= 70 ? 'جيد' : 'يحتاج تحسين';
+      out.push({ quarter: q, count: qEvals.length, avgPercentage, avgScore5: sum.s5 / qEvals.length, avgScore500: sum.s500 / qEvals.length, generalRating });
+    }
+    return out;
+  }, [periodMode, selectedQuarter, collapsedEvaluations]);
   const fullyOnLeave = (periodMode === 'annual' || (periodMode === 'quarterly' && selectedQuarter > 0))
     && evaluableMonths === 0
     && windowLeaves.length > 0;
@@ -741,6 +767,47 @@ export const Reports: React.FC = () => {
                     })()}
                   </CardBody>
                 </Card>
+              )}
+
+              {/* Per-quarter summaries (جميع الأرباع view) */}
+              {quarterlySummaries.length > 0 && (
+                <div className="space-y-3">
+                  {quarterlySummaries.map(qs => (
+                    <Card key={qs.quarter} className="border-ds-info-border">
+                      <CardHeader className="bg-ds-info-bg">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-blue-600" />
+                            <h2 className="text-base sm:text-lg font-semibold text-ds-info-text">
+                              ملخص {quarterLabels[qs.quarter]} — {selectedYear}
+                            </h2>
+                          </div>
+                          <Badge variant={getRatingVariant(qs.generalRating)} size="sm">{qs.generalRating}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardBody>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="bg-ds-info-bg rounded-lg p-3 text-center">
+                            <p className="text-xs text-blue-600 mb-1">عدد التقييمات</p>
+                            <p className="text-lg sm:text-xl font-bold text-ds-info-text">{qs.count}</p>
+                          </div>
+                          <div className="bg-ds-purple-bg rounded-lg p-3 text-center">
+                            <p className="text-xs text-purple-600 mb-1">متوسط / 500</p>
+                            <p className="text-lg sm:text-xl font-bold text-ds-purple-text">{qs.avgScore500.toFixed(0)}</p>
+                          </div>
+                          <div className="bg-ds-info-bg rounded-lg p-3 text-center">
+                            <p className="text-xs text-indigo-600 mb-1">متوسط / 5</p>
+                            <p className="text-lg sm:text-xl font-bold text-ds-info-text">{qs.avgScore5.toFixed(2)}</p>
+                          </div>
+                          <div className="bg-ds-info-bg rounded-lg p-3 text-center">
+                            <p className="text-xs text-teal-600 mb-1">متوسط النسبة</p>
+                            <p className="text-lg sm:text-xl font-bold text-ds-info-text">{qs.avgPercentage.toFixed(1)}%</p>
+                          </div>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
               )}
 
               {/* Individual evaluations */}
