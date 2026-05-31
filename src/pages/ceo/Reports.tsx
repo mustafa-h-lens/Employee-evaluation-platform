@@ -1147,18 +1147,15 @@ export const CeoReports: React.FC = () => {
                   {quarterlySummaries.map(qs => (
                     <Card key={qs.quarter} className="border-ds-info-border">
                       <CardHeader className="bg-ds-info-bg">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-blue-600" />
-                            <h2 className="text-base sm:text-lg font-semibold text-ds-info-text">
-                              ملخص {quarterLabels[qs.quarter]} — {selectedYear}
-                            </h2>
-                          </div>
-                          <Badge variant={getRatingVariant(qs.generalRating)} size="sm">{qs.generalRating}</Badge>
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-blue-600" />
+                          <h2 className="text-base sm:text-lg font-semibold text-ds-info-text">
+                            ملخص {quarterLabels[qs.quarter]} — {selectedYear}
+                          </h2>
                         </div>
                       </CardHeader>
                       <CardBody>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                           <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                             <p className="text-xs text-blue-600 mb-1">عدد التقييمات</p>
                             <p className="text-lg sm:text-xl font-bold text-ds-info-text">{qs.count}</p>
@@ -1174,6 +1171,10 @@ export const CeoReports: React.FC = () => {
                           <div className="bg-ds-info-bg rounded-lg p-3 text-center">
                             <p className="text-xs text-teal-600 mb-1">متوسط النسبة</p>
                             <p className="text-lg sm:text-xl font-bold text-ds-info-text">{qs.avgPercentage.toFixed(1)}%</p>
+                          </div>
+                          <div className="bg-ds-warning-bg rounded-lg p-3 text-center flex flex-col items-center justify-center">
+                            <p className="text-xs text-amber-600 mb-1">التقدير العام</p>
+                            <Badge variant={getRatingVariant(qs.generalRating)} size="lg">{qs.generalRating}</Badge>
                           </div>
                         </div>
                       </CardBody>
