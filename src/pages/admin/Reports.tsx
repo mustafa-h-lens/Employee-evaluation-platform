@@ -401,12 +401,12 @@ export const Reports: React.FC = () => {
     });
   }, [evaluations]);
 
-  // Effective denominator: prefer the leave-aware count from the RPC; fall
-  // back to the COUNT OF EVALUATED PERIODS (after collapsing multi-directorate
-  // duplicates) while the RPC is still in flight (or 0).
-  const denominator = (evaluableMonths !== null && evaluableMonths > 0)
-    ? evaluableMonths
-    : collapsedEvaluations.length;
+  // Denominator = the number of evaluated periods that actually exist
+  // (one evaluation → ÷1, two → ÷2, …). We do NOT divide by the full
+  // window (12/3) nor by leave-aware months, so an employee evaluated
+  // once at 75% reads as 75%. Leave / evaluable-month context is shown
+  // in the summary note instead.
+  const denominator = collapsedEvaluations.length;
 
   const buildSummary = () => {
     if (collapsedEvaluations.length === 0 || denominator === 0) return null;
@@ -701,17 +701,15 @@ export const Reports: React.FC = () => {
                       const summary = annualSummary || quarterlySummary!;
                       return (
                         <div className="space-y-4">
-                          {windowLeaves.length > 0 && (
-                            <div className="bg-ds-warning-bg border border-ds-warning-border rounded-lg p-3 flex items-start gap-2">
-                              <Calendar className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                              <p className="text-xs text-ds-warning-text">
-                                تم احتساب المتوسط على <span className="font-bold">{summary.evaluableMonths}</span> من <span className="font-bold">{summary.totalMonths}</span> شهر — استُبعدت أشهر الإجازة:{' '}
-                                <span className="font-medium">
-                                  {windowLeaves.map(l => l.type_name).join('، ')}
-                                </span>
-                              </p>
-                            </div>
-                          )}
+                          <div className="bg-ds-info-bg border border-ds-info-border rounded-lg p-3 flex items-start gap-2">
+                            <Calendar className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-ds-info-text">
+                              المتوسط محسوب على <span className="font-bold">{summary.count}</span> {summary.count === 1 ? 'تقييم' : 'تقييمات'} خلال الفترة.
+                              {windowLeaves.length > 0 && (
+                                <> الموظف لديه إجازة في: <span className="font-medium">{windowLeaves.map(l => l.type_name).join('، ')}</span>.</>
+                              )}
+                            </p>
+                          </div>
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div className="bg-ds-info-bg rounded-lg p-4 text-center">
                               <p className="text-xs text-blue-600 mb-1">عدد التقييمات</p>
