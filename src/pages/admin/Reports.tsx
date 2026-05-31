@@ -823,7 +823,7 @@ export const Reports: React.FC = () => {
                             <h3 className="text-sm font-bold text-ds-info-text mb-2 flex items-center gap-2">
                               <Star className="h-4 w-4" /> المعايير العامة
                             </h3>
-                            <div className="border rounded-lg overflow-hidden">
+                            <div className="border border-ds-border-subtle rounded-lg overflow-hidden">
                               <table className="w-full text-sm">
                                 <thead className="bg-ds-info-bg">
                                   <tr>
@@ -857,7 +857,7 @@ export const Reports: React.FC = () => {
                             <h3 className="text-sm font-bold text-ds-success-text mb-2 flex items-center gap-2">
                               <Star className="h-4 w-4" /> المعايير الخاصة
                             </h3>
-                            <div className="border rounded-lg overflow-hidden">
+                            <div className="border border-ds-border-subtle rounded-lg overflow-hidden">
                               <table className="w-full text-sm">
                                 <thead className="bg-ds-success-bg">
                                   <tr>
@@ -921,7 +921,7 @@ export const Reports: React.FC = () => {
                             <h3 className="text-sm font-bold text-ds-muted mb-2 flex items-center gap-2">
                               <Target className="h-4 w-4" /> خطة التطوير
                             </h3>
-                            <div className="border rounded-lg overflow-hidden">
+                            <div className="border border-ds-border-subtle rounded-lg overflow-hidden">
                               <table className="w-full text-sm">
                                 <thead className="bg-ds-bg">
                                   <tr>
