@@ -659,11 +659,13 @@ export const CeoReports: React.FC = () => {
         ))}
       </div>
 
-      {/* Filters — `!overflow-visible` overrides the DS .card rule
-          (overflow: hidden) so the searchable-dropdown panel that's
-          absolutely positioned below the input isn't clipped to the
-          card edge. */}
-      <Card className="!overflow-visible">
+      {/* Filters — `!overflow-visible` overrides the DS .card rule so
+          the searchable-dropdown panel below the input isn't clipped
+          to the card edge. `hover:!translate-y-0` cancels the DS
+          .card:hover lift; without that, as the cursor moves down
+          through the dropdown the card toggled hover ↔ idle, shifting
+          the dropdown 2px up/down and causing item flicker. */}
+      <Card className="!overflow-visible hover:!translate-y-0">
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}

@@ -358,8 +358,10 @@ export const Reports: React.FC = () => {
 
       {/* Employee Search — `!overflow-visible` overrides the DS .card
           rule so the dropdown panel below the input isn't clipped at
-          the card edge. */}
-      <Card className="!overflow-visible">
+          the card edge. `hover:!translate-y-0` cancels the .card:hover
+          lift that would otherwise wiggle the dropdown 2px as the
+          cursor crosses the card boundary. */}
+      <Card className="!overflow-visible hover:!translate-y-0">
         <CardBody>
           <div className="flex items-center gap-4 flex-wrap">
             {/* Searchable dropdown */}
