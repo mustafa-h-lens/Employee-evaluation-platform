@@ -357,14 +357,15 @@ export const AllEvaluations: React.FC = () => {
       .from('director_evaluation_scores')
       .select(`
         score_1_to_5, weighted_result, criterion_type,
-        criterion:evaluation_criteria(title, description, weight)
+        criterion:evaluation_criteria(title, description, weight),
+        dept_criterion:department_criteria(title, description, weight)
       `)
       .eq('evaluation_id', ev.id);
 
     const scoreDetails: ScoreDetail[] = (scores || []).map((s: any) => ({
-      criterion_title: s.criterion?.title || '',
-      criterion_description: s.criterion?.description || '',
-      criterion_weight: s.criterion?.weight || 0,
+      criterion_title: s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || ''),
+      criterion_description: s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || ''),
+      criterion_weight: s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0),
       score: s.score_1_to_5,
       weighted_result: s.weighted_result,
       type: s.criterion_type || 'general',
@@ -651,18 +652,32 @@ export const AllEvaluations: React.FC = () => {
       .from('director_evaluation_scores')
       .select(`
         evaluation_id, score_1_to_5, weighted_result, criterion_type,
-        criterion:evaluation_criteria(title, description, weight)
+        criterion:evaluation_criteria(title, description, weight),
+        dept_criterion:department_criteria(title, description, weight)
       `)
       .in('evaluation_id', allIds);
+
+    // Director-specific criteria live in department_criteria (the CEO's
+    // private director-criteria, with department/directorate/group all
+    // null) and are referenced via department_criterion_id. General
+    // criteria come from evaluation_criteria. Resolve each field from the
+    // table that matches criterion_type so specific rows keep their own
+    // title/weight instead of collapsing into a single empty-title row.
+    const titleOf = (s: any): string =>
+      s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || '');
+    const descOf = (s: any): string =>
+      s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || '');
+    const weightOf = (s: any): number =>
+      s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0);
 
     // Bucket A — per-evaluator score lists for the per-CEO tabs.
     const perEvalScores = new Map<string, ScoreDetail[]>();
     (scores || []).forEach((s: any) => {
       const arr = perEvalScores.get(s.evaluation_id) ?? [];
       arr.push({
-        criterion_title: s.criterion?.title || '',
-        criterion_description: s.criterion?.description || '',
-        criterion_weight: s.criterion?.weight || 0,
+        criterion_title: titleOf(s),
+        criterion_description: descOf(s),
+        criterion_weight: weightOf(s),
         score: s.score_1_to_5,
         weighted_result: s.weighted_result,
         type: (s.criterion_type || 'general') as 'general' | 'specific',
@@ -675,9 +690,9 @@ export const AllEvaluations: React.FC = () => {
     // collapse instead of showing twice.
     const criterionMap = new Map<string, { totalScore: number; totalWeighted: number; count: number; title: string; desc: string; weight: number; type: string }>();
     (scores || []).forEach((s: any) => {
-      const rawTitle = s.criterion?.title || '';
-      const desc = s.criterion?.description || '';
-      const weight = s.criterion?.weight || 0;
+      const rawTitle = titleOf(s);
+      const desc = descOf(s);
+      const weight = weightOf(s);
       const key = `${s.criterion_type}_${normalizeCriterionTitle(rawTitle)}`;
       if (!criterionMap.has(key)) criterionMap.set(key, { totalScore: 0, totalWeighted: 0, count: 0, title: rawTitle, desc, weight, type: s.criterion_type });
       const entry = criterionMap.get(key)!;

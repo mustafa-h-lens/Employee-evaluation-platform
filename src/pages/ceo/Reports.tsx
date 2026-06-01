@@ -298,14 +298,15 @@ export const CeoReports: React.FC = () => {
           .from('director_evaluation_scores')
           .select(`
             score_1_to_5, weighted_result, criterion_type,
-            criterion:evaluation_criteria(title, description, weight)
+            criterion:evaluation_criteria(title, description, weight),
+            dept_criterion:department_criteria(title, description, weight, group:department_criteria_groups(name))
           `)
           .eq('evaluation_id', ev.id);
 
         scoresMap[ev.id] = (scoreData || []).map((s: any) => ({
-          criterion_title: s.criterion?.title || '',
-          criterion_description: s.criterion?.description || '',
-          criterion_weight: s.criterion?.weight || 0,
+          criterion_title: s.criterion_type === 'specific' ? (s.dept_criterion?.title || '') : (s.criterion?.title || ''),
+          criterion_description: s.criterion_type === 'specific' ? (s.dept_criterion?.description || '') : (s.criterion?.description || ''),
+          criterion_weight: s.criterion_type === 'specific' ? (s.dept_criterion?.weight || 0) : (s.criterion?.weight || 0),
           score: s.score_1_to_5,
           weighted_result: s.weighted_result,
           type: s.criterion_type || 'general',
