@@ -95,16 +95,20 @@ export const DirectorCriteriaSection: React.FC<Props> = ({ embedded = false }) =
   const fetchCriteria = useCallback(async () => {
     if (!user) return;
     try {
-      // Scope: ONLY this CEO's private criteria for evaluating directors.
-      // (department_id, directorate_id, group_id) all null isolates this row
-      // from directorate-employee criteria; created_by isolates Saad/Ahmed.
+      // Scope: the SHARED high-management criteria for evaluating directors.
+      // (department_id, directorate_id, group_id) all null isolates these
+      // rows from directorate-employee criteria. These are intentionally NOT
+      // filtered by created_by — high management (Saad & Ahmed) share one
+      // set, so a criterion either CEO adds or removes is reflected for both.
+      // The DB RLS (CEO can insert/update/delete department_id-null rows)
+      // already permits either CEO to manage any of them, and the admin
+      // panel reads the same unfiltered pool.
       const { data, error } = await supabase
         .from('department_criteria')
         .select('*')
         .is('department_id', null)
         .is('directorate_id', null)
         .is('group_id', null)
-        .eq('created_by', user.id)
         .order('order', { ascending: true });
 
       if (!error && data) setCriteria(data);

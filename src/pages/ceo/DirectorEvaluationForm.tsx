@@ -123,13 +123,14 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
     const checkCriteria = async () => {
       if (!user) return;
       const [{ count }, { data: weightSettings }] = await Promise.all([
+        // Shared high-management criteria pool (not per-CEO) — must match the
+        // set loaded in fetchCriteria so the specific section shows for both CEOs.
         supabase
           .from('department_criteria')
           .select('id', { count: 'exact', head: true })
           .is('department_id', null)
           .is('directorate_id', null)
           .is('group_id', null)
-          .eq('created_by', user.id)
           .eq('is_active', true),
         supabase
           .from('evaluation_settings')
@@ -169,7 +170,9 @@ export const DirectorEvaluationForm: React.FC<{ directorId?: string }> = ({ dire
     if (!user) return;
     const [{ data: general }, { data: specific }] = await Promise.all([
       supabase.from('evaluation_criteria').select('*').is('group_id', null).eq('is_active', true).order('order'),
-      supabase.from('department_criteria').select('*').is('department_id', null).is('directorate_id', null).is('group_id', null).eq('created_by', user.id).eq('is_active', true).order('order'),
+      // Shared high-management criteria (not filtered by created_by) so both
+      // CEOs evaluate directors against the same set — see DirectorCriteriaSection.
+      supabase.from('department_criteria').select('*').is('department_id', null).is('directorate_id', null).is('group_id', null).eq('is_active', true).order('order'),
     ]);
     setCriteria(general || []);
     setSpecificCriteria((specific || []).map((s: any) => ({
